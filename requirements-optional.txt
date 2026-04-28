@@ -1,7 +1,7 @@
 # Optional dependencies for enrichment and advanced features
 psutil>=5.9.0
 geoip2>=5.2.0
-python-whois>=0.8.0
+python-whois>=0.9.6
 yara-python>=4.3.0
 requests>=2.31.0
 PyYAML>=6.0.1
