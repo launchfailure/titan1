@@ -2,6 +2,6 @@
 psutil>=5.9.0
 geoip2>=5.2.0
 python-whois>=0.8.0
-yara-python>=4.3.0
+yara-python>=4.5.4
 requests>=2.31.0
 PyYAML>=6.0.1
