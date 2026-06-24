@@ -136,6 +136,16 @@ titan-decoder --file suspicious.bin --out report.json --enable-detections \
   --report-out case_report.md --report-format markdown
 ```
 
+`--evidence` can also be used **without** a payload (`--file`/`--batch`) to ingest
+logs on their own. The report is produced with `node_count: 0` and the normalized
+evidence attached:
+
+```bash
+titan-decoder --out report.json \
+  --evidence dns:./logs/dns.csv \
+  --evidence proxy:./logs/proxy.csv
+```
+
 Export a normalized evidence timeline (from the ingested `--evidence` sources):
 
 ```bash

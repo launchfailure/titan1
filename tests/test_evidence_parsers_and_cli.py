@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-import pytest
 
 
 def test_evidence_parser_dns_csv_produces_indicators(tmp_path: Path):
@@ -71,6 +70,59 @@ def test_cli_evidence_attached_to_report(tmp_path: Path, monkeypatch):
     assert "links" in report["evidence"]
     assert "top_links" in report["evidence"]
     assert isinstance(report["evidence"]["links"], list)
+
+
+def test_cli_evidence_only_without_file(tmp_path: Path, monkeypatch):
+    # Evidence-only mode: no --file/--batch, just IR logs to ingest.
+    from titan_decoder import cli
+
+    dns = tmp_path / "dns.csv"
+    dns.write_text(
+        "timestamp,client_ip,query,answers\n"
+        "2025-01-01 00:00:01,10.0.0.10,example.com,93.184.216.34\n"
+    )
+
+    out = tmp_path / "report.json"
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "titan-decoder",
+            "--out",
+            str(out),
+            "--quiet",
+            "--evidence",
+            f"dns:{dns}",
+        ],
+    )
+
+    try:
+        cli.main()
+        assert False, "Expected SystemExit"
+    except SystemExit as e:
+        assert e.code == 0
+
+    report = json.loads(out.read_text())
+    # No payload was analyzed, but the report is well-formed and carries evidence.
+    assert report["node_count"] == 0
+    assert "run_manifest" in report
+    assert "evidence" in report
+    assert len(report["evidence"]["events"]) == 1
+    vals = {(i["type"], i["value"]) for i in report["evidence"]["indicators"]}
+    assert ("domains", "example.com") in vals
+
+
+def test_cli_no_input_source_errors(tmp_path: Path, monkeypatch):
+    # Neither --file, --batch, nor --evidence: should error out cleanly.
+    from titan_decoder import cli
+
+    monkeypatch.setattr("sys.argv", ["titan-decoder", "--quiet"])
+
+    try:
+        cli.main()
+        assert False, "Expected SystemExit"
+    except SystemExit as e:
+        assert e.code == 1
 
 
 def test_cli_case_report_includes_evidence(tmp_path: Path, monkeypatch):

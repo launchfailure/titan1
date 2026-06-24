@@ -184,6 +184,29 @@ class HexDecoder(Decoder):
         return "Hex"
 
 
+# Relative frequencies (percent) of letters in English text. Used to decide
+# whether a ROT13 rotation actually yields more English-like output than its
+# input, so the self-inverse cipher is not applied to already-readable text.
+_ENGLISH_LETTER_FREQ = {
+    "a": 8.2, "b": 1.5, "c": 2.8, "d": 4.3, "e": 12.7, "f": 2.2, "g": 2.0,
+    "h": 6.1, "i": 7.0, "j": 0.15, "k": 0.77, "l": 4.0, "m": 2.4, "n": 6.7,
+    "o": 7.5, "p": 1.9, "q": 0.095, "r": 6.0, "s": 6.3, "t": 9.1, "u": 2.8,
+    "v": 0.98, "w": 2.4, "x": 0.15, "y": 2.0, "z": 0.074,
+}
+
+
+def _english_likeness(text: str) -> float:
+    """Average English letter frequency over the alphabetic characters in text.
+
+    Higher means more English-like. ROT13 ciphertext of English scores low;
+    actual English prose scores high. Returns 0.0 when there are no letters.
+    """
+    letters = [c.lower() for c in text if c.isalpha()]
+    if not letters:
+        return 0.0
+    return sum(_ENGLISH_LETTER_FREQ.get(c, 0.0) for c in letters) / len(letters)
+
+
 class Rot13Decoder(Decoder):
     """ROT13 decoder."""
 
@@ -227,6 +250,14 @@ class Rot13Decoder(Decoder):
                     decoded += chr((ord(char) - ord("A") + 13) % 26 + ord("A"))
                 else:
                     decoded += char
+
+            # ROT13 is self-inverse, so it cannot tell plaintext from ciphertext
+            # by structure alone. Only treat it as a successful decode when the
+            # rotation makes the text more English-like; otherwise we would mangle
+            # already-readable content into garbage and pollute downstream IOCs.
+            if _english_likeness(decoded) <= _english_likeness(text):
+                return data, False
+
             return decoded.encode("ascii"), True
         except Exception:
             return data, False

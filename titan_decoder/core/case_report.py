@@ -76,11 +76,11 @@ def to_markdown(case: Dict[str, Any]) -> str:
         if links:
             lines.append("")
             lines.append("### Top Links")
-            for l in links[:10]:
-                src = (l.get("src") or {})
-                dst = (l.get("dst") or {})
+            for link in links[:10]:
+                src = (link.get("src") or {})
+                dst = (link.get("dst") or {})
                 lines.append(
-                    f"- {src.get('type')}={src.get('value')} -> {dst.get('type')}={dst.get('value')} ({l.get('reason_code')}, confidence={l.get('confidence')})"
+                    f"- {src.get('type')}={src.get('value')} -> {dst.get('type')}={dst.get('value')} ({link.get('reason_code')}, confidence={link.get('confidence')})"
                 )
         lines.append("")
 

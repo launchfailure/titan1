@@ -91,7 +91,6 @@ class XORKeyFinder:
 
             # Calculate metrics
             entropy = EntropyAnalyzer.calculate_entropy(xored)
-            Counter(xored)
 
             # Count printable characters (heuristic for plaintext)
             printable = sum(1 for b in xored if 32 <= b <= 126 or b in (9, 10, 13))

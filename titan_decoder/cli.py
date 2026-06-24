@@ -14,7 +14,6 @@ from .config import Config
 from .core.offline_guard import block_network, is_network_blocked
 from .core.evidence_parsers import parse_evidence_file, combine_parse_results
 from .core.evidence_correlation import top_pivots, build_last_seen, build_entity_hints
-from .core.evidence_models import Indicator
 from .core.evidence_links import build_links_from_evidence_events, top_links
 
 
@@ -300,13 +299,6 @@ def main():
             results.append(parse_evidence_file(path, kind))
         return combine_parse_results(results)
 
-    # If user requested trace, persist into config so the engine can act on it.
-    if args.trace:
-        try:
-            config_for_trace = True
-        except Exception:
-            config_for_trace = True
-
     # Setup signal handlers for clean shutdown
     interrupted = False
 
@@ -466,41 +458,43 @@ def main():
 
     # Normal analysis mode
     if not args.file:
-        print(
-            "Error: --file or --batch is required"
-        )
-        sys.exit(1)
+        # Evidence-only mode: ingest IR logs/artifacts without a payload to
+        # decode. With no input source at all, this is an error.
+        if not args.evidence:
+            print("Error: --file, --batch, or --evidence is required")
+            sys.exit(1)
+        data = b""
+    else:
+        if not args.file.exists():
+            print(f"Error: Input file {args.file} does not exist")
+            sys.exit(1)
 
-    if not args.file.exists():
-        print(f"Error: Input file {args.file} does not exist")
-        sys.exit(1)
+        # Read input data with error handling
+        try:
+            data = args.file.read_bytes()
+        except PermissionError:
+            print(f"Error: Permission denied reading {args.file}")
+            sys.exit(1)
+        except OSError as e:
+            print(f"Error: Could not read file {args.file}: {e}")
+            sys.exit(1)
 
-    # Read input data with error handling
-    try:
-        data = args.file.read_bytes()
-    except PermissionError:
-        print(f"Error: Permission denied reading {args.file}")
-        sys.exit(1)
-    except OSError as e:
-        print(f"Error: Could not read file {args.file}: {e}")
-        sys.exit(1)
+        if len(data) == 0:
+            print(f"Error: Input file {args.file} is empty")
+            sys.exit(1)
 
-    if len(data) == 0:
-        print(f"Error: Input file {args.file} is empty")
-        sys.exit(1)
-
-    # Check file size
-    max_size = config.get("max_data_size", 50 * 1024 * 1024)
-    if len(data) > max_size:
-        if not args.quiet:
-            print(
-                f"Warning: File size ({len(data)} bytes) exceeds max_data_size ({max_size} bytes)",
-                file=sys.stderr,
-            )
-            print(
-                "Analysis may be slow or incomplete. Increase max_data_size in config if needed.",
-                file=sys.stderr,
-            )
+        # Check file size
+        max_size = config.get("max_data_size", 50 * 1024 * 1024)
+        if len(data) > max_size:
+            if not args.quiet:
+                print(
+                    f"Warning: File size ({len(data)} bytes) exceeds max_data_size ({max_size} bytes)",
+                    file=sys.stderr,
+                )
+                print(
+                    "Analysis may be slow or incomplete. Increase max_data_size in config if needed.",
+                    file=sys.stderr,
+                )
 
     # Run analysis with optional profiling and error handling
     try:
@@ -508,8 +502,6 @@ def main():
     except Exception as e:
         print(f"Error: Failed to initialize engine: {e}")
         sys.exit(1)
-
-    offline_ctx = block_network() if args.offline else None
 
     if args.perf_profile:
         from .core.profiling import PerformanceProfiler
