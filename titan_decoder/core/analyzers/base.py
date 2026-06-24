@@ -550,6 +550,18 @@ class ELFAnalyzer(Analyzer):
                 12: "OpenBSD",
             }
 
+            # Endianness and word size depend on e_ident: ELF64 uses 8-byte
+            # e_entry/e_phoff/e_shoff, ELF32 uses 4-byte; ei_data selects
+            # little- (1) vs big-endian (2).
+            endian = ">" if ei_data == 2 else "<"
+            if ei_class == 2:  # 64-bit
+                header_fmt = endian + "HHIQQQIHHHHHH"
+            else:  # 32-bit (and fallback)
+                header_fmt = endian + "HHIIIIIHHHHHH"
+            header_size = struct.calcsize(header_fmt)
+            if len(data) < 16 + header_size:
+                return None
+
             # Rest of header
             (
                 e_type,
@@ -565,7 +577,7 @@ class ELFAnalyzer(Analyzer):
                 e_shentsize,
                 e_shnum,
                 e_shstrndx,
-            ) = struct.unpack("<HHIIIIIHHHHHH", data[16:52])
+            ) = struct.unpack(header_fmt, data[16 : 16 + header_size])
 
             # Object file types
             object_types = {
