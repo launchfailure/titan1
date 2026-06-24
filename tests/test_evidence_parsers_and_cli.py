@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-import pytest
 
 
 def test_evidence_parser_dns_csv_produces_indicators(tmp_path: Path):

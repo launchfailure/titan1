@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 
 
 def test_cli_doctor_outputs_json_and_exits_zero(monkeypatch, capsys):

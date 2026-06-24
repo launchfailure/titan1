@@ -16,13 +16,13 @@ def test_evidence_links_dns_client_to_domain_and_domain_to_answer_ip():
     links = build_links_from_evidence_events(events)
     keys = {
         (
-            l["src"]["type"],
-            l["src"]["value"],
-            l["dst"]["type"],
-            l["dst"]["value"],
-            l["reason_code"],
+            link["src"]["type"],
+            link["src"]["value"],
+            link["dst"]["type"],
+            link["dst"]["value"],
+            link["reason_code"],
         )
-        for l in links
+        for link in links
     }
 
     assert ("ipv4", "10.0.0.10", "domains", "example.com", "dns_client_queried_domain") in keys
@@ -46,6 +46,6 @@ def test_evidence_links_dns_ignores_non_ip_answers():
 
     links = build_links_from_evidence_events(events)
     # Only one answer-based IP link should exist
-    ip_links = [l for l in links if l.get("reason_code") == "dns_answer"]
+    ip_links = [link for link in links if link.get("reason_code") == "dns_answer"]
     assert len(ip_links) == 1
     assert ip_links[0]["dst"]["value"] == "93.184.216.34"

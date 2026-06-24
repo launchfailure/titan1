@@ -11,7 +11,7 @@ Goal: "pivots with proof" without heavy dependencies.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 
 def _looks_like_ipv4(value: str) -> bool:
@@ -274,19 +274,19 @@ def build_links_from_evidence_events(events: List[Dict[str, Any]]) -> List[Dict[
             )
 
     # Return deterministic ordering
-    out = [l.to_dict() for l in sorted(links.values(), key=lambda x: (x.src_type, x.src_value, x.dst_type, x.dst_value, x.reason_code))]
+    out = [link.to_dict() for link in sorted(links.values(), key=lambda x: (x.src_type, x.src_value, x.dst_type, x.dst_value, x.reason_code))]
     return out
 
 
 def top_links(links: List[Dict[str, Any]], limit: int = 10) -> List[Dict[str, Any]]:
     """Rank links by number of sources then lexicographically."""
-    def score(l: Dict[str, Any]) -> tuple[int, str, str, str, str, str]:
-        src = l.get("src") or {}
-        dst = l.get("dst") or {}
+    def score(link: Dict[str, Any]) -> tuple[int, str, str, str, str, str]:
+        src = link.get("src") or {}
+        dst = link.get("dst") or {}
         return (
-            len(l.get("sources") or []),
-            str(l.get("confidence") or ""),
-            str(l.get("reason_code") or ""),
+            len(link.get("sources") or []),
+            str(link.get("confidence") or ""),
+            str(link.get("reason_code") or ""),
             str(src.get("type") or ""),
             str(src.get("value") or ""),
             str(dst.get("value") or ""),

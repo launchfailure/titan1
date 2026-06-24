@@ -10,7 +10,7 @@ This is intentionally lightweight and deterministic.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from .evidence_models import Indicator
 

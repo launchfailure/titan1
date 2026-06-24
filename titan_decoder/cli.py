@@ -14,7 +14,6 @@ from .config import Config
 from .core.offline_guard import block_network, is_network_blocked
 from .core.evidence_parsers import parse_evidence_file, combine_parse_results
 from .core.evidence_correlation import top_pivots, build_last_seen, build_entity_hints
-from .core.evidence_models import Indicator
 from .core.evidence_links import build_links_from_evidence_events, top_links
 
 
@@ -300,13 +299,6 @@ def main():
             results.append(parse_evidence_file(path, kind))
         return combine_parse_results(results)
 
-    # If user requested trace, persist into config so the engine can act on it.
-    if args.trace:
-        try:
-            config_for_trace = True
-        except Exception:
-            config_for_trace = True
-
     # Setup signal handlers for clean shutdown
     interrupted = False
 
@@ -508,8 +500,6 @@ def main():
     except Exception as e:
         print(f"Error: Failed to initialize engine: {e}")
         sys.exit(1)
-
-    offline_ctx = block_network() if args.offline else None
 
     if args.perf_profile:
         from .core.profiling import PerformanceProfiler

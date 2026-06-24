@@ -15,7 +15,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from ..utils.helpers import extract_iocs
 from .evidence_models import EvidenceEvent, Indicator, EvidenceRef
@@ -140,12 +140,6 @@ def parse_browser_history_sqlite(path: Path) -> Tuple[List[EvidenceEvent], List[
         # Chrome/Edge
         if _table_exists(conn, "urls"):
             cur = conn.cursor()
-            cols = [
-                "url",
-                "title",
-                "visit_count",
-                "last_visit_time",
-            ]
             try:
                 cur.execute(
                     "SELECT url, title, visit_count, last_visit_time FROM urls ORDER BY last_visit_time DESC LIMIT 500"
