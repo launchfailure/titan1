@@ -457,7 +457,7 @@ class PEAnalyzer(Analyzer):
                         size_of_uninit_data,
                         entry_point,
                         base_of_code,
-                    ) = struct.unpack("<HBBIIIIII", data[opt_offset : opt_offset + 24])
+                    ) = struct.unpack("<HBBIIIII", data[opt_offset : opt_offset + 24])
 
                     metadata.update(
                         {
@@ -473,15 +473,15 @@ class PEAnalyzer(Analyzer):
                         }
                     )
 
-                    # For PE32, image base is at offset 28
-                    if magic == 0x10B and opt_offset + 28 <= len(data):
+                    # For PE32, image base is a 4-byte field at offset 28.
+                    if magic == 0x10B and opt_offset + 32 <= len(data):
                         image_base = struct.unpack(
                             "<I", data[opt_offset + 28 : opt_offset + 32]
                         )[0]
                         metadata["image_base"] = f"0x{image_base:08x}"
 
-                    # For PE32+, image base is at offset 24
-                    elif magic == 0x20B and opt_offset + 24 <= len(data):
+                    # For PE32+, image base is an 8-byte field at offset 24.
+                    elif magic == 0x20B and opt_offset + 32 <= len(data):
                         image_base = struct.unpack(
                             "<Q", data[opt_offset + 24 : opt_offset + 32]
                         )[0]
