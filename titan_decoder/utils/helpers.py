@@ -1,4 +1,5 @@
 import hashlib
+import ipaddress
 import math
 from typing import Dict, List
 import re
@@ -93,16 +94,17 @@ def looks_like_hex(data: bytes) -> bool:
 # IOC Extraction
 # =========================
 
-PRIVATE_IP_RANGES = [
-    re.compile(r"^10\."),
-    re.compile(r"^192\.168\."),
-    re.compile(r"^172\.(1[6-9]|2[0-9]|3[0-1])\."),
-]
-
-
 def is_private_ip(ip: str) -> bool:
-    """Check if IP is private."""
-    return any(r.match(ip) for r in PRIVATE_IP_RANGES)
+    """Return True if ip is a valid IPv4 address that is not globally routable.
+
+    Covers the RFC1918 private ranges plus loopback, link-local, CGNAT, and
+    other reserved/special-use space — anything that should not be treated as a
+    public indicator. Returns False for invalid addresses.
+    """
+    try:
+        return not ipaddress.IPv4Address(ip).is_global
+    except ValueError:
+        return False
 
 
 def _clean_indicator(val: str) -> str:
@@ -161,6 +163,11 @@ def extract_iocs(text: str) -> Dict[str, List[str]]:
     for raw_ip in ipv4:
         ip = _clean_indicator(raw_ip)
         if not ip:
+            continue
+        try:
+            # Reject malformed addresses (e.g. octets > 255 like 999.999.999.999).
+            ipaddress.IPv4Address(ip)
+        except ValueError:
             continue
         iocs["ipv4"].add(ip)
         if is_private_ip(ip):
