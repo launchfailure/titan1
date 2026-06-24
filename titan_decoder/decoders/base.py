@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Tuple
 import base64
-import gzip
 import bz2
 import lzma
+import zlib
 import binascii
 import re
 
@@ -13,6 +13,36 @@ from ..utils.helpers import (
     looks_like_bz2,
     looks_like_hex,
 )
+
+
+# Cap on decompressed output to defend against decompression bombs: a few KB of
+# bz2/gzip/lzma can expand to many GB. This mirrors the size limits the archive
+# (ZIP/TAR) analyzers already enforce. The engine overrides this per-decoder
+# from config (max_data_size).
+DEFAULT_MAX_DECOMPRESSED_SIZE = 100 * 1024 * 1024  # 100 MB
+
+
+def _bounded_decompress(make_decompressor, data: bytes, max_output: int) -> bytes:
+    """Decompress with an output cap to defend against decompression bombs.
+
+    ``make_decompressor`` is a zero-arg factory returning a fresh incremental
+    decompressor (zlib/bz2/lzma style) exposing ``decompress(data, max_length)``,
+    ``.eof`` and ``.unused_data``. Concatenated streams (e.g. multi-member gzip)
+    are handled by creating a new decompressor per stream. ``decompress`` returns
+    at most ``max_length`` bytes and buffers the rest, so peak memory stays
+    bounded. Raises ValueError if the total output would exceed ``max_output``.
+    """
+    result = bytearray()
+    remaining = data
+    while remaining:
+        decompressor = make_decompressor()
+        # Allow one byte past the remaining budget so overflow is detectable.
+        budget = max_output - len(result) + 1
+        result += decompressor.decompress(remaining, budget)
+        if len(result) > max_output or not decompressor.eof:
+            raise ValueError("decompressed output exceeds maximum allowed size")
+        remaining = decompressor.unused_data
+    return bytes(result)
 
 
 class Decoder(ABC):
@@ -91,12 +121,18 @@ class RecursiveBase64Decoder(Decoder):
 class GzipDecoder(Decoder):
     """Gzip decompressor."""
 
+    def __init__(self, max_output_size: int = DEFAULT_MAX_DECOMPRESSED_SIZE):
+        self.max_output_size = max_output_size
+
     def can_decode(self, data: bytes) -> bool:
         return looks_like_gzip(data)
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
-            return gzip.decompress(data), True
+            # wbits=31 selects the gzip header/format.
+            return _bounded_decompress(
+                lambda: zlib.decompressobj(31), data, self.max_output_size
+            ), True
         except Exception:
             return data, False
 
@@ -108,12 +144,17 @@ class GzipDecoder(Decoder):
 class Bz2Decoder(Decoder):
     """Bz2 decompressor."""
 
+    def __init__(self, max_output_size: int = DEFAULT_MAX_DECOMPRESSED_SIZE):
+        self.max_output_size = max_output_size
+
     def can_decode(self, data: bytes) -> bool:
         return looks_like_bz2(data)
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
-            return bz2.decompress(data), True
+            return _bounded_decompress(
+                bz2.BZ2Decompressor, data, self.max_output_size
+            ), True
         except Exception:
             return data, False
 
@@ -125,12 +166,17 @@ class Bz2Decoder(Decoder):
 class LzmaDecoder(Decoder):
     """LZMA/XZ decompressor."""
 
+    def __init__(self, max_output_size: int = DEFAULT_MAX_DECOMPRESSED_SIZE):
+        self.max_output_size = max_output_size
+
     def can_decode(self, data: bytes) -> bool:
         return data.startswith(b"\xfd7zXZ") or data.startswith(b"\x5d\x00\x00")
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
-            return lzma.decompress(data), True
+            return _bounded_decompress(
+                lzma.LZMADecompressor, data, self.max_output_size
+            ), True
         except Exception:
             return data, False
 
@@ -141,6 +187,9 @@ class LzmaDecoder(Decoder):
 
 class ZlibDecoder(Decoder):
     """ZLIB decompressor."""
+
+    def __init__(self, max_output_size: int = DEFAULT_MAX_DECOMPRESSED_SIZE):
+        self.max_output_size = max_output_size
 
     def can_decode(self, data: bytes) -> bool:
         # ZLIB compressed data typically starts with compression method
@@ -155,9 +204,9 @@ class ZlibDecoder(Decoder):
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
-            import zlib
-
-            return zlib.decompress(data), True
+            return _bounded_decompress(
+                zlib.decompressobj, data, self.max_output_size
+            ), True
         except Exception:
             return data, False
 

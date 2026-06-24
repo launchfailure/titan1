@@ -152,19 +152,23 @@ class TitanEngine:
         self.smart_detector = SmartDetectionEngine()
 
         # Initialize decoders based on config
+        # Cap decompressed output to defend against decompression bombs.
+        max_decompressed = int(
+            self.config.get("max_data_size", 50 * 1024 * 1024)
+        )
         self.decoders: List[Decoder] = []
         if self.config.get("decoders", {}).get("recursive_base64", True):
             self.decoders.append(RecursiveBase64Decoder())
         if self.config.get("decoders", {}).get("base64", True):
             self.decoders.append(Base64Decoder())
         if self.config.get("decoders", {}).get("gzip", True):
-            self.decoders.append(GzipDecoder())
+            self.decoders.append(GzipDecoder(max_decompressed))
         if self.config.get("decoders", {}).get("bz2", True):
-            self.decoders.append(Bz2Decoder())
+            self.decoders.append(Bz2Decoder(max_decompressed))
         if self.config.get("decoders", {}).get("lzma", True):
-            self.decoders.append(LzmaDecoder())
+            self.decoders.append(LzmaDecoder(max_decompressed))
         if self.config.get("decoders", {}).get("zlib", True):
-            self.decoders.append(ZlibDecoder())
+            self.decoders.append(ZlibDecoder(max_decompressed))
         if self.config.get("decoders", {}).get("hex", True):
             self.decoders.append(HexDecoder())
         if self.config.get("decoders", {}).get("rot13", True):
