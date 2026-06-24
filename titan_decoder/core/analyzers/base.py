@@ -216,11 +216,10 @@ class TarAnalyzer(Analyzer):
         self.max_workers = self.config.get("max_parallel_workers", 4)
 
     def can_analyze(self, data: bytes) -> bool:
-        return (
-            data.startswith(b"\x75\x73\x74\x61\x72")
-            or len(data) >= 512
-            and data[257:263] == b"ustar\x00"
-        )
+        # The ustar magic lives at offset 257 of the 512-byte tar header. Both
+        # the POSIX ("ustar\x00") and GNU ("ustar  ") variants begin with
+        # b"ustar" there, so match that prefix to cover both.
+        return len(data) >= 262 and data[257:262] == b"ustar"
 
     def analyze(self, data: bytes) -> List[Tuple[str, bytes]]:
         """Analyze TAR file with safety checks and optional parallel extraction."""
