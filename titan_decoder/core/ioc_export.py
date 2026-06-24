@@ -65,23 +65,27 @@ def export_stix_minimal(iocs: Dict[str, Any], path: Path):
     }
 
     def mk_indicator(ind_type: str, value: str, idx: int) -> Dict[str, Any]:
+        # STIX string literals escape backslash and single quote; without this
+        # an IOC value containing a quote (e.g. a crafted URL) produces an
+        # invalid STIX pattern.
+        safe = value.replace("\\", "\\\\").replace("'", "\\'")
         pattern = None
         if ind_type == "ipv4":
-            pattern = f"[ipv4-addr:value = '{value}']"
+            pattern = f"[ipv4-addr:value = '{safe}']"
         elif ind_type == "domains":
-            pattern = f"[domain-name:value = '{value}']"
+            pattern = f"[domain-name:value = '{safe}']"
         elif ind_type == "urls":
-            pattern = f"[url:value = '{value}']"
+            pattern = f"[url:value = '{safe}']"
         elif ind_type == "emails":
-            pattern = f"[email-addr:value = '{value}']"
+            pattern = f"[email-addr:value = '{safe}']"
         elif ind_type == "hashes":
-            pattern = f"[file:hashes.'SHA-256' = '{value}']"
+            pattern = f"[file:hashes.'SHA-256' = '{safe}']"
         elif ind_type == "imei":
-            pattern = f"[x-device:imei = '{value}']"
+            pattern = f"[x-device:imei = '{safe}']"
         elif ind_type == "imsi":
-            pattern = f"[x-device:imsi = '{value}']"
+            pattern = f"[x-device:imsi = '{safe}']"
         elif ind_type == "iccid":
-            pattern = f"[x-device:iccid = '{value}']"
+            pattern = f"[x-device:iccid = '{safe}']"
         if not pattern:
             return None
         return {
@@ -93,15 +97,14 @@ def export_stix_minimal(iocs: Dict[str, Any], path: Path):
         }
 
     idx = 1
+    seen_patterns: set[str] = set()
     for key, values in iocs.items():
-        mapped_key = key
-        if key == "domains":
-            mapped_key = "domains"
         for v in values:
-            obj = mk_indicator(mapped_key, v, idx)
-            idx += 1
-            if obj:
+            obj = mk_indicator(key, v, idx)
+            if obj and obj["pattern"] not in seen_patterns:
+                seen_patterns.add(obj["pattern"])
                 bundle["objects"].append(obj)
+                idx += 1
     path.write_text(json.dumps(bundle, indent=2))
 
 
@@ -110,16 +113,17 @@ def export_misp(
 ):
     """Export IOCs as MISP event (JSON format)."""
     import uuid
-    from datetime import datetime
+    from datetime import datetime, timezone
 
+    now = datetime.now(timezone.utc)
     event_uuid = str(uuid.uuid4())
-    timestamp = int(datetime.utcnow().timestamp())
+    timestamp = int(now.timestamp())
 
     event = {
         "Event": {
             "uuid": event_uuid,
             "info": event_info,
-            "date": datetime.utcnow().strftime("%Y-%m-%d"),
+            "date": now.strftime("%Y-%m-%d"),
             "timestamp": str(timestamp),
             "published": False,
             "analysis": "1",  # Ongoing
@@ -141,12 +145,19 @@ def export_misp(
         "iccid": "sim-number",
     }
 
+    # The IOC dict has overlapping IP buckets (ipv4 is a superset of
+    # ipv4_public), so dedupe by (type, value) to avoid emitting the same
+    # attribute twice.
+    seen: set[tuple[str, str]] = set()
     for ioc_type, values in iocs.items():
         misp_type = type_mapping.get(ioc_type)
         if not misp_type:
             continue
 
         for value in values:
+            if (misp_type, value) in seen:
+                continue
+            seen.add((misp_type, value))
             attribute = {
                 "uuid": str(uuid.uuid4()),
                 "type": misp_type,
