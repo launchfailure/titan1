@@ -149,9 +149,14 @@ def extract_iocs(text: str) -> Dict[str, List[str]]:
     emails = re.findall(
         r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", text_for_other
     )
+    # Match only real hash digest lengths (hex): MD5=32, SHA1=40, SHA224=56,
+    # SHA256=64, SHA384=96, SHA512=128. A loose {32,128} range would flag any
+    # hex-encoded blob (e.g. a 34-char hex payload) as a bogus "hash" IOC.
     hashes = re.findall(
-        r"\b[a-fA-F0-9]{32,128}\b", text_for_other
-    )  # MD5, SHA1, SHA256, etc.
+        r"\b(?:[a-fA-F0-9]{32}|[a-fA-F0-9]{40}|[a-fA-F0-9]{56}"
+        r"|[a-fA-F0-9]{64}|[a-fA-F0-9]{96}|[a-fA-F0-9]{128})\b",
+        text_for_other,
+    )
 
     for raw_ip in ipv4:
         ip = _clean_indicator(raw_ip)
