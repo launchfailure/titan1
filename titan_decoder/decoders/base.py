@@ -587,7 +587,9 @@ class UUDecoder(Decoder):
             uu.decode(input_buffer, output_buffer)
             decoded = output_buffer.getvalue()
 
-            return decoded if decoded else (data, False), bool(decoded)
+            if decoded:
+                return decoded, True
+            return data, False
         except Exception:
             return data, False
 
@@ -710,7 +712,9 @@ class QuotedPrintableDecoder(Decoder):
             import quopri
 
             decoded = quopri.decodestring(data)
-            return decoded if decoded != data else (data, False), decoded != data
+            if decoded != data:
+                return decoded, True
+            return data, False
         except Exception:
             return data, False
 
