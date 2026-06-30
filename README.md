@@ -302,7 +302,6 @@ titan_decoder/
 │   ├── ioc_export.py         # JSON/CSV/STIX/MISP export
 │   ├── case_report.py        # Markdown reports
 │   ├── timeline.py           # Event timeline export
-│   ├── file_hashing.py       # MD5/SHA1/SHA256 + VT
 │   ├── correlation.py        # IOC correlation cache
 │   ├── resource_manager.py   # Timeouts and limits
 │   ├── secure_logging.py     # PII redaction
