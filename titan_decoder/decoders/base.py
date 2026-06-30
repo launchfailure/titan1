@@ -440,6 +440,15 @@ class PDFDecoder(Decoder):
 class OLEDecoder(Decoder):
     """OLE (Object Linking and Embedding) file decoder - extracts embedded content."""
 
+    # Per-signature match cap: each signature occurrence extracts a window and,
+    # for VBA, scans for end markers. Without a cap, a crafted OLE file full of
+    # repeated signatures yields gigabytes of output (memory bomb) and the VBA
+    # end-marker scan becomes O(n^2). Real OLE files have very few matches.
+    MAX_MATCHES_PER_SIGNATURE = 64
+
+    def __init__(self, max_output_size: int = DEFAULT_MAX_DECOMPRESSED_SIZE):
+        self.max_output_size = max_output_size
+
     def can_decode(self, data: bytes) -> bool:
         """Check if data looks like an OLE file."""
         if len(data) < 8:
@@ -448,25 +457,26 @@ class OLEDecoder(Decoder):
         return data[:8] == b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
-        """Extract embedded content from OLE files."""
+        """Extract embedded content from OLE files (bounded)."""
         try:
             extracted_content = []
-
-            # Basic OLE parsing - look for common embedded content patterns
-            # This is a simplified implementation
-
-            # Look for embedded OLE objects
-            ole_objects = self._extract_ole_objects(data)
-            extracted_content.extend(ole_objects)
-
-            # Look for VBA macros (common in malicious Office docs)
-            vba_content = self._extract_vba_macros(data)
-            if vba_content:
-                extracted_content.extend(vba_content)
-
-            # Look for embedded files
-            embedded_files = self._extract_embedded_files(data)
-            extracted_content.extend(embedded_files)
+            total = 0
+            generators = (
+                self._extract_ole_objects(data),
+                self._extract_vba_macros(data),
+                self._extract_embedded_files(data),
+            )
+            for gen in generators:
+                if total >= self.max_output_size:
+                    break
+                for chunk in gen:
+                    room = self.max_output_size - total
+                    if room <= 0:
+                        break
+                    if len(chunk) > room:
+                        chunk = chunk[:room]
+                    extracted_content.append(chunk)
+                    total += len(chunk)
 
             if extracted_content:
                 return b"\n".join(extracted_content), True
@@ -476,69 +486,49 @@ class OLEDecoder(Decoder):
         except Exception:
             return data, False
 
-    def _extract_ole_objects(self, data: bytes) -> list:
-        """Extract OLE objects from the file."""
-        objects = []
-
-        # Look for OLE object signatures
+    def _extract_ole_objects(self, data: bytes):
+        """Yield windows around OLE object signatures."""
         ole_signatures = [
             b"\x01\x00\x00\x00",  # OLE object
             b"Package",  # Embedded package
         ]
-
         for sig in ole_signatures:
             pos = 0
-            while True:
+            count = 0
+            while count < self.MAX_MATCHES_PER_SIGNATURE:
                 pos = data.find(sig, pos)
                 if pos == -1:
                     break
-
-                # Extract reasonable amount of data after signature
                 start = max(0, pos - 100)
                 end = min(len(data), pos + 1000)
-                objects.append(data[start:end])
+                yield data[start:end]
                 pos += len(sig)
+                count += 1
 
-        return objects
-
-    def _extract_vba_macros(self, data: bytes) -> list:
-        """Extract VBA macro content."""
-        macros = []
-
-        # Look for VBA project signatures
+    def _extract_vba_macros(self, data: bytes):
+        """Yield VBA macro content around project signatures."""
         vba_indicators = [b"VBA", b"PROJECT", b"Attribute VB_Name"]
-
+        end_markers = [b"\x00\x00", b"End Sub", b"End Function"]
         for indicator in vba_indicators:
             pos = 0
-            while True:
+            count = 0
+            while count < self.MAX_MATCHES_PER_SIGNATURE:
                 pos = data.find(indicator, pos)
                 if pos == -1:
                     break
-
-                # Extract macro content (look for reasonable boundaries)
-                start = pos
-                # Look for end markers
-                end_markers = [b"\x00\x00", b"End Sub", b"End Function"]
                 end = len(data)
-
                 for marker in end_markers:
                     marker_pos = data.find(marker, pos)
                     if marker_pos != -1 and marker_pos < end:
                         end = marker_pos + len(marker)
-
-                macro_content = data[start:end]
+                macro_content = data[pos:end]
                 if len(macro_content) > 10:  # Only if substantial content
-                    macros.append(macro_content)
-
+                    yield macro_content
                 pos += len(indicator)
+                count += 1
 
-        return macros
-
-    def _extract_embedded_files(self, data: bytes) -> list:
-        """Extract embedded files from OLE containers."""
-        files = []
-
-        # Look for file headers within the OLE data
+    def _extract_embedded_files(self, data: bytes):
+        """Yield windows around embedded file headers."""
         file_headers = [
             b"%PDF-",  # PDF
             b"PK\x03\x04",  # ZIP
@@ -547,21 +537,17 @@ class OLEDecoder(Decoder):
             b"BZ",  # BZIP2
             b"\x1f\x8b",  # GZIP
         ]
-
         for header in file_headers:
             pos = 0
-            while True:
+            count = 0
+            while count < self.MAX_MATCHES_PER_SIGNATURE:
                 pos = data.find(header, pos)
                 if pos == -1:
                     break
-
-                # Extract from header to a reasonable size
-                start = pos
                 end = min(len(data), pos + 10000)  # 10KB should be enough for headers
-                files.append(data[start:end])
+                yield data[pos:end]
                 pos += len(header)
-
-        return files
+                count += 1
 
     @property
     def name(self) -> str:

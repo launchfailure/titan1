@@ -178,7 +178,7 @@ class TitanEngine:
         if self.config.get("decoders", {}).get("pdf", True):
             self.decoders.append(PDFDecoder(max_decompressed))
         if self.config.get("decoders", {}).get("ole", True):
-            self.decoders.append(OLEDecoder())
+            self.decoders.append(OLEDecoder(max_decompressed))
         if self.config.get("decoders", {}).get("url", True):
             self.decoders.append(URLDecoder())
         if self.config.get("decoders", {}).get("html_entity", True):
