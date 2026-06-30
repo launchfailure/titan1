@@ -65,7 +65,7 @@ class ForensicsEngine:
 
     def analyze(self, analysis_report: Dict[str, Any]) -> Dict[str, Any]:
         nodes = analysis_report.get("nodes", [])
-        text_corpus = self._gather_text(nodes)
+        text_corpus = self._gather_text(self._meaningful_nodes(nodes))
 
         vm_hits = self._detect_vm(text_corpus)
         mobile_ids = self._detect_mobile_ids(text_corpus)
@@ -88,6 +88,21 @@ class ForensicsEngine:
             "network_indicators": {"ips": ips},
             "recommendations": recommendations,
         }
+
+    def _meaningful_nodes(
+        self, nodes: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Keep only leaf nodes (decoded/final content).
+
+        Intermediate encoding layers (e.g. the raw base64 or compressed bytes of
+        a parent node) carry their still-encoded form in content_preview, which
+        produces spurious matches like an "AMD" hardware hint from base64 noise.
+        The meaningful, decoded content lives in their child/leaf nodes. A node
+        is a leaf when no other node references it as a parent.
+        """
+        parent_ids = {n.get("parent") for n in nodes if n.get("parent") is not None}
+        leaves = [n for n in nodes if n.get("id") not in parent_ids]
+        return leaves or nodes
 
     def _gather_text(self, nodes: Iterable[Dict[str, Any]]) -> str:
         parts: List[str] = []
