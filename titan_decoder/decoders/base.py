@@ -799,24 +799,27 @@ class URLDecoder(Decoder):
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
             text = data.decode("utf-8", errors="ignore")
-            result = b""
+            # Use a bytearray: byte concatenation in a loop (result += ...) is
+            # O(n^2) and hangs on percent-heavy payloads.
+            result = bytearray()
+            n = len(text)
             i = 0
-            while i < len(text):
-                if text[i] == "%" and i + 2 < len(text):
+            while i < n:
+                ch = text[i]
+                if ch == "%" and i + 2 < n:
                     try:
-                        byte_val = int(text[i + 1 : i + 3], 16)
-                        result += bytes([byte_val])
+                        result.append(int(text[i + 1 : i + 3], 16))
                         i += 3
+                        continue
                     except ValueError:
-                        result += text[i].encode("utf-8")
-                        i += 1
-                elif text[i] == "+":
+                        pass
+                if ch == "+":
                     result += b" "
-                    i += 1
                 else:
-                    result += text[i].encode("utf-8")
-                    i += 1
-            return result if result else data, bool(result and result != data)
+                    result += ch.encode("utf-8")
+                i += 1
+            out = bytes(result)
+            return (out if out else data), bool(out and out != data)
         except Exception:
             return data, False
 
@@ -837,57 +840,39 @@ class HTMLEntityDecoder(Decoder):
         except Exception:
             return False
 
+    _ENTITY_RE = re.compile(r"&#(\d+);|&#x([0-9A-Fa-f]+);|&([a-zA-Z]+);")
+    _NAMED = {
+        "nbsp": 0x20,
+        "lt": ord("<"),
+        "gt": ord(">"),
+        "amp": ord("&"),
+        "quot": ord('"'),
+        "apos": ord("'"),
+    }
+
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
             text = data.decode("utf-8", errors="ignore")
-            result = []
-            i = 0
 
-            entities = {
-                "nbsp": 0x20,
-                "lt": ord("<"),
-                "gt": ord(">"),
-                "amp": ord("&"),
-                "quot": ord('"'),
-                "apos": ord("'"),
-            }
+            # Single-pass substitution: the previous char-by-char scan sliced
+            # text[i:] and re-ran the regex for every character (O(n^2)), which
+            # hangs on entity-heavy payloads.
+            def _sub(m: "re.Match") -> str:
+                dec, hexv, name = m.group(1), m.group(2), m.group(3)
+                if dec is not None:
+                    try:
+                        return chr(int(dec))
+                    except (ValueError, OverflowError):
+                        return m.group(0)
+                if hexv is not None:
+                    try:
+                        return chr(int(hexv, 16))
+                    except (ValueError, OverflowError):
+                        return m.group(0)
+                code = self._NAMED.get(name.lower())
+                return chr(code) if code is not None else m.group(0)
 
-            while i < len(text):
-                if text[i] == "&":
-                    # Try numeric
-                    match_dec = re.match(r"&#(\d+);", text[i:])
-                    match_hex = re.match(r"&#x([0-9A-Fa-f]+);", text[i:], re.IGNORECASE)
-
-                    if match_dec:
-                        try:
-                            code = int(match_dec.group(1))
-                            result.append(chr(code))
-                            i += len(match_dec.group(0))
-                            continue
-                        except (ValueError, OverflowError):
-                            pass
-                    elif match_hex:
-                        try:
-                            code = int(match_hex.group(1), 16)
-                            result.append(chr(code))
-                            i += len(match_hex.group(0))
-                            continue
-                        except (ValueError, OverflowError):
-                            pass
-
-                    # Try named
-                    match_named = re.match(r"&([a-z]+);", text[i:], re.IGNORECASE)
-                    if match_named:
-                        entity_name = match_named.group(1).lower()
-                        if entity_name in entities:
-                            result.append(chr(entities[entity_name]))
-                            i += len(match_named.group(0))
-                            continue
-
-                result.append(text[i])
-                i += 1
-
-            decoded = "".join(result).encode("utf-8")
+            decoded = self._ENTITY_RE.sub(_sub, text).encode("utf-8")
             return decoded, decoded != data
         except Exception:
             return data, False
