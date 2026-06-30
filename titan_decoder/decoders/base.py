@@ -576,17 +576,31 @@ class UUDecoder(Decoder):
             return False
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
+        # Implemented with binascii.a2b_uu rather than the stdlib `uu` module,
+        # which is deprecated (3.11) and removed in Python 3.13.
         try:
-            import uu
-            import io
+            out = bytearray()
+            started = False
+            for raw in data.split(b"\n"):
+                line = raw.rstrip(b"\r")
+                if not started:
+                    if line.startswith(b"begin "):
+                        started = True
+                    continue
+                if line.startswith(b"end"):
+                    break
+                if not line or line == b"`":
+                    # ` is the zero-length data line that precedes `end`.
+                    continue
+                try:
+                    out += binascii.a2b_uu(line)
+                except binascii.Error:
+                    # Some encoders strip trailing whitespace; recompute the
+                    # expected byte count from the length char and retry.
+                    nbytes = (((line[0] - 32) & 0x3F) * 4 + 5) // 3
+                    out += binascii.a2b_uu(line[: nbytes + 1])
 
-            # Create a buffer and attempt UU decode
-            input_buffer = io.BytesIO(data)
-            output_buffer = io.BytesIO()
-
-            uu.decode(input_buffer, output_buffer)
-            decoded = output_buffer.getvalue()
-
+            decoded = bytes(out)
             if decoded:
                 return decoded, True
             return data, False
