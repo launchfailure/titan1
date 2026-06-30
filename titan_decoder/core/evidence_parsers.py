@@ -52,11 +52,33 @@ def _read_jsonl(path: Path) -> Iterator[Dict[str, Any]]:
                 yield obj
 
 
+# Some log exports have long fields (URLs, user-agents); raise the 128 KB
+# default but keep it bounded so a single unterminated quote can't be read as a
+# multi-GB field.
+_CSV_FIELD_LIMIT = 16 * 1024 * 1024
+try:
+    csv.field_size_limit(_CSV_FIELD_LIMIT)
+except (OverflowError, ValueError):  # pragma: no cover - platform dependent
+    pass
+
+
 def _read_csv(path: Path) -> Iterator[Dict[str, Any]]:
     with path.open("r", encoding="utf-8", errors="ignore", newline="") as handle:
         reader = csv.DictReader(handle)
-        for row_no, row in enumerate(reader, start=2):
-            # row_no=2 because header is line 1
+        # Header is line 1, so data rows start at line 2.
+        row_no = 1
+        while True:
+            try:
+                row = next(reader)
+            except StopIteration:
+                break
+            except csv.Error:
+                # Malformed row (oversized field, bad quoting, embedded NUL):
+                # skip it instead of aborting the whole file (as JSONL does).
+                continue
+            row_no += 1
+            if not isinstance(row, dict):
+                continue
             row = dict(row)
             row.setdefault("_line", row_no)
             yield row

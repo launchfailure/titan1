@@ -230,6 +230,14 @@ def merge_indicators(indicators: List[Indicator]) -> List[Indicator]:
             return a
         return a if a >= b else b
 
+    # Maintain each merged indicator's set of source keys incrementally. The
+    # previous code rebuilt this set from cur.sources on every merge, which is
+    # O(n^2) when one value (e.g. a C2 domain) recurs across many log lines.
+    seen_sources: Dict[tuple[str, str], set] = {}
+
+    def _source_key(s) -> tuple:
+        return (s.evidence_path, s.extracted_by, s.record_id, s.field)
+
     for ind in indicators:
         k = ind.key()
         if k not in merged:
@@ -242,17 +250,19 @@ def merge_indicators(indicators: List[Indicator]) -> List[Indicator]:
                 tags=list(ind.tags),
                 sources=list(ind.sources),
             )
+            seen_sources[k] = {_source_key(s) for s in merged[k].sources}
             continue
 
         cur = merged[k]
         cur.first_seen = min_ts(cur.first_seen, ind.first_seen)
         cur.last_seen = max_ts(cur.last_seen, ind.last_seen)
-        cur.tags = sorted(set(cur.tags) | set(ind.tags))
+        if not set(ind.tags) <= set(cur.tags):
+            cur.tags = sorted(set(cur.tags) | set(ind.tags))
 
-        # Merge sources (best-effort de-dupe)
-        seen = {(s.evidence_path, s.extracted_by, s.record_id, s.field) for s in cur.sources}
+        # Merge sources (best-effort de-dupe) using the persistent seen set.
+        seen = seen_sources[k]
         for s in ind.sources:
-            key = (s.evidence_path, s.extracted_by, s.record_id, s.field)
+            key = _source_key(s)
             if key in seen:
                 continue
             cur.sources.append(s)
