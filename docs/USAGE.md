@@ -222,6 +222,7 @@ Notes:
 
 - YAML packs are also supported (`.yml`/`.yaml`) when PyYAML is installed (see `requirements-optional.txt`).
 - Pack provenance is recorded in `report.meta.rule_packs` and each detection includes a `source` field.
+- **Security:** only load rule packs you trust. A `content_regex` pattern is run with Python's `re` (no timeout) against content from the untrusted payload, so a catastrophic-backtracking pattern (e.g. `(a+)+$`) can hang the run on a crafted input. Author patterns that avoid nested/ambiguous quantifiers.
 
 ## First 10 minutes (beginner checklist)
 
