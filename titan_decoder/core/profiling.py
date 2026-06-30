@@ -8,11 +8,15 @@ import time
 import cProfile
 import pstats
 import io
-import psutil
 import os
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Optional
 from dataclasses import dataclass, field
 from contextlib import contextmanager
+
+try:  # psutil is an optional dependency (requirements-optional.txt)
+    import psutil  # type: ignore
+except ImportError:  # pragma: no cover - exercised only when psutil is absent
+    psutil = None  # type: ignore
 
 
 @dataclass
@@ -35,7 +39,9 @@ class PerformanceProfiler:
     """Profile performance of Titan Decoder operations."""
 
     def __init__(self):
-        self.process = psutil.Process(os.getpid())
+        # psutil is optional; when absent, memory/CPU metrics degrade to 0.0
+        # but timing and cProfile-based profiling still work.
+        self.process = psutil.Process(os.getpid()) if psutil is not None else None
         self.start_time = None
         self.end_time = None
         self.start_memory = None
@@ -43,6 +49,15 @@ class PerformanceProfiler:
         self.memory_samples: List[float] = []
         self.profiler = None
         self.metrics = PerformanceMetrics()
+
+    def _rss_mb(self) -> Optional[float]:
+        """Current RSS in MB, or None if psutil is unavailable/unreadable."""
+        if self.process is None:
+            return None
+        try:
+            return self.process.memory_info().rss / 1024 / 1024
+        except Exception:
+            return None
 
     @contextmanager
     def profile(self, enable_cprofile: bool = False):
@@ -63,8 +78,8 @@ class PerformanceProfiler:
     def _start_profiling(self, enable_cprofile: bool = False):
         """Start profiling session."""
         self.start_time = time.time()
-        self.start_memory = self.process.memory_info().rss / 1024 / 1024  # MB
-        self.memory_samples = [self.start_memory]
+        self.start_memory = self._rss_mb()  # MB, or None without psutil
+        self.memory_samples = [self.start_memory] if self.start_memory is not None else []
 
         if enable_cprofile:
             self.profiler = cProfile.Profile()
@@ -73,20 +88,26 @@ class PerformanceProfiler:
     def _end_profiling(self):
         """End profiling session and collect metrics."""
         self.end_time = time.time()
-        self.end_memory = self.process.memory_info().rss / 1024 / 1024  # MB
+        self.end_memory = self._rss_mb()  # MB, or None without psutil
 
         # Calculate metrics
         self.metrics.execution_time = self.end_time - self.start_time
-        self.metrics.memory_peak = max(self.memory_samples)
-        self.metrics.memory_average = sum(self.memory_samples) / len(
-            self.memory_samples
-        )
+        if self.memory_samples:
+            self.metrics.memory_peak = max(self.memory_samples)
+            self.metrics.memory_average = sum(self.memory_samples) / len(
+                self.memory_samples
+            )
+        else:
+            # psutil unavailable: leave memory metrics at their 0.0 defaults.
+            self.metrics.memory_peak = 0.0
+            self.metrics.memory_average = 0.0
 
         # CPU usage from process
-        try:
-            self.metrics.cpu_percent = self.process.cpu_percent(interval=0.1)
-        except Exception:
-            self.metrics.cpu_percent = 0.0
+        if self.process is not None:
+            try:
+                self.metrics.cpu_percent = self.process.cpu_percent(interval=0.1)
+            except Exception:
+                self.metrics.cpu_percent = 0.0
 
         # Get cProfile results if enabled
         if self.profiler:
@@ -131,9 +152,10 @@ class PerformanceProfiler:
         return functions
 
     def record_memory_sample(self):
-        """Record current memory usage."""
-        current_memory = self.process.memory_info().rss / 1024 / 1024
-        self.memory_samples.append(current_memory)
+        """Record current memory usage (no-op when psutil is unavailable)."""
+        current_memory = self._rss_mb()
+        if current_memory is not None:
+            self.memory_samples.append(current_memory)
 
 
 class BenchmarkSuite:
