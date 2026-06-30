@@ -145,6 +145,11 @@ class ZipAnalyzer(Analyzer):
     def _pre_scan_zip(self, zip_file: zipfile.ZipFile, zip_size: int) -> List[str]:
         """Pre-scan ZIP contents for safety issues. Returns list of safe filenames."""
         safe_files = []
+        # Track the running total incrementally. Recomputing
+        # ``sum(getinfo(f).file_size ...)`` on every iteration made this O(n^2):
+        # a small crafted archive with many tiny entries (which never trip the
+        # total-size cap) turned pre-scan into a multi-minute CPU hang.
+        current_safe_size = 0
 
         for info in zip_file.infolist():
             # Skip directories
@@ -167,12 +172,11 @@ class ZipAnalyzer(Analyzer):
                 continue
 
             # Check for files that would make total size too large
-            # (rough estimate based on current safe files)
-            current_safe_size = sum(zip_file.getinfo(f).file_size for f in safe_files)
             if current_safe_size + info.file_size > self.max_total_size:
                 continue
 
             safe_files.append(info.filename)
+            current_safe_size += info.file_size
 
         return safe_files
 
@@ -316,6 +320,9 @@ class TarAnalyzer(Analyzer):
     ) -> List[tarfile.TarInfo]:
         """Pre-scan TAR contents for safety issues. Returns list of safe TarInfo objects."""
         safe_members = []
+        # Incremental running total; recomputing ``sum(m.size ...)`` per member
+        # was O(n^2) and let a many-entry archive hang pre-scan.
+        current_safe_size = 0
 
         for member in tar_file.getmembers():
             # Skip non-files
@@ -336,11 +343,11 @@ class TarAnalyzer(Analyzer):
                     continue
 
             # Check for files that would make total size too large
-            current_safe_size = sum(m.size for m in safe_members)
             if current_safe_size + member.size > self.max_total_size:
                 continue
 
             safe_members.append(member)
+            current_safe_size += member.size
 
         return safe_members
 
