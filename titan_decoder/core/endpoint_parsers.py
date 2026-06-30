@@ -229,6 +229,11 @@ def parse_browser_history_sqlite(path: Path) -> Tuple[List[EvidenceEvent], List[
             except Exception:
                 pass
 
+    except Exception:
+        # Corrupt / non-SQLite file: _table_exists (or any query) can raise
+        # DatabaseError. Degrade to empty results like the other parsers rather
+        # than letting it abort the whole evidence run.
+        pass
     finally:
         try:
             conn.close()
