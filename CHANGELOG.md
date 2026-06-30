@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — Hardening & correctness
+## 2.0.1 — Hardening & correctness (2026-06-30)
 
 Security / DoS resistance (untrusted-input hardening):
 
