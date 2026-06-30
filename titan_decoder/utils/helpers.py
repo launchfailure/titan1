@@ -94,6 +94,27 @@ def looks_like_hex(data: bytes) -> bool:
 # IOC Extraction
 # =========================
 
+# Common file extensions that the domain regex would otherwise mistake for a
+# TLD (e.g. "config.json", "gate.php", "payload.txt" -> bogus domains). Every
+# entry here is NOT a real TLD, so filtering on them never drops a real domain.
+# Ambiguous extensions that *are* ccTLDs/gTLDs (sh, py, io, zip, mov, md, ...)
+# are deliberately omitted to avoid false negatives.
+COMMON_FILE_EXTENSIONS = frozenset(
+    {
+        "txt", "log", "json", "xml", "csv", "yaml", "yml", "toml", "ini",
+        "cfg", "conf", "php", "html", "htm", "css", "js", "jsx", "ts", "tsx",
+        "exe", "dll", "bin", "dat", "dmp", "img", "iso", "msi", "apk", "ipa",
+        "deb", "rpm", "png", "jpg", "jpeg", "gif", "bmp", "svg", "ico", "webp",
+        "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "rtf",
+        "bak", "tmp", "swp", "lock", "sqlite", "db", "ps1", "psm1", "vbs",
+        "asp", "aspx", "jsp", "jar", "war", "ear", "class", "pyc", "pyo",
+        "woff", "woff2", "ttf", "otf", "eot", "mp3", "mp4", "avi", "mkv",
+        "wav", "flac", "webm", "gz", "bz2", "xz", "tgz", "vhd", "vmdk",
+        "pem", "crt", "der", "pfx", "manifest",
+    }
+)
+
+
 def is_private_ip(ip: str) -> bool:
     """Return True if ip is a valid IPv4 address that is not globally routable.
 
@@ -182,8 +203,13 @@ def extract_iocs(text: str) -> Dict[str, List[str]]:
 
     for raw_domain in domains:
         domain = _clean_indicator(raw_domain).lower()
-        if domain:
-            iocs["domains"].add(domain)
+        if not domain:
+            continue
+        # Drop filename-like matches (e.g. config.json) whose final label is a
+        # known non-TLD file extension.
+        if domain.rsplit(".", 1)[-1] in COMMON_FILE_EXTENSIONS:
+            continue
+        iocs["domains"].add(domain)
 
     for raw_email in emails:
         email = _clean_indicator(raw_email).lower()

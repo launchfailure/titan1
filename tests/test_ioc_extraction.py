@@ -41,3 +41,26 @@ def test_ipv4_ioc_public_private_classification():
     for ip in ("192.168.1.1", "10.0.0.1", "127.0.0.1", "169.254.1.1", "100.64.0.1"):
         assert ip in iocs["ipv4_private"], ip
         assert ip not in iocs["ipv4_public"], ip
+
+
+def test_domain_extraction_drops_filenames():
+    from titan_decoder.utils.helpers import extract_iocs
+
+    text = (
+        "open config.json and gate.php, see report.pdf data.csv style.css app.exe; "
+        "c2 is evil-corp.net via cdn.bad.example.org"
+    )
+    domains = extract_iocs(text)["domains"]
+    for filename in ("config.json", "gate.php", "report.pdf", "data.csv", "style.css", "app.exe"):
+        assert filename not in domains
+    assert "evil-corp.net" in domains
+    assert "cdn.bad.example.org" in domains
+
+
+def test_domain_extraction_keeps_cctld_lookalikes():
+    # .sh / .py are real ccTLDs and must NOT be treated as file extensions.
+    from titan_decoder.utils.helpers import extract_iocs
+
+    domains = extract_iocs("hosts evil.sh and paraguay.py")["domains"]
+    assert "evil.sh" in domains
+    assert "paraguay.py" in domains

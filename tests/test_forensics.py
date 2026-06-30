@@ -39,3 +39,19 @@ def test_handles_empty_nodes_gracefully():
     assert summary["vm"]["detected"] is False
     assert summary["mobile_ids"] == {"imei": [], "imsi": [], "iccid": []}
     assert summary["burner"]["score"] == 0
+
+
+def test_ignores_intermediate_encoded_layers():
+    # The root (base64-ish) layer carries noise; only the decoded leaf should be
+    # scanned. Parent/child ids mark the root as a non-leaf intermediate node.
+    report = {
+        "nodes": [
+            {"id": 0, "parent": None, "content_preview": "AMDxQUNvcmU=", "content_type": "Text"},
+            {"id": 1, "parent": 0, "content_preview": "clean VMware host DESKTOP-AB12CD", "content_type": "Text"},
+        ]
+    }
+    summary = ForensicsEngine().analyze(report)
+    # VM signal from the decoded leaf is detected...
+    assert summary["vm"]["detected"]
+    # ...but the "AMD" substring in the encoded parent must not surface.
+    assert summary["hardware_hints"] == []
