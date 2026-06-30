@@ -54,3 +54,35 @@ def test_output_exactly_at_cap_is_allowed():
     out, ok = GzipDecoder(100).decode(payload)
     assert ok is True
     assert out == b"A" * 100
+
+
+def test_pdf_flatedecode_bomb_is_bounded():
+    import zlib
+
+    from titan_decoder.decoders.base import PDFDecoder
+
+    cap = 1 * 1024 * 1024  # 1 MB
+    flate_bomb = zlib.compress(b"\x00" * (50 * 1024 * 1024))  # 50 MB -> tiny
+    pdf = (
+        b"%PDF-1.5\n1 0 obj<</Filter/FlateDecode/Length "
+        + str(len(flate_bomb)).encode()
+        + b">>stream\n" + flate_bomb + b"\nendstream endobj\n%%EOF"
+    )
+    out, ok = PDFDecoder(cap).decode(pdf)
+    # Bomb exceeds the cap: the inflated 50 MB must NOT be produced.
+    assert len(out) <= len(pdf) + 16
+
+
+def test_pdf_legit_flate_stream_still_extracted():
+    import zlib
+
+    from titan_decoder.decoders.base import PDFDecoder
+
+    payload = b"http://pdf-c2.example.net 8.8.8.8 secret"
+    pdf = (
+        b"%PDF-1.5\n1 0 obj<</Filter/FlateDecode/Length 0>>stream\n"
+        + zlib.compress(payload) + b"\nendstream endobj\n%%EOF"
+    )
+    out, ok = PDFDecoder(50 * 1024 * 1024).decode(pdf)
+    assert ok is True
+    assert payload in out
