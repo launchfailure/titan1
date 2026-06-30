@@ -9,6 +9,7 @@
 - Don’t upload real incident data (logs, browser history DBs, reports) to public issues.
 - This tool can process untrusted inputs; run in a sandboxed environment when possible.
 - Outputs may contain sensitive artifacts extracted from samples (IOCs, emails, hostnames). Handle accordingly.
+- Built-in hardening (decompression-bomb caps, DoS-resistant decoders, resource limits) and known trust boundaries are documented in [SECURITY.md](SECURITY.md).
 - No warranty: see [LICENSE](LICENSE).
 
 ## 🚀 Quick Start (5 Minutes)
@@ -104,9 +105,14 @@ python -c 'import json; r=json.load(open("report.json")); print((r.get("risk_ass
 ### Production Features
 - **Batch Processing**: Analyze entire directories
 - **PII Redaction**: Safe log sharing
-- **Resource Limits**: Memory caps, timeouts
+- **Resource Limits**: Memory caps, timeouts, recursion/node/size bounds
+- **DoS Resistance**: Bounded decompression (anti-bomb) and O(n)-by-design
+  decoders that don't blow up on crafted input (see [SECURITY.md](SECURITY.md))
 - **Signal Handling**: Clean shutdown (Ctrl+C)
-- **Error Recovery**: Graceful handling of corrupted files
+- **Error Recovery**: Malformed archives, corrupt SQLite, and bad CSV/JSONL rows
+  are skipped rather than crashing the run
+- **No Required Dependencies**: Core runs on the stdlib; optional extras
+  (`psutil`, enrichment) degrade gracefully when absent
 
 ## 📖 Usage Examples
 
@@ -201,23 +207,6 @@ Create `~/.titan_decoder/config.json`:
     },
   
     "analyzers": {
-    ---
-
-    ## 💬 Feedback & Contributing
-
-    - Bugs / questions: open a GitHub Issue (please avoid sensitive incident data)
-    - Feature ideas: open a Feature Request Issue
-    - Security issues: use GitHub Security Advisories (private report)
-
-    See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup and PR guidelines.
-
-## 🆘 Support
-
-- Issues (bugs/questions): https://github.com/pragmaconflux/titan1/issues
-- Discussions (Q&A/ideas, enable in repo settings): https://github.com/pragmaconflux/titan1/discussions
-- Security reports (private): https://github.com/pragmaconflux/titan1/security/advisories/new
-
-### Quick Config
         "zip": true,
         "tar": true,
         "pe": true,
@@ -322,7 +311,10 @@ titan_decoder/
 
 ## 🤝 Contributing
 
-Contributions welcome! Please open a PR or issue to discuss changes.
+Contributions welcome! Please open a PR or issue to discuss changes (avoid
+sensitive incident data in public issues). See [CONTRIBUTING.md](CONTRIBUTING.md)
+for dev setup and PR guidelines, and [SECURITY.md](SECURITY.md) to report
+security issues privately.
 
 **Add a custom decoder:**
 ```python
