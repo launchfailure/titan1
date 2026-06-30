@@ -681,16 +681,22 @@ class ASN1Decoder(Decoder):
             value = data[offset : offset + length]
             offset += length
 
-            # Try to extract printable content
-            try:
-                if tag == 0x04:  # OCTET STRING
-                    result.append(value)
-                elif tag == 0x0C:  # UTF8String
-                    result.append(value)
-                elif tag == 0x13:  # PrintableString
-                    result.append(value)
-            except Exception:
-                pass
+            # Constructed types (SEQUENCE 0x30, SET 0x31, constructed context
+            # tags) all set bit 0x20. Almost all real ASN.1 wraps its content in
+            # an outer SEQUENCE, so we must descend into them; previously this
+            # method never recursed (the depth parameter was dead), so anything
+            # below the top level — i.e. every realistic cert/key — extracted
+            # nothing.
+            if tag & 0x20:
+                nested = self._parse_asn1(value, depth + 1)
+                if nested:
+                    result.append(nested)
+            elif tag == 0x04:  # OCTET STRING
+                result.append(value)
+            elif tag == 0x0C:  # UTF8String
+                result.append(value)
+            elif tag == 0x13:  # PrintableString
+                result.append(value)
 
         return b"\n".join(result)
 
