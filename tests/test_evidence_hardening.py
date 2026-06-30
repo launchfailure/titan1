@@ -71,3 +71,22 @@ def test_csv_nul_byte_row_is_tolerated(tmp_path):
     res = parse_evidence_file(csv_path, "dns")
     vals = {(i.indicator_type, i.value) for i in res.indicators}
     assert ("domains", "good.com") in vals
+
+
+def test_source_preview_preserved_across_indicators(tmp_path):
+    # The per-record preview is now computed once and shared; ensure each
+    # indicator's source still carries the record snapshot as provenance.
+    csv_path = tmp_path / "dns.csv"
+    csv_path.write_text(
+        "timestamp,client_ip,query,answers\n"
+        "2025-01-01T00:00:01Z,10.0.0.7,evil.com,203.0.113.9\n"
+    )
+    res = parse_evidence_file(csv_path, "dns")
+    for ind in res.indicators:
+        assert ind.sources, ind.value
+        prev = ind.sources[0].preview
+        # Every source carries a record snapshot mentioning the queried domain.
+        assert prev and "evil.com" in prev
+    # The client_ip / answer indicators snapshot the full record.
+    full = [i for i in res.indicators if i.indicator_type == "ipv4"]
+    assert full and "client_ip" in full[0].sources[0].preview

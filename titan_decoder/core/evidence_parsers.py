@@ -137,17 +137,36 @@ def _pick(record: Dict[str, Any], keys: Iterable[str]) -> Optional[Any]:
     return None
 
 
-def _mk_ref(path: Path, extracted_by: str, record: Dict[str, Any], field: str | None = None) -> EvidenceRef:
+_UNSET = object()
+
+
+def _record_preview(record: Dict[str, Any]) -> str | None:
+    """A short JSON snapshot of a record, used as EvidenceRef provenance."""
+    try:
+        return json.dumps(
+            {k: record.get(k) for k in list(record.keys())[:12]}, ensure_ascii=False
+        )[:500]
+    except Exception:
+        return None
+
+
+def _mk_ref(
+    path: Path,
+    extracted_by: str,
+    record: Dict[str, Any],
+    field: str | None = None,
+    preview=_UNSET,
+) -> EvidenceRef:
     rid = None
     if "_line" in record:
         rid = f"line:{record.get('_line')}"
     elif "id" in record:
         rid = str(record.get("id"))
-    preview = None
-    try:
-        preview = json.dumps({k: record.get(k) for k in list(record.keys())[:12]}, ensure_ascii=False)[:500]
-    except Exception:
-        preview = None
+    # The preview is identical for every indicator from the same record, so
+    # callers can compute it once per record and pass it in (it dominates parse
+    # time on large files otherwise).
+    if preview is _UNSET:
+        preview = _record_preview(record)
     return EvidenceRef(
         evidence_path=str(path),
         extracted_by=extracted_by,
@@ -168,6 +187,7 @@ def _extract_indicators_from_fields(
 ) -> List[Indicator]:
     inds: List[Indicator] = []
     tags = tags or []
+    _rec_prev = _record_preview(record)
     for field, ind_type in field_map:
         val = record.get(field)
         if val in (None, ""):
@@ -190,7 +210,7 @@ def _extract_indicators_from_fields(
                     last_seen=ts,
                     confidence=confidence,
                     tags=list(tags),
-                    sources=[_mk_ref(path, extracted_by, record, field=field)],
+                    sources=[_mk_ref(path, extracted_by, record, field=field, preview=_rec_prev)],
                 )
             )
     return inds
@@ -202,6 +222,7 @@ def parse_dns_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
     indicators: List[Indicator] = []
 
     for rec in records:
+        _rec_prev = _record_preview(rec)
         ts = parse_timestamp(_pick(rec, ["timestamp", "time", "ts", "datetime"]))
         client_ip = _pick(rec, ["client_ip", "src_ip", "src", "ip", "client"])  # best-effort
         query = _pick(rec, ["query", "qname", "domain", "name"])
@@ -256,7 +277,7 @@ def parse_dns_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
                     last_seen=ts,
                     confidence="medium",
                     tags=["dns", "client"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="client_ip")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="client_ip")],
                 )
             )
         for ip in answer_list:
@@ -268,7 +289,7 @@ def parse_dns_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
                     last_seen=ts,
                     confidence="high",
                     tags=["dns", "answer"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="answers")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="answers")],
                 )
             )
 
@@ -281,6 +302,7 @@ def parse_proxy_records(path: Path, records: List[Dict[str, Any]]) -> ParseResul
     indicators: List[Indicator] = []
 
     for rec in records:
+        _rec_prev = _record_preview(rec)
         ts = parse_timestamp(_pick(rec, ["timestamp", "time", "ts", "datetime"]))
         url = _pick(rec, ["url", "uri", "request", "request_url"])
         domain = _pick(rec, ["host", "domain", "sni"])
@@ -316,7 +338,7 @@ def parse_proxy_records(path: Path, records: List[Dict[str, Any]]) -> ParseResul
                     last_seen=ts,
                     confidence="high",
                     tags=["proxy"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="url")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="url")],
                 )
             )
         if domain:
@@ -328,7 +350,7 @@ def parse_proxy_records(path: Path, records: List[Dict[str, Any]]) -> ParseResul
                     last_seen=ts,
                     confidence="high",
                     tags=["proxy"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="host")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="host")],
                 )
             )
         if user_agent:
@@ -340,7 +362,7 @@ def parse_proxy_records(path: Path, records: List[Dict[str, Any]]) -> ParseResul
                     last_seen=ts,
                     confidence="medium",
                     tags=["proxy"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="user_agent")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="user_agent")],
                 )
             )
         if src_ip:
@@ -352,7 +374,7 @@ def parse_proxy_records(path: Path, records: List[Dict[str, Any]]) -> ParseResul
                     last_seen=ts,
                     confidence="medium",
                     tags=["proxy", "client"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="src_ip")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="src_ip")],
                 )
             )
         if dst_ip:
@@ -364,7 +386,7 @@ def parse_proxy_records(path: Path, records: List[Dict[str, Any]]) -> ParseResul
                     last_seen=ts,
                     confidence="medium",
                     tags=["proxy", "server"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="dst_ip")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="dst_ip")],
                 )
             )
 
@@ -377,6 +399,7 @@ def parse_firewall_records(path: Path, records: List[Dict[str, Any]]) -> ParseRe
     indicators: List[Indicator] = []
 
     for rec in records:
+        _rec_prev = _record_preview(rec)
         ts = parse_timestamp(_pick(rec, ["timestamp", "time", "ts", "datetime"]))
         src_ip = _pick(
             rec,
@@ -465,7 +488,7 @@ def parse_firewall_records(path: Path, records: List[Dict[str, Any]]) -> ParseRe
                     last_seen=ts,
                     confidence="medium",
                     tags=["firewall", "src"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="src_ip")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="src_ip")],
                 )
             )
         if dst_ip:
@@ -477,7 +500,7 @@ def parse_firewall_records(path: Path, records: List[Dict[str, Any]]) -> ParseRe
                     last_seen=ts,
                     confidence="medium",
                     tags=["firewall", "dst"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="dst_ip")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="dst_ip")],
                 )
             )
 
@@ -490,6 +513,7 @@ def parse_vpn_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
     indicators: List[Indicator] = []
 
     for rec in records:
+        _rec_prev = _record_preview(rec)
         ts = parse_timestamp(_pick(rec, ["timestamp", "time", "ts", "datetime"]))
         user = _pick(rec, ["user", "username", "account"])
         src_ip = _pick(rec, ["src_ip", "client_ip", "ip"])
@@ -521,7 +545,7 @@ def parse_vpn_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
                     last_seen=ts,
                     confidence="high",
                     tags=["vpn"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="user")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="user")],
                 )
             )
         if src_ip:
@@ -533,7 +557,7 @@ def parse_vpn_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
                     last_seen=ts,
                     confidence="high",
                     tags=["vpn", "client"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="src_ip")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="src_ip")],
                 )
             )
         if assigned_ip:
@@ -545,7 +569,7 @@ def parse_vpn_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
                     last_seen=ts,
                     confidence="medium",
                     tags=["vpn", "assigned"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="assigned_ip")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="assigned_ip")],
                 )
             )
 
@@ -558,6 +582,7 @@ def parse_auth_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
     indicators: List[Indicator] = []
 
     for rec in records:
+        _rec_prev = _record_preview(rec)
         ts = parse_timestamp(_pick(rec, ["timestamp", "time", "ts", "datetime"]))
         user = _pick(rec, ["user", "username", "account", "principal"])
         src_ip = _pick(rec, ["src_ip", "client_ip", "ip"])
@@ -589,7 +614,7 @@ def parse_auth_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
                     last_seen=ts,
                     confidence="high",
                     tags=["auth"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="user")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="user")],
                 )
             )
         if src_ip:
@@ -601,7 +626,7 @@ def parse_auth_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
                     last_seen=ts,
                     confidence="medium",
                     tags=["auth"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="src_ip")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="src_ip")],
                 )
             )
         if host:
@@ -613,7 +638,7 @@ def parse_auth_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
                     last_seen=ts,
                     confidence="medium",
                     tags=["auth"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="host")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="host")],
                 )
             )
 
@@ -626,6 +651,7 @@ def parse_dhcp_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
     indicators: List[Indicator] = []
 
     for rec in records:
+        _rec_prev = _record_preview(rec)
         ts = parse_timestamp(_pick(rec, ["timestamp", "time", "ts", "datetime"]))
         mac = _pick(rec, ["mac", "mac_address", "client_mac"])
         ip = _pick(rec, ["ip", "assigned_ip", "client_ip"])
@@ -654,7 +680,7 @@ def parse_dhcp_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
                     last_seen=ts,
                     confidence="high",
                     tags=["dhcp"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="mac")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="mac")],
                 )
             )
         if ip:
@@ -666,7 +692,7 @@ def parse_dhcp_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
                     last_seen=ts,
                     confidence="high",
                     tags=["dhcp"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="ip")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="ip")],
                 )
             )
         if hostname:
@@ -678,7 +704,7 @@ def parse_dhcp_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
                     last_seen=ts,
                     confidence="medium",
                     tags=["dhcp"],
-                    sources=[_mk_ref(path, extracted_by, rec, field="hostname")],
+                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="hostname")],
                 )
             )
 
