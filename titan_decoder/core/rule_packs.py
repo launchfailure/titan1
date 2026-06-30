@@ -20,6 +20,18 @@ rules:
 Supported rule types:
 - content_regex: regex over concatenated node content_preview
 - ioc_present: requires one or more IOC types to meet minimum counts
+
+Security note
+-------------
+A ``content_regex`` pattern is supplied by whoever authors the rule pack and is
+run with Python's ``re`` against content derived from the analyzed (untrusted)
+payload. ``re`` has no execution timeout and a tight C match loop cannot be
+interrupted by signals, so a pattern prone to catastrophic backtracking (e.g.
+``(a+)+$``, ``(.*a){20}``) can hang the run when the payload contains a
+triggering string. Only load rule packs from sources you trust, and author
+patterns that avoid nested/ambiguous quantifiers (prefer possessive-style,
+anchored, or character-class patterns). The engine bounds the scanned text via
+``max_node_count``/preview limits, but that does not prevent backtracking.
 """
 
 from __future__ import annotations
