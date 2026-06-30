@@ -73,18 +73,17 @@ class Base64Decoder(Decoder):
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
-            # Handle multiline
-            lines = data.splitlines()
-            decoded_parts = []
-            for line in lines:
-                line = line.strip()
-                if not line:
-                    continue
-                if looks_like_base64(line.encode()):
-                    decoded_parts.append(base64.b64decode(line))
-                else:
-                    decoded_parts.append(line.encode())
-            return b"\n".join(decoded_parts), True
+            # Treat the input as a single base64 stream. ``b64decode`` ignores
+            # embedded whitespace/newlines, so line-wrapped payloads (PEM/MIME/
+            # PowerShell ``-enc``) are reconstructed byte-for-byte. Two earlier
+            # bugs lived here: ``line.encode()`` on the ``bytes`` lines raised
+            # AttributeError and made the decoder always fail, and joining the
+            # per-line decodes with ``b"\n"`` injected spurious newlines that
+            # corrupted wrapped binary payloads.
+            stripped = b"".join(data.split())
+            if not looks_like_base64(stripped):
+                return data, False
+            return base64.b64decode(stripped), True
         except Exception:
             return data, False
 
