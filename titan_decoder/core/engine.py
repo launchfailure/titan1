@@ -176,7 +176,7 @@ class TitanEngine:
         if self.config.get("decoders", {}).get("xor", True):
             self.decoders.append(XorDecoder())
         if self.config.get("decoders", {}).get("pdf", True):
-            self.decoders.append(PDFDecoder())
+            self.decoders.append(PDFDecoder(max_decompressed))
         if self.config.get("decoders", {}).get("ole", True):
             self.decoders.append(OLEDecoder())
         if self.config.get("decoders", {}).get("url", True):

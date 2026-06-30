@@ -365,8 +365,8 @@ class XorDecoder(Decoder):
 class PDFDecoder(Decoder):
     """PDF file stream decoder - extracts compressed streams and objects."""
 
-    def __init__(self):
-        pass
+    def __init__(self, max_output_size: int = DEFAULT_MAX_DECOMPRESSED_SIZE):
+        self.max_output_size = max_output_size
 
     def can_decode(self, data: bytes) -> bool:
         """Check if data looks like a PDF file."""
@@ -377,27 +377,37 @@ class PDFDecoder(Decoder):
         """Extract and decompress PDF streams and objects."""
         try:
             extracted_content = []
+            total = 0  # Cap total extracted bytes (FlateDecode streams can be bombs).
 
             # Find all stream objects with their preceding dictionaries
             # Pattern matches: <<...>> stream ... endstream
             stream_pattern = b"<<([^>]*)>>\\s*stream\\r?\\n(.*?)\\r?\\nendstream"
-            import re
 
             matches = re.findall(stream_pattern, data, re.DOTALL)
 
             for dict_part, stream_data in matches:
+                if total >= self.max_output_size:
+                    break
                 # Check if this stream uses FlateDecode compression
                 if b"/FlateDecode" in dict_part:
                     try:
-                        import zlib
-
-                        decompressed = zlib.decompress(stream_data)
+                        # Bound the inflate output so a crafted stream cannot
+                        # expand without limit (decompression bomb).
+                        decompressed = _bounded_decompress(
+                            zlib.decompressobj,
+                            stream_data,
+                            self.max_output_size - total,
+                        )
                         extracted_content.append(decompressed)
+                        total += len(decompressed)
                     except Exception:
-                        # If decompression fails, keep original
+                        # Decompression failed or exceeded the cap: keep the raw
+                        # (compressed, hence small) stream instead.
                         extracted_content.append(stream_data)
+                        total += len(stream_data)
                 else:
                     extracted_content.append(stream_data)
+                    total += len(stream_data)
 
             # Also extract JavaScript if present
             js_pattern = b"/JavaScript\\s*(.*?)\\s*endobj"
