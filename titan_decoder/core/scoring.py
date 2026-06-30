@@ -19,15 +19,19 @@ class ScoringEngine:
     STRUCTURE_WEIGHT = 0.2
     COST_WEIGHT = 0.1
 
-    # Decoder cost rankings (lower = cheaper)
+    # Decoder cost rankings (lower = cheaper). Keys MUST match each decoder's
+    # ``.name`` exactly, otherwise the lookup silently falls back to the default
+    # cost: "Lzma"/"Rot13" never matched the real names "LZMA"/"ROT13", and
+    # "ZLIB" was missing entirely, so those three were mis-costed.
     DECODER_COSTS = {
         "Base64": 1,
         "RecursiveBase64": 2,
         "Gzip": 3,
         "Bz2": 3,
-        "Lzma": 4,
+        "LZMA": 4,
+        "ZLIB": 3,
         "Hex": 2,
-        "Rot13": 1,
+        "ROT13": 1,
         "XOR": 5,  # Expensive due to brute force
         "ZIP": 3,
         "TAR": 3,
