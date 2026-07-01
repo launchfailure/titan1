@@ -27,6 +27,7 @@ class ScoringEngine:
         "Base64": 1,
         "RecursiveBase64": 2,
         "Base64URL": 2,
+        "PEM": 2,
         "Gzip": 3,
         "Bz2": 3,
         "LZMA": 4,

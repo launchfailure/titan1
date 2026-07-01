@@ -13,6 +13,7 @@ from ..decoders.base import (
     Base64Decoder,
     RecursiveBase64Decoder,
     Base64UrlDecoder,
+    PemArmorDecoder,
     GzipDecoder,
     Bz2Decoder,
     LzmaDecoder,
@@ -165,6 +166,8 @@ class TitanEngine:
             self.decoders.append(Base64Decoder())
         if self.config.get("decoders", {}).get("base64url", True):
             self.decoders.append(Base64UrlDecoder())
+        if self.config.get("decoders", {}).get("pem", True):
+            self.decoders.append(PemArmorDecoder())
         if self.config.get("decoders", {}).get("gzip", True):
             self.decoders.append(GzipDecoder(max_decompressed))
         if self.config.get("decoders", {}).get("bz2", True):
