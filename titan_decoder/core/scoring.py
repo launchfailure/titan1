@@ -32,6 +32,7 @@ class ScoringEngine:
         "ZLIB": 3,
         "Hex": 2,
         "ROT13": 1,
+        "UTF16": 2,
         "XOR": 5,  # Expensive due to brute force
         "ZIP": 3,
         "TAR": 3,

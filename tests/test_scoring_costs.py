@@ -32,6 +32,7 @@ from titan_decoder.decoders.base import (
     URLDecoder,
     HTMLEntityDecoder,
     UnicodeEscapeDecoder,
+    Utf16Decoder,
 )
 
 ALL_NAMES = {
@@ -39,6 +40,7 @@ ALL_NAMES = {
     for d in (
         Base64Decoder, RecursiveBase64Decoder, GzipDecoder, Bz2Decoder, LzmaDecoder,
         ZlibDecoder, HexDecoder, Rot13Decoder, XorDecoder, PDFDecoder, OLEDecoder,
+        Utf16Decoder,
     )
 } | {
     UUDecoder().name, ASN1Decoder().name, QuotedPrintableDecoder().name,

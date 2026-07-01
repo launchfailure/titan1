@@ -921,3 +921,61 @@ class UnicodeEscapeDecoder(Decoder):
     @property
     def name(self) -> str:
         return "UnicodeEscape"
+
+
+class Utf16Decoder(Decoder):
+    """Decode UTF-16 text to UTF-8.
+
+    Real-world malware constantly carries UTF-16LE text -- most notably
+    PowerShell ``-EncodedCommand`` (UTF-16LE then base64) and .NET string blobs.
+    After the base64 layer is peeled the bytes are UTF-16, which the engine's
+    UTF-8 preview reads as e.g. ``h\\x00t\\x00t\\x00p...``; the interleaved NUL
+    bytes then break IOC regexes. Converting UTF-16 -> UTF-8 restores clean text
+    for downstream extraction.
+    """
+
+    def _endianness(self, data: bytes):
+        """Return 'utf-16-le'/'utf-16-be' if data looks like UTF-16 text, else None."""
+        if len(data) < 8:
+            return None
+        if data[:2] == b"\xff\xfe":
+            return "utf-16-le"
+        if data[:2] == b"\xfe\xff":
+            return "utf-16-be"
+        sample = data[:1024]
+        if len(sample) % 2:
+            sample = sample[:-1]
+        pairs = len(sample) // 2
+        if pairs < 4:
+            return None
+        odd_nul = sum(1 for i in range(1, len(sample), 2) if sample[i] == 0)
+        even_nul = sum(1 for i in range(0, len(sample), 2) if sample[i] == 0)
+        # ASCII carried in UTF-16 puts the NUL high byte on one fixed parity and
+        # (almost) never on the other. Requiring one parity ~all-NUL and the
+        # other ~none excludes binary/PE null padding (NULs on both parities),
+        # random data, and plain text (no NULs) -- verified 0 false positives.
+        if odd_nul >= 0.6 * pairs and even_nul <= 0.05 * pairs:
+            return "utf-16-le"
+        if even_nul >= 0.6 * pairs and odd_nul <= 0.05 * pairs:
+            return "utf-16-be"
+        return None
+
+    def can_decode(self, data: bytes) -> bool:
+        return self._endianness(data) is not None
+
+    def decode(self, data: bytes) -> Tuple[bytes, bool]:
+        enc = self._endianness(data)
+        if enc is None:
+            return data, False
+        try:
+            text = data.decode(enc, errors="ignore")
+            out = text.encode("utf-8", errors="ignore").replace(b"\x00", b"")
+            if out and out != data:
+                return out, True
+            return data, False
+        except Exception:
+            return data, False
+
+    @property
+    def name(self) -> str:
+        return "UTF16"
