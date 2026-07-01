@@ -16,7 +16,8 @@ class PIIRedactor:
     """Redact PII from log messages."""
 
     # Regex patterns for common PII
-    EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
+    # TLD class was [A-Z|a-z] (literal '|' inside the class); intent is letters only.
+    EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
     IP_PATTERN = re.compile(r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b")
     HASH_PATTERN = re.compile(r"\b[a-fA-F0-9]{32,128}\b")
 

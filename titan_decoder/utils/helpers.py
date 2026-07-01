@@ -170,7 +170,10 @@ def extract_iocs(text: str) -> Dict[str, List[str]]:
     urls = re.findall(r"\bhttps?://[^\s\"']+\b", text_for_urls)
     domains = re.findall(r"\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b", text_for_other)
     emails = re.findall(
-        r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", text_for_other
+        # TLD class was [A-Z|a-z], which includes a literal '|' inside the
+        # character class (a common regex mistake) and matched bogus TLDs like
+        # ".co|m"; the intent is just letters.
+        r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", text_for_other
     )
     # Match only real hash digest lengths (hex): MD5=32, SHA1=40, SHA224=56,
     # SHA256=64, SHA384=96, SHA512=128. A loose {32,128} range would flag any
