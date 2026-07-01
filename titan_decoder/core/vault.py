@@ -45,6 +45,10 @@ CREATE INDEX IF NOT EXISTS idx_runs_created ON runs(created_ts);
 """
 
 
+class VaultError(RuntimeError):
+    """Raised when the vault database can't be opened (e.g. corrupt/non-SQLite file)."""
+
+
 class VaultStore:
     def __init__(self, db_path: Path):
         self.db_path = db_path
@@ -52,9 +56,22 @@ class VaultStore:
 
     def __enter__(self):
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(self.db_path)
-        self.conn.executescript(SCHEMA)
-        self._migrate_schema()
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+            self.conn.executescript(SCHEMA)
+            self._migrate_schema()
+        except sqlite3.DatabaseError as e:
+            # Corrupt or non-SQLite file at db_path: fail with a clear, catchable
+            # error instead of leaking a raw sqlite3.DatabaseError traceback.
+            if self.conn is not None:
+                try:
+                    self.conn.close()
+                except Exception:
+                    pass
+                self.conn = None
+            raise VaultError(
+                f"Vault database at {self.db_path} could not be opened: {e}"
+            ) from e
         return self
 
     def __exit__(self, exc_type, exc, tb):
