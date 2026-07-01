@@ -156,6 +156,48 @@ class Base64UrlDecoder(Decoder):
         return "Base64URL"
 
 
+class PemArmorDecoder(Decoder):
+    """Decode PEM / ``certutil``-armored base64 bodies.
+
+    ``certutil -encode`` and PEM wrap base64 between ``-----BEGIN X-----`` and
+    ``-----END X-----`` lines. Malware smuggles executables/scripts inside fake
+    "CERTIFICATE" blocks and unpacks them with ``certutil -decode``; the armor
+    lines and dashes stop the plain base64 detector from firing. Extract the
+    body of each block and base64-decode it (concatenating multiple blocks).
+    """
+
+    _BLOCK = re.compile(
+        rb"-----BEGIN [^-\r\n]*-----(.*?)-----END [^-\r\n]*-----",
+        re.DOTALL,
+    )
+
+    def can_decode(self, data: bytes) -> bool:
+        if b"-----BEGIN " not in data or b"-----END " not in data:
+            return False
+        return self._BLOCK.search(data) is not None
+
+    def decode(self, data: bytes) -> Tuple[bytes, bool]:
+        try:
+            out = bytearray()
+            for match in self._BLOCK.finditer(data):
+                body = b"".join(match.group(1).split())  # strip line wrapping
+                if not body:
+                    continue
+                try:
+                    out += base64.b64decode(body + b"=" * (-len(body) % 4))
+                except Exception:
+                    continue
+            if out:
+                return bytes(out), True
+            return data, False
+        except Exception:
+            return data, False
+
+    @property
+    def name(self) -> str:
+        return "PEM"
+
+
 class GzipDecoder(Decoder):
     """Gzip decompressor."""
 

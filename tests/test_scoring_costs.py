@@ -17,6 +17,7 @@ from titan_decoder.decoders.base import (
     Base64Decoder,
     RecursiveBase64Decoder,
     Base64UrlDecoder,
+    PemArmorDecoder,
     GzipDecoder,
     Bz2Decoder,
     LzmaDecoder,
@@ -39,9 +40,9 @@ from titan_decoder.decoders.base import (
 ALL_NAMES = {
     d().name
     for d in (
-        Base64Decoder, RecursiveBase64Decoder, Base64UrlDecoder, GzipDecoder,
-        Bz2Decoder, LzmaDecoder, ZlibDecoder, HexDecoder, Rot13Decoder, XorDecoder,
-        PDFDecoder, OLEDecoder, Utf16Decoder,
+        Base64Decoder, RecursiveBase64Decoder, Base64UrlDecoder, PemArmorDecoder,
+        GzipDecoder, Bz2Decoder, LzmaDecoder, ZlibDecoder, HexDecoder, Rot13Decoder,
+        XorDecoder, PDFDecoder, OLEDecoder, Utf16Decoder,
     )
 } | {
     UUDecoder().name, ASN1Decoder().name, QuotedPrintableDecoder().name,
