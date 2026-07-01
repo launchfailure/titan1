@@ -117,6 +117,45 @@ class RecursiveBase64Decoder(Decoder):
         return "RecursiveBase64"
 
 
+class Base64UrlDecoder(Decoder):
+    """URL-safe base64 (RFC 4648 section 5): '-' and '_' replace '+' and '/'.
+
+    Used by JWTs and web-based C2. It only fires when the data actually contains
+    '-' or '_' -- standard base64 (which never contains those) is left to the
+    Base64/RecursiveBase64 decoders, so the two never compete.
+    """
+
+    _RE = re.compile(rb"^[A-Za-z0-9_-]+={0,2}$")
+
+    def can_decode(self, data: bytes) -> bool:
+        s = data.strip()
+        if len(s) < 16:
+            return False
+        if b"-" not in s and b"_" not in s:
+            return False  # plain base64 -> handled by the standard decoders
+        if not self._RE.match(s):
+            return False
+        try:
+            base64.urlsafe_b64decode(s + b"=" * (-len(s) % 4))
+            return True
+        except Exception:
+            return False
+
+    def decode(self, data: bytes) -> Tuple[bytes, bool]:
+        try:
+            s = data.strip()
+            out = base64.urlsafe_b64decode(s + b"=" * (-len(s) % 4))
+            if out and out != data:
+                return out, True
+            return data, False
+        except Exception:
+            return data, False
+
+    @property
+    def name(self) -> str:
+        return "Base64URL"
+
+
 class GzipDecoder(Decoder):
     """Gzip decompressor."""
 
