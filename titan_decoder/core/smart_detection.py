@@ -47,7 +47,12 @@ class SmartDetectionEngine:
                 lines = text.split("\n")
                 uu_line_count = 0
                 for line in lines:
-                    if re.match(r"^[`!-_]{1,60}$", line):
+                    # UUencode uses the alphabet 0x20 (space) .. 0x60 (backtick);
+                    # a full data line is 61 chars (1 length byte + 60 data). The
+                    # old class [`!-_] excluded space (0x20), which b2a_uu emits
+                    # for the value 0, so real UU lines containing spaces failed
+                    # to match and detection under-counted / missed valid files.
+                    if re.match(r"^[\x20-\x60]{1,61}$", line):
                         uu_line_count += 1
                     elif line.startswith("end"):
                         break
