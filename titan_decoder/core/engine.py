@@ -272,6 +272,10 @@ class TitanEngine:
             pass
 
         self.nodes: List[AnalysisNode] = []
+        # Running set of node content hashes for O(1) dedup (rebuilding a set
+        # from all prior nodes on every call was O(n^2)).
+        self._seen_hashes: set = set()
+        self._node_cap_reached: bool = False
 
     def analyze_blob(
         self,
@@ -302,6 +306,20 @@ class TitanEngine:
             logger.warning(f"Max recursion depth reached at depth {depth}")
             return
 
+        # Global node-count cap. This MUST apply to decoded/extracted content
+        # too: is_decoded_content bypasses every score/count pruning rule below,
+        # so without this hard stop a small crafted nested archive fans out to
+        # millions of nodes (max_node_count is otherwise unenforced once you are
+        # inside decoded content), exhausting memory well before the timeout.
+        if len(self.nodes) >= self.pruning_engine.max_nodes:
+            if not self._node_cap_reached:
+                self._node_cap_reached = True
+                logger.warning(
+                    f"Max node count ({self.pruning_engine.max_nodes}) reached; "
+                    "stopping further analysis"
+                )
+            return
+
         # For root node and decoded content, always analyze. For speculative branches, check pruning.
         if (
             not is_decoded_content
@@ -322,12 +340,12 @@ class TitanEngine:
         node.id = len(self.nodes)
         self.nodes.append(node)
 
-        # Check for duplicate content (hash deduplication)
-        existing_hashes = {n.sha256 for n in self.nodes[:-1]}  # Exclude current node
-        if node.sha256 in existing_hashes:
+        # Check for duplicate content (hash deduplication), O(1) via running set.
+        if node.sha256 in self._seen_hashes:
             logger.info("Duplicate content detected, skipping analysis")
             node.pruned = True
             return
+        self._seen_hashes.add(node.sha256)
 
         # Smart detection: Check if we should enable any off-by-default decoders
         detected_decoders = self.smart_detector.detect_format(data)
@@ -527,6 +545,8 @@ class TitanEngine:
         )
 
         self.nodes = []
+        self._seen_hashes = set()
+        self._node_cap_reached = False
         self.decision_trace = []
         self.analyze_blob(input_data, None, 0)
 
