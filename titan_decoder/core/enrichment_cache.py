@@ -61,7 +61,12 @@ class EnrichmentCache:
         if not provider or not indicator_type or not indicator_value:
             return None
 
-        conn = self._connect()
+        try:
+            conn = self._connect()
+        except sqlite3.DatabaseError:
+            # Corrupt/non-SQLite cache file: treat as a cache miss rather than
+            # aborting the whole (best-effort) enrichment/analysis run.
+            return None
         try:
             cur = conn.cursor()
             cur.execute(
@@ -83,6 +88,8 @@ class EnrichmentCache:
                 cached_at=str(cached_at),
                 payload=payload,
             )
+        except sqlite3.DatabaseError:
+            return None
         finally:
             conn.close()
 
@@ -94,23 +101,34 @@ class EnrichmentCache:
             return _utc_now_iso()
 
         cached_at = _utc_now_iso()
-        conn = self._connect()
+        try:
+            conn = self._connect()
+        except sqlite3.DatabaseError:
+            # Corrupt cache file: skip persisting rather than crash the run.
+            return cached_at
         try:
             conn.execute(
                 "INSERT OR REPLACE INTO enrichment_cache(provider, indicator_type, indicator_value, cached_at, payload_json) VALUES (?, ?, ?, ?, ?)",
                 (provider, indicator_type, indicator_value, cached_at, json.dumps(payload, sort_keys=True)),
             )
             conn.commit()
+        except sqlite3.DatabaseError:
+            pass
         finally:
             conn.close()
         return cached_at
 
     def stats(self) -> Dict[str, Any]:
-        conn = self._connect()
+        try:
+            conn = self._connect()
+        except sqlite3.DatabaseError as e:
+            return {"entries": 0, "error": f"cache unavailable: {e}"}
         try:
             cur = conn.cursor()
             cur.execute("SELECT COUNT(*) FROM enrichment_cache")
             (count,) = cur.fetchone() or (0,)
             return {"entries": int(count)}
+        except sqlite3.DatabaseError as e:
+            return {"entries": 0, "error": f"cache unavailable: {e}"}
         finally:
             conn.close()

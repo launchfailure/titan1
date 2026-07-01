@@ -1074,7 +1074,7 @@ def _vault_paths(config: Config) -> tuple[Path, Path]:
 
 
 def _vault_store(config: Config, report: dict) -> None:
-    from titan_decoder.core.vault import VaultStore
+    from titan_decoder.core.vault import VaultStore, VaultError
 
     vault_dir, db_path = _vault_paths(config)
     vault_dir.mkdir(parents=True, exist_ok=True)
@@ -1090,46 +1090,62 @@ def _vault_store(config: Config, report: dict) -> None:
     iocs = report.get("iocs", {}) or {}
     ioc_count = sum(len(v) for v in iocs.values() if isinstance(v, list))
 
-    with VaultStore(db_path) as store:
-        store.record_run(
-            analysis_id,
-            report_path,
-            node_count=node_count,
-            risk_level=str(risk_level) if risk_level is not None else None,
-            risk_score=int(risk_score) if isinstance(risk_score, (int, float)) else None,
-            ioc_count=int(ioc_count),
-        )
-        store.record_iocs(analysis_id, iocs)
+    # The report JSON is already persisted above; if the index DB is corrupt,
+    # warn but don't crash (and don't lose the completed analysis).
+    try:
+        with VaultStore(db_path) as store:
+            store.record_run(
+                analysis_id,
+                report_path,
+                node_count=node_count,
+                risk_level=str(risk_level) if risk_level is not None else None,
+                risk_score=int(risk_score) if isinstance(risk_score, (int, float)) else None,
+                ioc_count=int(ioc_count),
+            )
+            store.record_iocs(analysis_id, iocs)
+    except VaultError as e:
+        print(f"Warning: vault indexing skipped: {e}", file=sys.stderr)
 
 
 def _vault_search(config: Config, value: str, ioc_type: str | None = None) -> list:
-    from titan_decoder.core.vault import VaultStore
+    from titan_decoder.core.vault import VaultStore, VaultError
 
     _, db_path = _vault_paths(config)
     if not db_path.exists():
         return []
-    with VaultStore(db_path) as store:
-        return store.search_value(value, ioc_type=ioc_type)
+    try:
+        with VaultStore(db_path) as store:
+            return store.search_value(value, ioc_type=ioc_type)
+    except VaultError as e:
+        print(f"Warning: {e}", file=sys.stderr)
+        return []
 
 
 def _vault_list_recent(config: Config, limit: int) -> list:
-    from titan_decoder.core.vault import VaultStore
+    from titan_decoder.core.vault import VaultStore, VaultError
 
     _, db_path = _vault_paths(config)
     if not db_path.exists():
         return []
-    with VaultStore(db_path) as store:
-        return store.list_recent(limit=limit)
+    try:
+        with VaultStore(db_path) as store:
+            return store.list_recent(limit=limit)
+    except VaultError as e:
+        print(f"Warning: {e}", file=sys.stderr)
+        return []
 
 
 def _vault_prune(config: Config, days: int) -> dict:
-    from titan_decoder.core.vault import VaultStore
+    from titan_decoder.core.vault import VaultStore, VaultError
 
     _, db_path = _vault_paths(config)
     if not db_path.exists():
         return {"ok": True, "result": {"before_runs": 0, "after_runs": 0, "deleted_runs": 0}}
-    with VaultStore(db_path) as store:
-        result = store.prune_days(days)
+    try:
+        with VaultStore(db_path) as store:
+            result = store.prune_days(days)
+    except VaultError as e:
+        return {"ok": False, "error": str(e)}
     return {"ok": True, "result": result}
 
 
