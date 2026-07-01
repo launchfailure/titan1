@@ -55,6 +55,16 @@ class ScoringEngine:
         re.compile(rb"import\s+\w+"),  # Import statement
         re.compile(rb"function\s+\w+"),  # Function definition
         re.compile(rb"class\s+\w+"),  # Class definition
+        # Network / command indicators: a decode that reveals a URL or a shell/
+        # PowerShell invocation is meaningful even when it yields no entropy
+        # reduction or printable gain. Single-byte XOR is a bijection, so a
+        # printable-ASCII-keyed config (e.g. a C2 URL) scores 0 on those
+        # components; rewarding these markers lets the reveal clear the score
+        # threshold and be followed instead of dropped.
+        re.compile(rb"https?://"),  # URL
+        re.compile(rb"[Pp]ower[Ss]hell"),  # PowerShell
+        re.compile(rb"cmd\.exe"),  # cmd
+        re.compile(rb"/bin/(?:ba)?sh"),  # POSIX shell
     ]
 
     @classmethod

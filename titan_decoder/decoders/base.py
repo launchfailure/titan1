@@ -396,44 +396,81 @@ class Rot13Decoder(Decoder):
         return "ROT13"
 
 
+def _build_xor_score_table() -> list:
+    """Per-byte text-likeness weights for scoring single-byte-XOR candidates."""
+    table = [-1.5] * 256  # non-printable bytes: strong penalty
+    for i in range(32, 127):
+        table[i] = 0.1  # other printable ASCII
+    for i in range(0x30, 0x3A):
+        table[i] = 0.4  # digits
+    for i in range(0x41, 0x5B):
+        table[i] = 0.6  # uppercase
+    for i in range(0x61, 0x7B):
+        table[i] = 1.0  # lowercase
+    for ch in b"./:@-_?=&%+":
+        table[ch] = 0.4  # URL / path punctuation
+    table[0x20] = 1.0  # space (strong text signal)
+    for ch in (0x09, 0x0A, 0x0D):
+        table[ch] = 0.3  # tab / newlines
+    return table
+
+
+_XOR_SCORE = _build_xor_score_table()
+
+
+def _xor_text_likeness(data: bytes) -> float:
+    """Higher => more like readable text/commands/URLs. Range roughly [-1.5, 1.0]."""
+    if not data:
+        return -1.0
+    return sum(_XOR_SCORE[b] for b in data) / len(data)
+
+
 class XorDecoder(Decoder):
-    """Single-byte XOR decoder with best guess."""
+    """Single-byte XOR decoder.
+
+    Brute-forces all 256 keys and picks the one that best reveals readable
+    text/commands/URLs using a text-likeness score, not raw printable count --
+    printable count cannot choose among the several all-printable candidates a
+    single-byte XOR produces, which is why an ASCII-XOR'd config (e.g. a C2 URL
+    keyed with 0x5A, whose ciphertext has no high bits) was previously missed.
+
+    Accepts only a clearly text-like reveal that beats reading the bytes as-is,
+    so it does not scramble already-readable, random, hex, or base64 data.
+    """
 
     def can_decode(self, data: bytes) -> bool:
-        """Check if data might be XOR encoded."""
-        if len(data) < 8:
+        n = len(data)
+        if n < 8 or n > 512:  # keep the 256-key brute force cheap and bounded
             return False
-
-        # Check if data has some structure that suggests XOR encoding
-        # Look for patterns that are common in XOR-encoded data
-        # High entropy but some repeating patterns
-        diversity = len(set(data)) / len(data)
-        if diversity < 0.5:  # Low diversity suggests not XOR
+        if len(set(data)) < 8:  # near-uniform / padding is not XOR'd text
             return False
-
-        # Check for potential XOR patterns (like English text with high bit set)
-        high_bit_count = sum(1 for b in data if b & 0x80)
-        high_bit_ratio = high_bit_count / len(data)
-        if high_bit_ratio < 0.1:  # Not enough high bits
+        # hex/base64 have dedicated decoders; don't XOR-scramble them.
+        if looks_like_hex(data) or looks_like_base64(data):
             return False
-
         return True
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         from ..utils.helpers import looks_like_text
 
-        best_score = 0
+        raw = _xor_text_likeness(data)
+        best = raw
         best_out = data
-
-        for key in range(256):
-            decoded = bytes(b ^ key for b in data)
-            score = sum(1 for b in decoded if 32 <= b <= 126)  # Printable ASCII
-            if score > best_score:
-                best_score = score
+        best_key = 0
+        for key in range(1, 256):
+            decoded = data.translate(bytes(i ^ key for i in range(256)))
+            score = _xor_text_likeness(decoded)
+            if score > best:
+                best = score
                 best_out = decoded
+                best_key = key
 
-        # Only return if it looks like text and score is good
-        if looks_like_text(best_out) and best_score > len(best_out) * 0.6:
+        # Require a genuine, clearly text-like reveal that beats the raw reading.
+        if (
+            best_key != 0
+            and best >= 0.70
+            and best >= raw + 0.20
+            and looks_like_text(best_out)
+        ):
             return best_out, True
         return data, False
 
