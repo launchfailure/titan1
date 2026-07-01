@@ -126,7 +126,13 @@ def _as_int(value: Any) -> Optional[int]:
         except Exception:
             return None
     if isinstance(value, float):
-        return int(value)
+        # int(float("inf")) raises OverflowError and int(float("nan")) raises
+        # ValueError; json.loads accepts Infinity/NaN by default, so a crafted
+        # evidence field must degrade to None rather than abort parsing.
+        try:
+            return int(value)
+        except (ValueError, OverflowError):
+            return None
     return None
 
 
