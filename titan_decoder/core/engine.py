@@ -553,9 +553,15 @@ class TitanEngine:
         finished_wall = datetime.now(timezone.utc)
         duration_ms = int((time.monotonic() - (self._analysis_started_monotonic or 0)) * 1000)
 
-        # Extract IOCs from all text nodes
+        # Extract IOCs from every node's preview, not just Text-classified ones.
+        # Malware routinely embeds C2 URLs/IPs in otherwise-binary content (config
+        # blobs, shellcode, a readable URL followed by binary padding), which the
+        # Text-only filter silently dropped. content_preview exists for all nodes,
+        # and the IOC regexes are specific enough that binary noise contributes
+        # essentially no false positives (URLs need "http://", IPs are
+        # ipaddress-validated dotted quads).
         all_text = "\n".join(
-            node.content_preview for node in self.nodes if node.content_type == "Text"
+            node.content_preview for node in self.nodes if node.content_preview
         )
 
         report: Dict[str, Any] = {
