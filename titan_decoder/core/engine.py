@@ -28,6 +28,7 @@ from ..decoders.base import (
     URLDecoder,
     HTMLEntityDecoder,
     UnicodeEscapeDecoder,
+    Utf16Decoder,
 )
 from .analyzers.base import Analyzer, ZipAnalyzer, TarAnalyzer, PEAnalyzer, ELFAnalyzer
 from ..utils.helpers import sha256, entropy, looks_like_text, extract_iocs
@@ -185,6 +186,8 @@ class TitanEngine:
             self.decoders.append(HTMLEntityDecoder())
         if self.config.get("decoders", {}).get("unicode_escape", True):
             self.decoders.append(UnicodeEscapeDecoder())
+        if self.config.get("decoders", {}).get("utf16", True):
+            self.decoders.append(Utf16Decoder())
 
         # Initialize off-by-default decoders (will be enabled by smart detection)
         self.uuencoder = UUDecoder(
