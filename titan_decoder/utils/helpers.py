@@ -82,12 +82,14 @@ def looks_like_hex(data: bytes) -> bool:
     """Check if data looks like hex encoded."""
     try:
         text = data.decode("ascii").strip()
-        if len(text) % 2 != 0:
-            return False
-        int(text, 16)
-        return True
-    except Exception:
+    except UnicodeDecodeError:
         return False
+    if not text or len(text) % 2 != 0:
+        return False
+    # Strict hex-digit check. ``int(text, 16)`` also accepts forms unhexlify
+    # rejects ("0x" prefixes, +/- signs, "_" separators), so the decoder was
+    # offered data it could never decode.
+    return bool(re.fullmatch(r"[0-9a-fA-F]+", text))
 
 
 # =========================

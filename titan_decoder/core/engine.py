@@ -208,6 +208,20 @@ class TitanEngine:
         self.base32_decoder = Base32Decoder(
             enabled=self.config.get("decoders", {}).get("base32", False)
         )
+        # Remember the configured enablement so smart-detection changes made
+        # during one run can be undone before the next (run_analysis resets to
+        # this baseline). Decoders explicitly enabled via config must also be
+        # registered here — previously they were constructed enabled but never
+        # added to self.decoders, so the config flags had no effect.
+        self._optional_decoder_baseline = [
+            (self.uuencoder, self.uuencoder.enabled),
+            (self.asn1_decoder, self.asn1_decoder.enabled),
+            (self.qp_decoder, self.qp_decoder.enabled),
+            (self.base32_decoder, self.base32_decoder.enabled),
+        ]
+        for decoder, enabled in self._optional_decoder_baseline:
+            if enabled:
+                self.decoders.append(decoder)
 
         # Initialize analyzers
         self.analyzers: List[Analyzer] = []
@@ -542,6 +556,19 @@ class TitanEngine:
         if best_score < self.pruning_engine.min_score_threshold:
             node.pruned = True
 
+    def _reset_optional_decoders(self) -> None:
+        """Restore off-by-default decoders to their configured baseline.
+
+        Smart detection enables these decoders mid-run and appends them to
+        self.decoders; without a reset that state leaked into subsequent
+        run_analysis() calls on the same engine, making results depend on what
+        was analyzed earlier.
+        """
+        for decoder, enabled in self._optional_decoder_baseline:
+            decoder.enabled = enabled
+            if not enabled and decoder in self.decoders:
+                self.decoders.remove(decoder)
+
     def run_analysis(self, input_data: bytes) -> Dict[str, Any]:
         """Run full analysis on input data."""
         analysis_id = str(uuid.uuid4())
@@ -557,6 +584,7 @@ class TitanEngine:
         self._seen_hashes = set()
         self._node_cap_reached = False
         self.decision_trace = []
+        self._reset_optional_decoders()
         self.analyze_blob(input_data, None, 0)
 
         finished_wall = datetime.now(timezone.utc)
