@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+Correctness:
+
+- Stop IOC extraction from reporting dotted .NET/scripting member access in
+  download-cradle payloads (e.g. `Net.WebClient`, `Net.HttpWebRequest`) as
+  bogus domains. Their trailing labels are verified non-TLDs and added to a
+  denylist, so real C2 domains are unaffected.
+
 ## 2.0.2 — Engine reliability fixes (2026-07-02)
 
 Reliability (engine no longer fails silently or nondeterministically):

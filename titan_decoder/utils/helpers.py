@@ -116,6 +116,22 @@ COMMON_FILE_EXTENSIONS = frozenset(
     }
 )
 
+# Code/API member identifiers whose final label the domain regex would otherwise
+# mistake for a TLD. Download-cradle payloads are full of dotted .NET/scripting
+# member access (e.g. "Net.WebClient", "Net.HttpWebRequest") that looks like a
+# two-label domain but whose trailing label is not a real TLD. Every entry here
+# is verified NOT to exist in the IANA root zone, so filtering on them never
+# drops a real domain (matching the false-negative-averse policy above).
+NON_TLD_CODE_IDENTIFIERS = frozenset(
+    {
+        "webclient", "webrequest", "httpwebrequest", "httpclient",
+        "downloadstring", "downloaddata", "downloadfile", "webproxy",
+        "tcpclient", "socket", "sockets", "streamreader", "streamwriter",
+        "memorystream", "filestream", "bitconverter", "encoding",
+        "convert", "invoke", "createinstance",
+    }
+)
+
 
 def is_private_ip(ip: str) -> bool:
     """Return True if ip is a valid IPv4 address that is not globally routable.
@@ -211,8 +227,12 @@ def extract_iocs(text: str) -> Dict[str, List[str]]:
         if not domain:
             continue
         # Drop filename-like matches (e.g. config.json) whose final label is a
-        # known non-TLD file extension.
-        if domain.rsplit(".", 1)[-1] in COMMON_FILE_EXTENSIONS:
+        # known non-TLD file extension, and code member access (e.g.
+        # Net.WebClient) whose final label is a known non-TLD identifier.
+        final_label = domain.rsplit(".", 1)[-1]
+        if final_label in COMMON_FILE_EXTENSIONS:
+            continue
+        if final_label in NON_TLD_CODE_IDENTIFIERS:
             continue
         iocs["domains"].add(domain)
 
