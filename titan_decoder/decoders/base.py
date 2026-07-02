@@ -1109,6 +1109,10 @@ class Utf16Decoder(Decoder):
             return data, False
         try:
             text = data.decode(enc, errors="ignore")
+            # Explicit-endian codecs do not consume a leading BOM: it decodes
+            # to U+FEFF, which would re-encode as \xef\xbb\xbf at the front of
+            # the UTF-8 output, corrupting the artifact and its hash.
+            text = text.lstrip("\ufeff")
             out = text.encode("utf-8", errors="ignore").replace(b"\x00", b"")
             if out and out != data:
                 return out, True
