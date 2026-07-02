@@ -434,7 +434,9 @@ class PEAnalyzer(Analyzer):
                 0x0200: "IA64",
                 0x8664: "x64",
                 0x01C0: "ARM",
-                0x01C4: "ARM64",
+                # 0x01C4 is IMAGE_FILE_MACHINE_ARMNT (32-bit ARM Thumb-2),
+                # not ARM64 (0xAA64) — mislabeling it corrupts triage.
+                0x01C4: "ARM Thumb-2",
                 0xAA64: "ARM64",
             }
 

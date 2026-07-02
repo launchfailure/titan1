@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import signal
+import threading
 from contextlib import contextmanager
 from typing import Optional
 import logging
@@ -30,7 +31,28 @@ class ResourceManager:
 
     @contextmanager
     def timeout_context(self, seconds: int, operation_name: str = "operation"):
-        """Context manager for enforcing timeouts on operations."""
+        """Context manager for enforcing timeouts on operations.
+
+        SIGALRM-based timeouts only work on POSIX and only from the main
+        thread. Elsewhere (Windows, worker threads) ``signal.signal`` raises,
+        and since the engine swallows per-decoder exceptions that would
+        silently disable every decoder/analyzer — so fall back to running the
+        operation unguarded instead. The run-level wall-clock deadline and
+        memory checks in the engine still bound the overall analysis.
+        """
+        can_use_alarm = (
+            hasattr(signal, "SIGALRM")
+            and threading.current_thread() is threading.main_thread()
+        )
+        if not can_use_alarm or seconds <= 0:
+            if not can_use_alarm:
+                logger.debug(
+                    "SIGALRM unavailable (platform/thread); running %s without "
+                    "a per-operation timeout",
+                    operation_name,
+                )
+            yield
+            return
 
         def timeout_handler(signum, frame):
             raise TimeoutError(f"{operation_name} exceeded {seconds}s timeout")

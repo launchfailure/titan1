@@ -45,6 +45,8 @@ class Config:
         "decoders": {
             "base64": True,
             "recursive_base64": True,
+            "base64url": True,
+            "pem": True,
             "gzip": True,
             "bz2": True,
             "lzma": True,
@@ -58,7 +60,7 @@ class Config:
             "url": True,
             "html_entity": True,
             "unicode_escape": True,
-            "base85": True,
+            "utf16": True,
             # Off-by-default decoders (require smart detection)
             "uuencode": False,
             "asn1": False,

@@ -272,15 +272,18 @@ class ZlibDecoder(Decoder):
         self.max_output_size = max_output_size
 
     def can_decode(self, data: bytes) -> bool:
-        # ZLIB compressed data typically starts with compression method
-        # This is a heuristic - ZLIB doesn't have a fixed header like GZIP
+        # Validate the full RFC 1950 header instead of only the low nibble of
+        # the first byte: that alone matched ~6% of random binary data and
+        # triggered a doomed decompression attempt on every such node.
         if len(data) < 2:
             return False
-        # Check for ZLIB header (compression method and flags)
-        # First byte: Compression method (8 = deflate)
-        # Second byte: Flags
-        compression_method = data[0] & 0x0F
-        return compression_method == 8  # Deflate compression
+        cmf, flg = data[0], data[1]
+        if cmf & 0x0F != 8:  # CM: 8 = deflate
+            return False
+        if cmf >> 4 > 7:  # CINFO: window size may not exceed 32KB
+            return False
+        # FCHECK: header bytes as a big-endian value must be divisible by 31.
+        return ((cmf << 8) | flg) % 31 == 0
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
@@ -709,9 +712,10 @@ class UUDecoder(Decoder):
                     out += binascii.a2b_uu(line)
                 except binascii.Error:
                     # Some encoders strip trailing whitespace; recompute the
-                    # expected byte count from the length char and retry.
-                    nbytes = (((line[0] - 32) & 0x3F) * 4 + 5) // 3
-                    out += binascii.a2b_uu(line[: nbytes + 1])
+                    # expected line length (length char + data chars, same
+                    # formula as CPython's uu module) and retry on that slice.
+                    nchars = (((line[0] - 32) & 0x3F) * 4 + 5) // 3
+                    out += binascii.a2b_uu(line[:nchars])
 
             decoded = bytes(out)
             if decoded:
@@ -836,7 +840,7 @@ class QuotedPrintableDecoder(Decoder):
         try:
             text = data.decode("ascii")
             # Look for typical quoted-printable patterns
-            return "=" in text and re.search(r"=[0-9A-F]{2}", text, re.IGNORECASE)
+            return bool(re.search(r"=[0-9A-F]{2}", text, re.IGNORECASE))
         except Exception:
             return False
 
@@ -871,7 +875,10 @@ class Base32Decoder(Decoder):
             # Base32 uses A-Z and 2-7, typically multiple of 8
             if not re.match(r"^[A-Z2-7=]+$", text):
                 return False
-            if len(text) % 8 != 0 and len(text) % 8 != 7:  # Allow for missing padding
+            # Padded input is a multiple of 8; with padding stripped the only
+            # lengths base32 can produce are 2/4/5/7 (mod 8). The old check
+            # only allowed 0 and 7, rejecting valid unpadded input.
+            if len(text) % 8 not in (0, 2, 4, 5, 7):
                 return False
             return len(text) >= 16  # Need reasonable length
         except Exception:
