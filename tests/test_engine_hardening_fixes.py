@@ -15,6 +15,7 @@ Covers:
 import base64
 import binascii
 import random
+import re
 import struct
 import threading
 import zlib
@@ -130,3 +131,51 @@ def test_pe_armnt_machine_not_mislabeled_arm64():
     (_, meta_json), = analyzer.analyze(bytes(data))
     assert b'"ARM Thumb-2"' in meta_json
     assert b"ARM64" not in meta_json
+
+
+def test_text_transform_decoders_do_not_fire_on_binary():
+    # URL/HTML-entity/unicode-escape decoders used errors="ignore", which on
+    # binary input silently deleted every non-UTF-8 byte; the mangled output
+    # differed from the input, so the "decode" was reported successful and its
+    # apparent entropy reduction outscored the correct decoder (e.g. Gzip),
+    # killing the real decode chain. They must only fire on valid UTF-8 text.
+    from titan_decoder.decoders.base import (
+        HTMLEntityDecoder,
+        UnicodeEscapeDecoder,
+        URLDecoder,
+    )
+
+    binary = bytes(range(256)) + b" %41 + &amp; \\u0041 "
+    for dec in (URLDecoder(), HTMLEntityDecoder(), UnicodeEscapeDecoder()):
+        assert not dec.can_decode(binary), dec.name
+        out, ok = dec.decode(binary)
+        assert not ok and out == binary, dec.name
+    # Genuine text payloads still decode.
+    out, ok = URLDecoder().decode(b"http%3A%2F%2Fexample.com%2Fx")
+    assert ok and out == b"http://example.com/x"
+    out, ok = HTMLEntityDecoder().decode(b"a &amp; b &#65;")
+    assert ok and out == b"a & b A"
+    out, ok = UnicodeEscapeDecoder().decode(b"\\u0068\\u0069 there")
+    assert ok and out == b"hi there"
+
+
+def test_gzip_stream_with_percent_bytes_not_hijacked():
+    import gzip as _gzip
+    import json as _json
+
+    # Find a payload whose *compressed* bytes contain a %XX trigram, i.e. the
+    # exact situation where URLDecoder previously outscored Gzip and broke the
+    # chain (observed nondeterministically in the stress scenario runner).
+    for i in range(20000):
+        inner = _json.dumps(
+            {"c2": "https://stress.example/v2/checkin", "nonce": i}
+        ).encode()
+        blob = _gzip.compress(inner)
+        if re.search(rb"%[0-9A-Fa-f]{2}", blob):
+            break
+    else:  # pragma: no cover - search space makes this effectively impossible
+        raise AssertionError("could not construct trigger payload")
+
+    eng = TitanEngine(Config())
+    rep = eng.run_analysis(base64.b64encode(blob))
+    assert any("stress.example" in u for u in rep["iocs"]["urls"]), rep["iocs"]

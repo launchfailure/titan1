@@ -12,6 +12,7 @@ from ..utils.helpers import (
     looks_like_gzip,
     looks_like_bz2,
     looks_like_hex,
+    looks_like_text,
 )
 
 
@@ -453,8 +454,6 @@ class XorDecoder(Decoder):
         return True
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
-        from ..utils.helpers import looks_like_text
-
         raw = _xor_text_likeness(data)
         best = raw
         best_out = data
@@ -903,18 +902,30 @@ class Base32Decoder(Decoder):
 
 
 class URLDecoder(Decoder):
-    """URL percent-encoding decoder."""
+    """URL percent-encoding decoder.
+
+    Percent-encoding is a text transport, so this only fires on valid UTF-8
+    input. Decoding with ``errors="ignore"`` on binary data silently deleted
+    every non-UTF-8 byte and the mangled output still compared unequal to the
+    input, so the "decode" was reported successful — and the byte destruction
+    looked like entropy reduction, letting this decoder outscore the correct
+    one (e.g. Gzip on a gzip stream that happens to contain ``%XX``) and kill
+    the real decode chain. The same fix applies to HTMLEntityDecoder and
+    UnicodeEscapeDecoder below.
+    """
 
     def can_decode(self, data: bytes) -> bool:
+        if not looks_like_text(data):
+            return False
         try:
-            text = data.decode("utf-8", errors="ignore")
+            text = data.decode("utf-8")
             return bool(re.search(r"%[0-9A-Fa-f]{2}", text))
         except Exception:
             return False
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
-            text = data.decode("utf-8", errors="ignore")
+            text = data.decode("utf-8")
             # Use a bytearray: byte concatenation in a loop (result += ...) is
             # O(n^2) and hangs on percent-heavy payloads.
             result = bytearray()
@@ -945,11 +956,13 @@ class URLDecoder(Decoder):
 
 
 class HTMLEntityDecoder(Decoder):
-    """HTML entity decoder."""
+    """HTML entity decoder (text-only; see URLDecoder docstring)."""
 
     def can_decode(self, data: bytes) -> bool:
+        if not looks_like_text(data):
+            return False
         try:
-            text = data.decode("utf-8", errors="ignore")
+            text = data.decode("utf-8")
             return bool(
                 re.search(r"&#(?:\d+|x[0-9A-Fa-f]+);|&[a-z]+;", text, re.IGNORECASE)
             )
@@ -968,7 +981,7 @@ class HTMLEntityDecoder(Decoder):
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
-            text = data.decode("utf-8", errors="ignore")
+            text = data.decode("utf-8")
 
             # Single-pass substitution: the previous char-by-char scan sliced
             # text[i:] and re-ran the regex for every character (O(n^2)), which
@@ -999,18 +1012,20 @@ class HTMLEntityDecoder(Decoder):
 
 
 class UnicodeEscapeDecoder(Decoder):
-    """Unicode escape sequences decoder."""
+    """Unicode escape sequences decoder (text-only; see URLDecoder docstring)."""
 
     def can_decode(self, data: bytes) -> bool:
+        if not looks_like_text(data):
+            return False
         try:
-            text = data.decode("utf-8", errors="ignore")
+            text = data.decode("utf-8")
             return bool(re.search(r"\\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8}", text))
         except Exception:
             return False
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
-            text = data.decode("utf-8", errors="ignore")
+            text = data.decode("utf-8")
             result = []
             i = 0
 
