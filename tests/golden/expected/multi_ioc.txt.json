@@ -81,6 +81,7 @@
       ],
       "plugins": {
         "analyzers": [],
+        "api_version": "1.0",
         "decoders": [],
         "loaded_plugins": [],
         "plugin_dirs": [

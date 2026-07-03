@@ -155,9 +155,61 @@ def _print_table(metrics: Dict) -> None:
     print(f"  malicious scores: {sep['malicious_scores']}")
 
 
+def append_history(metrics: dict, path: str) -> None:
+    """Append a per-release summary line to the detection-quality history.
+
+    Keeps a maintained record of precision/recall across releases so users can
+    see the engine getting better (or at least not worse), not just different.
+    """
+    from titan_decoder import __version__
+
+    summary = {
+        "version": __version__,
+        "schema": "detection-quality/1",
+        "corpus_size": metrics["corpus_size"],
+        "macro_precision": round(
+            sum(m["precision"] for m in metrics["per_rule"].values())
+            / len(metrics["per_rule"]),
+            3,
+        ),
+        "macro_recall": round(
+            sum(m["recall"] for m in metrics["per_rule"].values())
+            / len(metrics["per_rule"]),
+            3,
+        ),
+        "per_rule": {
+            r: {"precision": m["precision"], "recall": m["recall"]}
+            for r, m in metrics["per_rule"].items()
+        },
+        "risk_separated": metrics["risk_separation"]["separated"],
+    }
+    # De-duplicate by version: replace any existing entry for this version.
+    lines = []
+    if os.path.exists(path):
+        for line in open(path):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except ValueError:
+                continue
+            if entry.get("version") != __version__:
+                lines.append(line)
+    lines.append(json.dumps(summary, sort_keys=True))
+    with open(path, "w") as f:
+        f.write("\n".join(lines) + "\n")
+    print(f"Appended history entry for v{__version__} to {path}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", type=str, help="Write metrics JSON to this path")
+    parser.add_argument(
+        "--append-history",
+        type=str,
+        help="Append a per-release summary line to this history file (JSONL)",
+    )
     args = parser.parse_args()
 
     metrics = evaluate()
@@ -167,6 +219,9 @@ def main() -> int:
         with open(args.json, "w") as f:
             json.dump(metrics, f, indent=2)
         print(f"\nMetrics written to {args.json}")
+
+    if args.append_history:
+        append_history(metrics, args.append_history)
 
     # Non-zero exit if any rule has precision below 0.8 (a regression signal).
     weak = [r for r, m in metrics["per_rule"].items() if m["precision"] < 0.8]
