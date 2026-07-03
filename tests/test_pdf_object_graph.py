@@ -14,8 +14,6 @@ from _pdf_fixtures import build_pdf, flate_stream, build_objstm_pdf
 from titan_decoder.decoders.base import PDFDecoder
 from titan_decoder.decoders.pdf import (
     PDFDocument,
-    PDFRef,
-    PDFStream,
     _lzw_decode,
     _ascii85_decode,
     _ascii_hex_decode,

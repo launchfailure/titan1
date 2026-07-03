@@ -13,7 +13,7 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from tools.eval_detections import evaluate
+from tools.eval_detections import evaluate  # noqa: E402
 
 
 def test_detection_eval_separates_classes():

@@ -9,7 +9,7 @@ carved windows. Everything here is synthetic — no real malware.
 from __future__ import annotations
 
 import struct
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 SECTOR = 512
 FREESECT = 0xFFFFFFFF
@@ -206,7 +206,6 @@ def build_cfb(streams: List[Tuple[str, bytes]]) -> bytes:
     num_minifat_sectors = len(minifat_sectors)
 
     # Build FAT (spanning fat_sector_count sectors).
-    total_sectors = fat_sector_count + n_dir_sectors + data_sector_count
     fat = [FREESECT] * (fat_sector_count * per_fat)
     for s in range(fat_sector_count):
         fat[s] = FATSECT
