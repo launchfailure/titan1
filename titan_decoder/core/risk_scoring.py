@@ -13,9 +13,23 @@ logger = logging.getLogger(__name__)
 
 
 class RiskScoringEngine:
-    """Compute risk scores for analyses."""
+    """Compute risk scores for analyses.
 
-    # Scoring weights
+    Weight validation
+    -----------------
+    These 0--100 weights are measured against the synthetic labeled corpus in
+    ``tools/corpus_samples.py`` via ``tools/eval_detections.py`` (results
+    committed in ``docs/detection_metrics.json`` and summarized in
+    ``docs/DETECTION_QUALITY.md``). As of the last run: every built-in rule
+    (TITAN-001..007) scores precision 1.000 / recall 1.000 on that corpus, and
+    the overall risk score cleanly separates the classes — benign samples score
+    at most 4 while every malicious sample scores at least 15 (no overlap).
+    ``tests/test_detection_eval.py`` asserts this separation so a weight or rule
+    change that regresses it fails CI. Re-run the harness and refresh the
+    metrics file when tuning these constants.
+    """
+
+    # Scoring weights (see "Weight validation" above).
     WEIGHT_DETECTION_CRITICAL = 40
     WEIGHT_DETECTION_HIGH = 25
     WEIGHT_DETECTION_MEDIUM = 15

@@ -277,22 +277,22 @@ def test_pdf_decoder():
 
 
 def test_ole_decoder():
-    """Test OLE file embedded content extraction."""
-    # Create a minimal OLE file with embedded content
-    ole_header = (
-        b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"\x00" * 504
-    )  # OLE signature + padding
+    """Test OLE/CFB stream extraction against a real Compound File."""
+    import os
+    import sys
 
-    # Add some embedded content that looks like VBA
+    sys.path.insert(0, os.path.dirname(__file__))
+    from _cfb_fixtures import build_cfb
+
     embedded_content = b'VBA Macro content: Sub AutoOpen()\nMsgBox "Hello"\nEnd Sub'
-    ole_data = ole_header + embedded_content
+    ole_data = build_cfb([("Macros/VBA/Module1", embedded_content)])
 
     engine = TitanEngine()
     report = engine.run_analysis(ole_data)
 
-    # Should extract OLE content
+    # Should extract the stream as decoded content (root + extracted child).
     assert report["node_count"] >= 2
-    # Check that we have decoded content
+    # Check that the real stream content is present.
     found_content = False
     for node in report["nodes"]:
         if "VBA Macro" in node["content_preview"]:
