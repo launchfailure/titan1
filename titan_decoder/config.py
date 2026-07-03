@@ -1,7 +1,10 @@
 import json
 import copy
+import logging
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class Config:
@@ -35,9 +38,6 @@ class Config:
         "min_content_similarity": 0.8,
         "prune_empty_decodes": True,
         "prune_identical_content": True,
-        # Parallel processing
-        "enable_parallel_extraction": True,
-        "max_parallel_workers": 4,
         # Plugin system
         "plugin_dirs": [],
         "enable_logging": True,
@@ -73,15 +73,6 @@ class Config:
             "pe": True,
             "elf": True,
         },
-        # Phase 7: Advanced analysis
-        "enable_entropy_analysis": True,
-        "enable_script_analysis": True,
-        "enable_shellcode_detection": True,
-        "enable_string_extraction": True,
-        "enable_xor_keyfinding": True,
-        "enable_polymorphic_detection": True,
-        "enable_yara_generation": True,
-        "enable_html_reports": True,
         # Forensics / enrichment
         "enable_geo_enrichment": False,  # Optional MaxMind/GeoIP if available
         "geo_db_path": None,
@@ -93,11 +84,6 @@ class Config:
         "correlation_db_path": None,
         "enable_yara": False,  # Optional YARA scanning on decoded artifacts
         "yara_rules_path": None,
-        # AV Intelligence
-        "virustotal_api_key": None,  # Optional VirusTotal API key
-        "virustotal_rate_limit": 4,  # Requests per minute
-        # Security / Privacy
-        "enable_pii_redaction": True,  # Redact PII from logs
 
         # Reproducibility / strictness
         "seed": None,  # Optional deterministic seed recorded in run_manifest
@@ -110,7 +96,6 @@ class Config:
         # Local vault (history/search)
         "vault_dir": None,  # default: ~/.titan_decoder/vault
         "vault_db_path": None,  # default: <vault_dir>/vault.db
-        "vault_prune_days": None,  # if set, can be used to prune old vault entries
     }
 
     def __init__(self, config_file: Path = None):
@@ -139,8 +124,14 @@ class Config:
                     # without wiping the rest of the defaults.
                     if isinstance(loaded, dict):
                         self._deep_update(self._config, loaded)
-            except Exception:
-                pass  # Use defaults
+            except Exception as e:
+                # Fall back to defaults, but don't hide the problem: a typo'd
+                # config silently reverting every setting is very confusing.
+                logger.warning(
+                    "Could not load config %s (%s); using defaults",
+                    self.config_file,
+                    e,
+                )
 
     def save(self):
         """Save configuration to file."""

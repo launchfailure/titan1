@@ -4,8 +4,6 @@ import zipfile
 import tarfile
 import io
 import struct
-import concurrent.futures
-import threading
 
 from ...utils.helpers import looks_like_zip
 
@@ -31,7 +29,13 @@ class Analyzer(ABC):
 
 
 class ZipAnalyzer(Analyzer):
-    """ZIP file analyzer with comprehensive safety checks and parallel extraction."""
+    """ZIP file analyzer with comprehensive safety checks.
+
+    Extraction is sequential and in archive order: the source is an in-memory
+    BytesIO, so threads add no I/O parallelism (only GIL contention) while
+    making result order — and therefore node ordering in reports —
+    nondeterministic.
+    """
 
     def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
@@ -45,33 +49,23 @@ class ZipAnalyzer(Analyzer):
         self.max_compression_ratio = self.config.get(
             "max_compression_ratio", 100
         )  # 100:1 max
-        self.enable_parallel = self.config.get("enable_parallel_extraction", True)
-        self.max_workers = self.config.get("max_parallel_workers", 4)
 
     def can_analyze(self, data: bytes) -> bool:
         return looks_like_zip(data)
 
     def analyze(self, data: bytes) -> List[Tuple[str, bytes]]:
-        """Analyze ZIP file with safety checks and optional parallel extraction."""
-        extracted = []
+        """Analyze ZIP file with safety checks."""
         final_extracted: List[Tuple[str, bytes]] = []
         total_size = 0
-        zip_size = len(data)
 
         try:
             with zipfile.ZipFile(io.BytesIO(data)) as z:
                 # Pre-scan for safety issues
-                safe_files = self._pre_scan_zip(z, zip_size)
+                safe_files = self._pre_scan_zip(z)
                 if not safe_files:
                     return []  # No safe files found
 
-                # Extract safe files
-                if self.enable_parallel and len(safe_files) > 1:
-                    # Use parallel extraction for multiple files
-                    extracted = self._extract_parallel(z, safe_files)
-                else:
-                    # Use sequential extraction for single files or when parallel is disabled
-                    extracted = self._extract_sequential(z, safe_files)
+                extracted = self._extract_sequential(z, safe_files)
 
                 # Apply final size limits and path sanitization
                 for filename, content in extracted:
@@ -84,7 +78,7 @@ class ZipAnalyzer(Analyzer):
                     if total_size + content_size > self.max_total_size:
                         break
 
-                    # Path traversal protection (already done in parallel version)
+                    # Path traversal protection
                     safe_filename = self._sanitize_filename(filename)
                     final_extracted.append((safe_filename, content))
                     total_size += content_size
@@ -109,40 +103,7 @@ class ZipAnalyzer(Analyzer):
                 continue
         return extracted
 
-    def _extract_parallel(
-        self, zip_file: zipfile.ZipFile, safe_files: List[str]
-    ) -> List[Tuple[str, bytes]]:
-        """Extract files in parallel using thread pool."""
-
-        # Create a thread-safe container for results
-        results = []
-        lock = threading.Lock()
-
-        def extract_single_file(filename: str):
-            try:
-                content = zip_file.read(filename)
-                with lock:
-                    results.append((filename, content))
-            except Exception:
-                # Skip files that can't be read
-                pass
-
-        # Use ThreadPoolExecutor for I/O bound operations
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=min(self.max_workers, len(safe_files))
-        ) as executor:
-            # Submit all extraction tasks
-            futures = [
-                executor.submit(extract_single_file, filename)
-                for filename in safe_files
-            ]
-
-            # Wait for all tasks to complete
-            concurrent.futures.wait(futures)
-
-        return results
-
-    def _pre_scan_zip(self, zip_file: zipfile.ZipFile, zip_size: int) -> List[str]:
+    def _pre_scan_zip(self, zip_file: zipfile.ZipFile) -> List[str]:
         """Pre-scan ZIP contents for safety issues. Returns list of safe filenames."""
         safe_files = []
         # Track the running total incrementally. Recomputing
@@ -202,7 +163,13 @@ class ZipAnalyzer(Analyzer):
 
 
 class TarAnalyzer(Analyzer):
-    """TAR file analyzer with comprehensive safety checks and parallel extraction."""
+    """TAR file analyzer with comprehensive safety checks.
+
+    Extraction is sequential: tarfile.TarFile shares one seekable file object
+    with no internal locking, so concurrent extractfile() reads can interleave
+    seeks and silently corrupt extracted content (unlike zipfile, tarfile is
+    not thread-safe for reads).
+    """
 
     def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
@@ -216,8 +183,6 @@ class TarAnalyzer(Analyzer):
         self.max_compression_ratio = self.config.get(
             "max_compression_ratio", 100
         )  # 100:1 max
-        self.enable_parallel = self.config.get("enable_parallel_extraction", True)
-        self.max_workers = self.config.get("max_parallel_workers", 4)
 
     def can_analyze(self, data: bytes) -> bool:
         # The ustar magic lives at offset 257 of the 512-byte tar header. Both
@@ -226,26 +191,18 @@ class TarAnalyzer(Analyzer):
         return len(data) >= 262 and data[257:262] == b"ustar"
 
     def analyze(self, data: bytes) -> List[Tuple[str, bytes]]:
-        """Analyze TAR file with safety checks and optional parallel extraction."""
-        extracted = []
+        """Analyze TAR file with safety checks."""
         final_extracted: List[Tuple[str, bytes]] = []
         total_size = 0
-        tar_size = len(data)
 
         try:
             with tarfile.open(fileobj=io.BytesIO(data)) as t:
                 # Pre-scan for safety issues
-                safe_members = self._pre_scan_tar(t, tar_size)
+                safe_members = self._pre_scan_tar(t)
                 if not safe_members:
                     return []  # No safe files found
 
-                # Extract safe files
-                if self.enable_parallel and len(safe_members) > 1:
-                    # Use parallel extraction for multiple files
-                    extracted = self._extract_parallel(t, safe_members)
-                else:
-                    # Use sequential extraction for single files or when parallel is disabled
-                    extracted = self._extract_sequential(t, safe_members)
+                extracted = self._extract_sequential(t, safe_members)
 
                 # Apply final size limits and path sanitization
                 for member, content in extracted:
@@ -283,41 +240,7 @@ class TarAnalyzer(Analyzer):
                 continue
         return extracted
 
-    def _extract_parallel(
-        self, tar_file: tarfile.TarFile, safe_members: List[tarfile.TarInfo]
-    ) -> List[Tuple[tarfile.TarInfo, bytes]]:
-        """Extract files in parallel using thread pool."""
-
-        # Create a thread-safe container for results
-        results = []
-        lock = threading.Lock()
-
-        def extract_single_file(member: tarfile.TarInfo):
-            try:
-                content = tar_file.extractfile(member).read()
-                with lock:
-                    results.append((member, content))
-            except Exception:
-                # Skip files that can't be read
-                pass
-
-        # Use ThreadPoolExecutor for I/O bound operations
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=min(self.max_workers, len(safe_members))
-        ) as executor:
-            # Submit all extraction tasks
-            futures = [
-                executor.submit(extract_single_file, member) for member in safe_members
-            ]
-
-            # Wait for all tasks to complete
-            concurrent.futures.wait(futures)
-
-        return results
-
-    def _pre_scan_tar(
-        self, tar_file: tarfile.TarFile, tar_size: int
-    ) -> List[tarfile.TarInfo]:
+    def _pre_scan_tar(self, tar_file: tarfile.TarFile) -> List[tarfile.TarInfo]:
         """Pre-scan TAR contents for safety issues. Returns list of safe TarInfo objects."""
         safe_members = []
         # Incremental running total; recomputing ``sum(m.size ...)`` per member
@@ -333,14 +256,10 @@ class TarAnalyzer(Analyzer):
             if ".." in member.name or member.name.startswith("/"):
                 continue
 
-            # Check compression ratio (tar bomb detection)
-            # For TAR files, we check the ratio of uncompressed to stored size
-            if member.size > 0 and hasattr(member, "size"):
-                # TAR files don't have compressed size in the same way, but we can estimate
-                # based on the member size vs. a reasonable compression expectation
-                # This is a heuristic since TAR itself doesn't compress
-                if member.size > self.max_file_size:
-                    continue
+            # TAR itself doesn't compress, so there is no per-member
+            # compression ratio to check — just cap the member size.
+            if member.size > self.max_file_size:
+                continue
 
             # Check for files that would make total size too large
             if current_safe_size + member.size > self.max_total_size:

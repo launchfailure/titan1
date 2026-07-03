@@ -89,8 +89,12 @@ class PerformanceProfiler:
         """End profiling session and collect metrics."""
         self.end_time = time.time()
         self.end_memory = self._rss_mb()  # MB, or None without psutil
+        if self.end_memory is not None:
+            self.memory_samples.append(self.end_memory)
 
-        # Calculate metrics
+        # Calculate metrics. Note: unless record_memory_sample() was called
+        # during the run, "peak" is max(start RSS, end RSS), not a true
+        # high-water mark.
         self.metrics.execution_time = self.end_time - self.start_time
         if self.memory_samples:
             self.metrics.memory_peak = max(self.memory_samples)

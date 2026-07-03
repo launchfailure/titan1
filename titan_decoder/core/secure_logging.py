@@ -69,7 +69,11 @@ class StructuredLogger:
         self.logger = logging.getLogger(name)
         self.enable_redaction = enable_redaction
 
-        if enable_redaction:
+        # logging.getLogger returns a shared instance; guard against stacking
+        # one more RedactingFilter per StructuredLogger construction.
+        if enable_redaction and not any(
+            isinstance(f, RedactingFilter) for f in self.logger.filters
+        ):
             self.logger.addFilter(RedactingFilter())
 
     def debug(self, msg: str, **kwargs):

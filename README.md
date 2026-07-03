@@ -89,7 +89,6 @@ python -c 'import json; r=json.load(open("report.json")); print((r.get("risk_ass
 - **7 Detection Rules**: Deep Base64 nesting, Office macro+network IOCs, LOLBin patterns, packed/encrypted payload heuristics, multi-stage infrastructure, XOR+C2, malicious PDF
 - **Risk Scoring**: 0-100 heuristic threat assessment (CLEAN/LOW/MEDIUM/HIGH/CRITICAL)
 - **Enrichment**: Geo/WHOIS/YARA (optional, requires config) with deterministic local cache + refresh control
-- **AV Intelligence**: VirusTotal lookups (optional API key)
 
 ### Export & Reporting
 - **IOC Formats**: JSON, CSV, STIX 2.1, MISP
@@ -220,10 +219,6 @@ Create `~/.titan_decoder/config.json`:
     "enable_yara": false,
     "yara_rules_path": "/path/to/rules.yar",
   
-    "virustotal_api_key": "YOUR_API_KEY",
-    "virustotal_rate_limit": 4,
-  
-    "enable_pii_redaction": true,
     "enable_logging": true,
     "log_level": "INFO"
 }

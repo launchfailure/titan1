@@ -1,3 +1,65 @@
 [build-system]
 requires = ["setuptools>=82.0.1", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "titan-decoder"
+dynamic = ["version"]
+description = "Advanced payload decoding and analysis engine for cybersecurity"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "PragmaConflux", email = "pragmaconflux@users.noreply.github.com" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Information Technology",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+# Core engine is intentionally dependency-light.
+dependencies = []
+
+[project.urls]
+Documentation = "https://github.com/pragmaconflux/titan1/blob/main/docs/USAGE.md"
+Source = "https://github.com/pragmaconflux/titan1"
+Issues = "https://github.com/pragmaconflux/titan1/issues"
+
+[project.scripts]
+titan-decoder = "titan_decoder.cli:main"
+
+# Keep these lists in sync with requirements-dev.txt / requirements-optional.txt.
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.15.20",
+    "build>=1.5.0",
+    "twine>=6.2.0",
+]
+enrichment = [
+    "psutil>=7.2.2",
+    "geoip2>=5.2.0",
+    "python-whois>=0.9.6",
+    "yara-python>=4.5.4",
+    "requests>=2.34.2",
+    "PyYAML>=6.0.3",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "titan_decoder.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["titan_decoder*"]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+# Ruff defaults (pyflakes + a pycodestyle-error subset). Kept intentionally
+# conservative; broaden select once the codebase is ready for stricter rules.
+select = ["E4", "E7", "E9", "F"]

@@ -12,6 +12,7 @@ Design goals:
 
 from __future__ import annotations
 
+import itertools
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -19,6 +20,16 @@ from typing import Any, Dict, List, Optional
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+# Monotonic counter for event IDs. Wall-clock-based IDs collided for events
+# created in the same microsecond and made otherwise-identical runs produce
+# different reports (event_id is also a sort tiebreaker downstream).
+_EVENT_COUNTER = itertools.count(1)
+
+
+def _next_event_id() -> str:
+    return f"evt_{next(_EVENT_COUNTER):08d}"
 
 
 def parse_timestamp(value: Any) -> Optional[str]:
@@ -34,11 +45,19 @@ def parse_timestamp(value: Any) -> Optional[str]:
     if value is None:
         return None
 
-    if isinstance(value, (int, float)):
+    def _from_epoch(num: float) -> Optional[str]:
+        # Millisecond epochs (common in log exports) are ~1e12 for current
+        # dates; second epochs stay below ~1e11 until the year 5138. Without
+        # this, a 13-digit ms timestamp parsed as seconds lands in year ~56000.
         try:
-            return datetime.fromtimestamp(float(value), tz=timezone.utc).isoformat()
+            if abs(num) >= 1e11:
+                num /= 1000.0
+            return datetime.fromtimestamp(num, tz=timezone.utc).isoformat()
         except Exception:
             return None
+
+    if isinstance(value, (int, float)):
+        return _from_epoch(float(value))
 
     if isinstance(value, str):
         v = value.strip()
@@ -46,11 +65,10 @@ def parse_timestamp(value: Any) -> Optional[str]:
             return None
 
         # Numeric epoch string
-        try:
-            if v.isdigit():
-                return datetime.fromtimestamp(float(v), tz=timezone.utc).isoformat()
-        except Exception:
-            pass
+        if v.isdigit():
+            parsed = _from_epoch(float(v))
+            if parsed is not None:
+                return parsed
 
         # ISO 8601-ish
         try:
@@ -157,7 +175,7 @@ class EvidenceEvent:
     tags: List[str] = field(default_factory=list)
     raw: Dict[str, Any] = field(default_factory=dict)
 
-    event_id: str = field(default_factory=lambda: f"evt_{_utc_now_iso()}")
+    event_id: str = field(default_factory=_next_event_id)
 
     def to_dict(self) -> Dict[str, Any]:
         return {

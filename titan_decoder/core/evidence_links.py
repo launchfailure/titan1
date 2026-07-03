@@ -279,13 +279,17 @@ def build_links_from_evidence_events(events: List[Dict[str, Any]]) -> List[Dict[
 
 
 def top_links(links: List[Dict[str, Any]], limit: int = 10) -> List[Dict[str, Any]]:
-    """Rank links by number of sources then lexicographically."""
-    def score(link: Dict[str, Any]) -> tuple[int, str, str, str, str, str]:
+    """Rank links by number of sources, then confidence, then lexicographically."""
+    conf_order = {"low": 0, "medium": 1, "high": 2}
+
+    def score(link: Dict[str, Any]) -> tuple[int, int, str, str, str, str]:
         src = link.get("src") or {}
         dst = link.get("dst") or {}
         return (
             len(link.get("sources") or []),
-            str(link.get("confidence") or ""),
+            # Numeric confidence: comparing the labels as strings ranked
+            # "medium" above "high" under the reverse sort.
+            conf_order.get(str(link.get("confidence") or ""), 0),
             str(link.get("reason_code") or ""),
             str(src.get("type") or ""),
             str(src.get("value") or ""),

@@ -306,12 +306,10 @@ Profiles are presets that tweak recursion and resource usage:
 - `--profile fast`
   - Sets `max_recursion_depth=3`
   - Sets `max_node_count=50`
-  - Disables parallel extraction
 
 - `--profile full`
   - Sets `max_recursion_depth=8`
   - Sets `max_node_count=200`
-  - Enables parallel extraction
 
 You can override these explicitly:
 

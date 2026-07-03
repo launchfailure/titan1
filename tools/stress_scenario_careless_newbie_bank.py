@@ -519,11 +519,9 @@ def main() -> int:
     if args.profile == "fast":
         cfg.set("max_recursion_depth", 3)
         cfg.set("max_node_count", 50)
-        cfg.set("enable_parallel_extraction", False)
     else:
         cfg.set("max_recursion_depth", 8)
         cfg.set("max_node_count", 200)
-        cfg.set("enable_parallel_extraction", True)
 
     # Keep logs quiet for stress runs.
     cfg.set("enable_logging", False)

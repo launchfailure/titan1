@@ -64,7 +64,6 @@ class AnalysisNode:
         # Keep it small enough to avoid memory bloat but large enough to capture
         # meaningful context beyond headers.
         self.content_preview = data[:2000].decode("utf-8", errors="ignore")
-        self.children = []
 
         # Scoring information
         self.decode_score = 0.0
@@ -235,10 +234,6 @@ class TitanEngine:
                     "max_zip_file_size", 50 * 1024 * 1024
                 ),
                 "max_compression_ratio": self.config.get("max_compression_ratio", 100),
-                "enable_parallel_extraction": self.config.get(
-                    "enable_parallel_extraction", True
-                ),
-                "max_parallel_workers": self.config.get("max_parallel_workers", 4),
             }
             self.analyzers.append(ZipAnalyzer(zip_config))
         if self.config.get("analyzers", {}).get("tar", True):
@@ -251,10 +246,6 @@ class TitanEngine:
                     "max_tar_file_size", 50 * 1024 * 1024
                 ),
                 "max_compression_ratio": self.config.get("max_compression_ratio", 100),
-                "enable_parallel_extraction": self.config.get(
-                    "enable_parallel_extraction", True
-                ),
-                "max_parallel_workers": self.config.get("max_parallel_workers", 4),
             }
             self.analyzers.append(TarAnalyzer(tar_config))
         if self.config.get("analyzers", {}).get("pe", True):
@@ -283,8 +274,9 @@ class TitanEngine:
         self.decoders.extend(self.plugin_manager.get_decoders())
         self.analyzers.extend(self.plugin_manager.get_analyzers())
 
-        # Deterministic ordering across runs/environments.
-        # (Tie-breaking is still applied during decode selection.)
+        # Deterministic ordering across runs/environments. Decode-score ties
+        # resolve to the first decoder tried, so this sort is what makes tie
+        # resolution reproducible.
         try:
             self.decoders.sort(key=lambda d: (getattr(d, "name", "")))
         except Exception:
@@ -527,12 +519,10 @@ class TitanEngine:
                             }
                         )
 
-                    # Keep track of best scoring decode
-                    if score > best_score or (
-                        score == best_score
-                        and best_decoder is not None
-                        and decoder.name < best_decoder
-                    ):
+                    # Keep track of best scoring decode. Ties resolve to the
+                    # first decoder tried; self.decoders is sorted by name at
+                    # init, so this is already the alphabetically-first one.
+                    if score > best_score:
                         best_score = score
                         best_decoder = decoder.name
                         best_decoded = decoded

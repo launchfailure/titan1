@@ -498,17 +498,24 @@ class PDFDecoder(Decoder):
             extracted_content = []
             total = 0  # Cap total extracted bytes (FlateDecode streams can be bombs).
 
-            # Find all stream objects with their preceding dictionaries
-            # Pattern matches: <<...>> stream ... endstream
-            stream_pattern = b"<<([^>]*)>>\\s*stream\\r?\\n(.*?)\\r?\\nendstream"
+            # Find stream bodies, then inspect the dictionary that precedes
+            # each `stream` keyword. A dict-matching regex like <<([^>]*)>>
+            # cannot handle nested dictionaries (e.g. /DecodeParms <<...>>),
+            # which are common in real PDFs, so instead look at a bounded
+            # window before the stream keyword, cut at the previous object
+            # boundary to avoid reading the prior object's dictionary.
+            stream_re = re.compile(rb"stream\r?\n(.*?)\r?\nendstream", re.DOTALL)
 
-            matches = re.findall(stream_pattern, data, re.DOTALL)
-
-            for dict_part, stream_data in matches:
+            for match in stream_re.finditer(data):
                 if total >= self.max_output_size:
                     break
+                stream_data = match.group(1)
+                window = data[max(0, match.start() - 2048) : match.start()]
+                boundary = max(window.rfind(b"endobj"), window.rfind(b"endstream"))
+                if boundary != -1:
+                    window = window[boundary:]
                 # Check if this stream uses FlateDecode compression
-                if b"/FlateDecode" in dict_part:
+                if b"/FlateDecode" in window:
                     try:
                         # Bound the inflate output so a crafted stream cannot
                         # expand without limit (decompression bomb).
@@ -971,6 +978,8 @@ class HTMLEntityDecoder(Decoder):
 
     _ENTITY_RE = re.compile(r"&#(\d+);|&#x([0-9A-Fa-f]+);|&([a-zA-Z]+);")
     _NAMED = {
+        # nbsp is U+00A0, but it is deliberately normalized to a plain space:
+        # downstream IOC regexes rely on ASCII word boundaries.
         "nbsp": 0x20,
         "lt": ord("<"),
         "gt": ord(">"),
@@ -1034,9 +1043,10 @@ class UnicodeEscapeDecoder(Decoder):
                 if text[i : i + 2] == "\\U" and i + 10 <= len(text):
                     try:
                         code = int(text[i + 2 : i + 10], 16)
-                        result.append(chr(code))
-                        i += 10
-                        continue
+                        if not 0xD800 <= code <= 0xDFFF:  # lone surrogate: literal
+                            result.append(chr(code))
+                            i += 10
+                            continue
                     except (ValueError, OverflowError):
                         pass
 
@@ -1044,9 +1054,27 @@ class UnicodeEscapeDecoder(Decoder):
                 if text[i : i + 2] == "\\u" and i + 6 <= len(text):
                     try:
                         code = int(text[i + 2 : i + 6], 16)
-                        result.append(chr(code))
-                        i += 6
-                        continue
+                        if 0xD800 <= code <= 0xDBFF and text[i + 6 : i + 8] == "\\u":
+                            # Surrogate pair (the standard JSON escape form for
+                            # astral chars, e.g. 😀). Unpaired
+                            # surrogates can't be UTF-8-encoded — previously
+                            # they made encode() raise and the whole decode
+                            # fail via the blanket except.
+                            low = int(text[i + 8 : i + 12], 16)
+                            if 0xDC00 <= low <= 0xDFFF:
+                                combined = (
+                                    0x10000
+                                    + ((code - 0xD800) << 10)
+                                    + (low - 0xDC00)
+                                )
+                                result.append(chr(combined))
+                                i += 12
+                                continue
+                        elif not 0xD800 <= code <= 0xDFFF:
+                            result.append(chr(code))
+                            i += 6
+                            continue
+                        # Lone surrogate: fall through, keep the escape literal.
                     except (ValueError, OverflowError):
                         pass
 

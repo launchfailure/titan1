@@ -7,7 +7,8 @@ and relevance of decoding operations, enabling smart pruning of analysis paths.
 
 from typing import Dict, Any, Optional
 import re
-import math
+
+from ..utils.helpers import entropy
 
 
 class ScoringEngine:
@@ -40,15 +41,18 @@ class ScoringEngine:
         "TAR": 3,
     }
 
-    # Structural patterns that indicate meaningful decoding
+    # Structural patterns that indicate meaningful decoding.
+    # Two-byte magics (MZ, BZ) are anchored to the start of the data:
+    # unanchored they match those letter pairs in ordinary text, inflating
+    # scores for meaningless "decodes".
     STRUCTURE_PATTERNS = [
         re.compile(rb"\x7fELF"),  # ELF header
-        re.compile(rb"MZ"),  # PE header
+        re.compile(rb"\AMZ"),  # PE header (anchored)
         re.compile(rb"PK\x03\x04"),  # ZIP header
         re.compile(rb"\x1f\x8b"),  # GZIP header
-        re.compile(rb"BZ"),  # BZIP2 header
+        re.compile(rb"\ABZ"),  # BZIP2 header (anchored)
         re.compile(rb"#!/.*"),  # Shebang
-        re.compile(rb"<?xml"),  # XML
+        re.compile(rb"<\?xml"),  # XML declaration
         re.compile(rb'^\s*{\s*"'),  # JSON start
         re.compile(rb"^\s*\[\s*"),  # JSON array
         re.compile(rb"^[a-zA-Z_][a-zA-Z0-9_]*\s*="),  # Variable assignment
@@ -109,20 +113,8 @@ class ScoringEngine:
         if not original or not decoded:
             return 0.0
 
-        def calculate_entropy(data: bytes) -> float:
-            if not data:
-                return 0.0
-            freq = {}
-            for b in data:
-                freq[b] = freq.get(b, 0) + 1
-            entropy = 0.0
-            for count in freq.values():
-                p = count / len(data)
-                entropy -= p * math.log2(p) if p > 0 else 0
-            return entropy
-
-        original_entropy = calculate_entropy(original)
-        decoded_entropy = calculate_entropy(decoded)
+        original_entropy = entropy(original)
+        decoded_entropy = entropy(decoded)
 
         # Entropy reduction indicates more structured data
         if original_entropy == 0:
@@ -201,7 +193,9 @@ class PruningEngine:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         self.max_nodes = self.config.get("max_node_count", 100)
-        self.min_score_threshold = self.config.get("min_score_threshold", 0.1)
+        # Default must match Config.DEFAULT_CONFIG (0.01); a mismatched
+        # fallback here silently changes pruning for direct constructor use.
+        self.min_score_threshold = self.config.get("min_score_threshold", 0.01)
         self.max_depth = self.config.get("max_recursion_depth", 5)
 
         # Advanced pruning policies

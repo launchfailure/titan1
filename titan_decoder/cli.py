@@ -3,7 +3,6 @@
 import argparse
 import json
 import sys
-import signal
 import random
 from pathlib import Path
 
@@ -299,16 +298,10 @@ def main():
             results.append(parse_evidence_file(path, kind))
         return combine_parse_results(results)
 
-    # Setup signal handlers for clean shutdown
-    interrupted = False
-
-    def signal_handler(sig, frame):
-        nonlocal interrupted
-        interrupted = True
-        print("\nReceived interrupt signal, finishing current analysis...")
-
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    # Note: no custom SIGINT handler here. Python's default KeyboardInterrupt
+    # is the abort mechanism (caught around the analysis calls below); a custom
+    # handler that merely sets a flag would swallow Ctrl+C without stopping
+    # anything.
 
     # Load configuration
     config = Config(args.config) if args.config else Config()
@@ -366,16 +359,20 @@ def main():
     # List decoders/analyzers and exit.
     if args.list_decoders or args.list_analyzers:
         engine = TitanEngine(config)
+        listing = {}
         if args.list_decoders:
-            decs = []
-            for d in engine.decoders:
-                decs.append({"name": getattr(d, "name", type(d).__name__), "class": type(d).__name__})
-            print(json.dumps({"decoders": sorted(decs, key=lambda x: x["name"])}, indent=2))
-        else:
-            ans = []
-            for a in engine.analyzers:
-                ans.append({"name": getattr(a, "name", type(a).__name__), "class": type(a).__name__})
-            print(json.dumps({"analyzers": sorted(ans, key=lambda x: x["name"])}, indent=2))
+            decs = [
+                {"name": getattr(d, "name", type(d).__name__), "class": type(d).__name__}
+                for d in engine.decoders
+            ]
+            listing["decoders"] = sorted(decs, key=lambda x: x["name"])
+        if args.list_analyzers:
+            ans = [
+                {"name": getattr(a, "name", type(a).__name__), "class": type(a).__name__}
+                for a in engine.analyzers
+            ]
+            listing["analyzers"] = sorted(ans, key=lambda x: x["name"])
+        print(json.dumps(listing, indent=2))
         sys.exit(0)
 
     # Doctor mode: run diagnostics and exit (no input file required).
@@ -405,7 +402,6 @@ def main():
         config.set("enable_geo_enrichment", False)
         config.set("enable_whois", False)
         config.set("enable_yara", False)
-        config.set("virustotal_api_key", None)
 
     # Apply profile presets
     if args.analysis_profile == "safe":
@@ -423,22 +419,19 @@ def main():
             "analyzer_timeout_seconds",
             min(int(config.get("analyzer_timeout_seconds", 10)), 5),
         )
-        config.set("enable_parallel_extraction", False)
     elif args.analysis_profile == "fast":
         config.set("max_recursion_depth", 3)
         config.set("max_node_count", 50)
-        config.set("enable_parallel_extraction", False)
     elif args.analysis_profile == "full":
         config.set("max_recursion_depth", 8)
         config.set("max_node_count", 200)
-        config.set("enable_parallel_extraction", True)
 
     # Override max depth if specified
-    if args.max_depth:
+    if args.max_depth is not None:
         config.set("max_recursion_depth", args.max_depth)
 
     # Override max artifacts
-    if args.max_artifacts:
+    if args.max_artifacts is not None:
         config.set("max_node_count", args.max_artifacts)
 
     # Setup secure logging with PII redaction
@@ -452,9 +445,10 @@ def main():
             log_json=bool(args.log_json),
         )
 
-    # Batch mode
+    # Batch mode (sys.exit so the status code survives `python -m` invocation,
+    # not just the console-script wrapper).
     if args.batch:
-        return run_batch_analysis(args, config)
+        sys.exit(run_batch_analysis(args, config))
 
     # Normal analysis mode
     if not args.file:
@@ -496,6 +490,19 @@ def main():
                     file=sys.stderr,
                 )
 
+    # Optional IR evidence ingestion (logs/artifacts). Parsed before the
+    # (potentially long) analysis so a bad --evidence path fails fast instead
+    # of wasting a completed run.
+    evidence_result = None
+    try:
+        evidence_result = _parse_evidence_specs(args.evidence)
+    except SystemExit:
+        raise
+    except Exception as e:
+        if args.verbose:
+            print(f"Warning: failed to parse evidence inputs: {e}", file=sys.stderr)
+        evidence_result = None
+
     # Run analysis with optional profiling and error handling
     try:
         engine = TitanEngine(config)
@@ -517,6 +524,12 @@ def main():
         else:
             with profiler.profile(enable_cprofile=True) as metrics:
                 report = engine.run_analysis(data)
+
+        # Populate throughput metrics (execution_time is only final once the
+        # profiling context has exited).
+        metrics.operation_count = int(report.get("node_count") or 0)
+        if metrics.execution_time > 0:
+            metrics.throughput = metrics.operation_count / metrics.execution_time
 
         # Print profiling results
         print("\n" + "=" * 80)
@@ -596,17 +609,7 @@ def main():
     if args.seed is not None:
         report["meta"]["seed"] = int(args.seed)
 
-    # Optional IR evidence ingestion (logs/artifacts). Produces normalized events + indicators.
-    evidence_result = None
-    try:
-        evidence_result = _parse_evidence_specs(args.evidence)
-    except SystemExit:
-        raise
-    except Exception as e:
-        if args.verbose:
-            print(f"Warning: failed to parse evidence inputs: {e}", file=sys.stderr)
-        evidence_result = None
-
+    # Attach normalized evidence (parsed before the analysis above).
     if evidence_result is not None:
         # Deterministic ordering for stable reports.
         events_sorted = sorted(
@@ -664,20 +667,7 @@ def main():
 
         rules_engine = CorrelationRulesEngine([Path(p) for p in pack_paths])
         iocs = build_ioc_summary(report, None)
-        # Merge evidence indicators into IOC summary if present.
-        if evidence_result is not None:
-            for ind in evidence_result.indicators:
-                key = ind.indicator_type
-                if not key:
-                    continue
-                iocs.setdefault(key, [])
-                if ind.value not in iocs[key]:
-                    iocs[key].append(ind.value)
-            for k in list(iocs.keys()):
-                try:
-                    iocs[k] = sorted(set(iocs[k]))
-                except Exception:
-                    pass
+        _merge_evidence_iocs(iocs, evidence_result)
         detections = rules_engine.evaluate_all(report, iocs)
 
         if getattr(rules_engine, "rule_packs", None) is not None:
@@ -712,37 +702,17 @@ def main():
 
         enrichment_engine = EnrichmentEngine(config._config)
         iocs = build_ioc_summary(report, None)
-        if evidence_result is not None:
-            for ind in evidence_result.indicators:
-                key = ind.indicator_type
-                if not key:
-                    continue
-                iocs.setdefault(key, [])
-                if ind.value not in iocs[key]:
-                    iocs[key].append(ind.value)
-            for k in list(iocs.keys()):
-                try:
-                    iocs[k] = sorted(set(iocs[k]))
-                except Exception:
-                    pass
+        _merge_evidence_iocs(iocs, evidence_result)
         report["enrichment"] = enrichment_engine.enrich_iocs(iocs)
         report.setdefault("meta", {})
         try:
             report["meta"]["enrichment_cache"] = enrichment_engine.cache_info()
         except Exception:
             pass
+        # Report providers that actually initialized (library present, DB/rules
+        # loaded), not merely what the config asked for.
+        report["meta"]["enrichment_providers"] = enrichment_engine.active_providers()
         enrichment_engine.cleanup()
-
-        providers = []
-        if config.get("enable_geo_enrichment", False):
-            providers.append("geo")
-        if config.get("enable_whois", False):
-            providers.append("whois")
-        if config.get("enable_yara", False):
-            providers.append("yara")
-        if config.get("virustotal_api_key"):
-            providers.append("virustotal")
-        report["meta"]["enrichment_providers"] = providers
 
         if args.progress and not args.quiet:
             print("Enrichment complete", file=sys.stderr)
@@ -759,8 +729,6 @@ def main():
     if args.forensics_out or args.forensics_print:
         forensics = ForensicsEngine()
         forensics_summary = forensics.analyze(report)
-    else:
-        forensics_summary = None
 
     # Optional IOC export / case report / correlation
     if args.ioc_out or args.report_out:
@@ -768,40 +736,39 @@ def main():
         from .core.case_report import build_case_report, to_markdown, to_html
 
         iocs = build_ioc_summary(report, forensics_summary)
-        if evidence_result is not None:
-            for ind in evidence_result.indicators:
-                key = ind.indicator_type
-                if not key:
-                    continue
-                iocs.setdefault(key, [])
-                if ind.value not in iocs[key]:
-                    iocs[key].append(ind.value)
-            for k in list(iocs.keys()):
-                try:
-                    iocs[k] = sorted(set(iocs[k]))
-                except Exception:
-                    pass
+        _merge_evidence_iocs(iocs, evidence_result)
 
         # Correlation (optional, config-driven)
         if config.get("enable_correlation", False):
             try:
                 from .core.correlation import CorrelationStore
 
-                db_path = config.get("correlation_db_path") or (
-                    Path.home() / ".titan_decoder" / "correlation.db"
+                # Config values arrive as plain strings from JSON; a str has no
+                # .parent, which used to raise here and silently disable
+                # correlation for any user-configured db path.
+                db_path = Path(
+                    config.get("correlation_db_path")
+                    or (Path.home() / ".titan_decoder" / "correlation.db")
                 )
                 db_path.parent.mkdir(parents=True, exist_ok=True)
                 with CorrelationStore(db_path) as store:
                     analysis_id = report.get("meta", {}).get("analysis_id") or "analysis"
-                    store.record_analysis(analysis_id, iocs)
+                    # Correlate against *prior* runs before recording this one,
+                    # otherwise every IOC trivially matches the current run.
                     matches = store.correlate(iocs)
+                    store.record_analysis(analysis_id, iocs)
                     if matches:
                         if not forensics_summary:
                             forensics_summary = {}
                         forensics_summary["correlation_matches"] = matches
             except Exception as e:
-                if args.verbose:
-                    print(f"Warning: correlation disabled due to error: {e}")
+                # Surface the failure: silently dropping correlation hid a bug
+                # where any configured db path crashed this block.
+                if not args.quiet:
+                    print(
+                        f"Warning: correlation disabled due to error: {e}",
+                        file=sys.stderr,
+                    )
 
         if args.ioc_out:
             export_iocs(iocs, args.ioc_out, args.ioc_format)
@@ -986,6 +953,24 @@ def main():
         print("=" * 80, file=sys.stderr)
 
     sys.exit(exit_code)
+
+
+def _merge_evidence_iocs(iocs: dict, evidence_result) -> None:
+    """Merge evidence indicators into an IOC summary dict, in place."""
+    if evidence_result is None:
+        return
+    for ind in evidence_result.indicators:
+        key = ind.indicator_type
+        if not key:
+            continue
+        iocs.setdefault(key, [])
+        if ind.value not in iocs[key]:
+            iocs[key].append(ind.value)
+    for k in list(iocs.keys()):
+        try:
+            iocs[k] = sorted(set(iocs[k]))
+        except Exception:
+            pass
 
 
 def _run_doctor(config: Config) -> dict:
@@ -1190,9 +1175,8 @@ def run_batch_analysis(args, config):
         )
         sys.exit(1)
 
-    # Find all matching files
-    files = list(args.batch.glob(args.batch_pattern))
-    files = [f for f in files if f.is_file()]
+    # Find all matching files (sorted for deterministic processing order).
+    files = sorted(f for f in args.batch.glob(args.batch_pattern) if f.is_file())
 
     if not files:
         print(f"No files found matching pattern '{args.batch_pattern}' in {args.batch}")
@@ -1200,6 +1184,29 @@ def run_batch_analysis(args, config):
 
     if not getattr(args, "quiet", False):
         print(f"Found {len(files)} files to analyze")
+
+    # Batch mode only produces per-file JSON reports (plus optional vault
+    # storage). Warn instead of silently ignoring single-file-only options.
+    ignored = [
+        name
+        for name, flag in (
+            ("--enable-detections", args.enable_detections),
+            ("--enable-enrichment", args.enable_enrichment),
+            ("--evidence", args.evidence),
+            ("--ioc-out", args.ioc_out),
+            ("--report-out", args.report_out),
+            ("--graph", args.graph),
+            ("--jsonl-out", args.jsonl_out),
+            ("--timeline-out", args.timeline_out),
+            ("--forensics-out", args.forensics_out),
+        )
+        if flag
+    ]
+    if ignored:
+        print(
+            f"Warning: batch mode ignores: {', '.join(ignored)}",
+            file=sys.stderr,
+        )
 
     # Create output directory if needed
     if args.out:
@@ -1209,20 +1216,21 @@ def run_batch_analysis(args, config):
         output_dir = args.batch / "reports"
         output_dir.mkdir(exist_ok=True)
 
-    # Process each file
+    # Process each file, reusing one engine (run_analysis resets all per-run
+    # state, and constructing an engine re-scans plugin directories).
     success_count = 0
     fail_count = 0
+    engine = TitanEngine(config)
 
     for i, file_path in enumerate(files, 1):
         if not getattr(args, "quiet", False):
-            print(f"\\n[{i}/{len(files)}] Analyzing {file_path.name}...")
+            print(f"\n[{i}/{len(files)}] Analyzing {file_path.name}...")
 
         try:
             # Read file
             data = file_path.read_bytes()
 
             # Run analysis
-            engine = TitanEngine(config)
             if getattr(args, "offline", False):
                 with block_network():
                     report = engine.run_analysis(data)
@@ -1273,7 +1281,7 @@ def run_batch_analysis(args, config):
             success_count += 1
 
         except KeyboardInterrupt:
-            print("\\nBatch analysis interrupted by user")
+            print("\nBatch analysis interrupted by user")
             break
         except Exception as e:
             print(f"  ✗ Failed: {e}")
@@ -1285,7 +1293,7 @@ def run_batch_analysis(args, config):
 
     # Summary
     if not getattr(args, "quiet", False):
-        print(f"\\n{'=' * 80}")
+        print(f"\n{'=' * 80}")
         print("BATCH ANALYSIS COMPLETE")
         print(f"{'=' * 80}")
         print(f"Total files:   {len(files)}")
