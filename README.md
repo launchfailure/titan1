@@ -72,7 +72,9 @@ python -c 'import json; r=json.load(open("report.json")); print((r.get("risk_ass
 ## 📋 Features
 
 ### Core Capabilities
-- **18 Built-in Decoders (+ plugins)**: Base64 (and recursive), Base32, Gzip, Bz2, LZMA, Zlib, Hex, XOR, ROT13, URL decode, HTML entities, Unicode escape, UUEncode, ASN.1, QuotedPrintable, PDF, OLE
+- **21 Built-in Decoders (+ plugins)** — 17 always on, 4 opt-in:
+  - *Always on (17):* Base64, RecursiveBase64, Base64URL, PEM, Gzip, Bz2, LZMA, Zlib, Hex, XOR, ROT13, URL decode, HTML entities, Unicode escape, UTF-16, PDF, OLE
+  - *Opt-in (4):* Base32, UUEncode, ASN.1, QuotedPrintable — see [Opt-in decoders](#opt-in-decoders) below
 - **Smart Detection**: Auto-enables format-specific decoders
 - **Recursive Analysis**: Handles nested encodings (configurable depth)
 - **Archive Support**: ZIP, TAR with anti-zip-bomb protections
@@ -229,6 +231,44 @@ Create `~/.titan_decoder/config.json`:
 
 Run `titan-decoder --help` for the full option list.
 
+### Opt-in decoders
+
+Four decoders ship disabled in the always-on set: **Base32**, **UUEncode**,
+**ASN.1**, and **QuotedPrintable**.
+
+**Why they're off by default.** Their format signatures are weak or ambiguous,
+so running them on *every* node produces false-positive "decodes" and noisy
+output on unrelated binary/text. For example, any run of `A–Z2–7` characters is
+technically valid Base32, and ordinary text containing `=XX` sequences (URLs,
+config files) looks like Quoted-Printable. Keeping them out of the default
+chain makes normal runs precise instead of flooding the graph with spurious
+branches.
+
+**You usually don't need to do anything.** Smart detection runs on every node
+and *auto-enables* the right one the moment it confidently identifies the
+format (you'll see e.g. `Enabled Base32 decoder (confidence: 0.95)` in the
+logs). So a real Base32/UU/ASN.1/QP payload is still decoded out of the box —
+the decoder is simply activated on demand rather than tried blindly.
+
+**Force them on** when you want them always active (e.g. triaging a corpus you
+know is UUEncoded, or debugging why a borderline payload wasn't auto-detected).
+Add a `decoders` block to `~/.titan_decoder/config.json`:
+
+```json
+{
+    "decoders": {
+        "base32": true,
+        "uuencode": true,
+        "asn1": true,
+        "quoted_printable": true
+    }
+}
+```
+
+Set only the ones you need to `true`; omit or set `false` to leave a decoder on
+its default (auto-detect) behavior. The effective decoder set for any run is
+recorded in the report under `run_manifest.components.decoders`.
+
 ---
 
 ## 🧪 Testing
@@ -301,7 +341,7 @@ titan_decoder/
 │   └── analyzers/
 │       └── base.py           # ZIP, TAR, PE, ELF
 ├── decoders/
-│   └── base.py               # 18 built-in decoders (+ plugins)
+│   └── base.py               # 21 built-in decoders (17 on, 4 opt-in) (+ plugins)
 ├── plugins/                  # Plugin system
 └── utils/
     └── helpers.py            # IOC extraction, entropy
