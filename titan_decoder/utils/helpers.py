@@ -18,7 +18,7 @@ def entropy(data: bytes) -> float:
     """Calculate Shannon entropy of data."""
     if not data:
         return 0.0
-    freq = {}
+    freq: Dict[int, int] = {}
     for b in data:
         freq[b] = freq.get(b, 0) + 1
     ent = 0.0
@@ -155,7 +155,7 @@ def _clean_indicator(val: str) -> str:
 
 def extract_iocs(text: str) -> Dict[str, List[str]]:
     """Extract indicators of compromise from text with light normalization."""
-    iocs = {
+    iocs: Dict[str, set] = {
         "ipv4": set(),
         "ipv4_public": set(),
         "ipv4_private": set(),

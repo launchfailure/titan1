@@ -24,14 +24,17 @@ Supported rule types:
 Security note
 -------------
 A ``content_regex`` pattern is supplied by whoever authors the rule pack and is
-run with Python's ``re`` against content derived from the analyzed (untrusted)
-payload. ``re`` has no execution timeout and a tight C match loop cannot be
-interrupted by signals, so a pattern prone to catastrophic backtracking (e.g.
-``(a+)+$``, ``(.*a){20}``) can hang the run when the payload contains a
-triggering string. Only load rule packs from sources you trust, and author
-patterns that avoid nested/ambiguous quantifiers (prefer possessive-style,
-anchored, or character-class patterns). The engine bounds the scanned text via
-``max_node_count``/preview limits, but that does not prevent backtracking.
+run against content derived from the analyzed (untrusted) payload. ``re`` has no
+execution timeout and a tight C match loop cannot be interrupted by signals, so
+a pattern prone to catastrophic backtracking (e.g. ``(a+)+$``, ``(.*a){20}``)
+would otherwise hang the run when the payload contains a triggering string.
+
+This is now *defended*, not merely documented: ``content_regex_search`` runs the
+match under linear-time RE2 (``google-re2``) when installed, and otherwise in a
+separate process guarded by a hard wall-clock timeout — a process can be killed
+even mid-backtrack, unlike a thread. On timeout the rule is treated as "no
+match" and a warning is logged. You should still prefer trusted packs and
+well-formed patterns, but a hostile pattern can no longer hang the engine.
 """
 
 from __future__ import annotations
@@ -40,7 +43,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import json
+import logging
+import multiprocessing as mp
 import re
+
+logger = logging.getLogger(__name__)
+
+# Hard wall-clock limit for evaluating a single pack-supplied content_regex.
+# A catastrophic-backtracking pattern cannot be interrupted by signals inside
+# re's C match loop, so the bound is enforced by running the match in a separate
+# process that can be terminated.
+CONTENT_REGEX_TIMEOUT_SECONDS = 2.0
 
 
 @dataclass(frozen=True)
@@ -99,7 +112,7 @@ def load_rule_pack(path: Path) -> tuple[RulePackInfo, List[Dict[str, Any]]]:
     ), rules
 
 
-def compile_content_regex(pattern: str, flags: Optional[List[str]] = None) -> re.Pattern:
+def _resolve_flags(flags: Optional[List[str]]) -> int:
     re_flags = 0
     for f in flags or []:
         if f.upper() == "IGNORECASE":
@@ -108,7 +121,85 @@ def compile_content_regex(pattern: str, flags: Optional[List[str]] = None) -> re
             re_flags |= re.MULTILINE
         elif f.upper() == "DOTALL":
             re_flags |= re.DOTALL
-    return re.compile(pattern, re_flags)
+    return re_flags
+
+
+def compile_content_regex(pattern: str, flags: Optional[List[str]] = None) -> re.Pattern:
+    return re.compile(pattern, _resolve_flags(flags))
+
+
+def _regex_worker(pattern: str, re_flags: int, text: str, q) -> None:
+    """Run in a child process: search and put the boolean result on the queue."""
+    try:
+        q.put(bool(re.compile(pattern, re_flags).search(text)))
+    except Exception:
+        q.put(False)
+
+
+def content_regex_search(
+    pattern: str,
+    flags: Optional[List[str]],
+    text: str,
+    timeout: float = CONTENT_REGEX_TIMEOUT_SECONDS,
+) -> bool:
+    """Evaluate a pack-supplied ``content_regex`` with a hard time bound.
+
+    Rule-pack patterns are attacker-influenced (see the module security note),
+    and ``re`` has no execution timeout — a catastrophic-backtracking pattern
+    like ``(a+)+$`` against a triggering payload can hang the whole run. This
+    bounds it two ways:
+
+    1. If google-re2 (``re2``) is installed, use it: RE2 is linear-time and
+       cannot catastrophically backtrack, so no timeout is even needed. This is
+       the preferred, dependency-optional path.
+    2. Otherwise run the match in a separate process and terminate it if it
+       exceeds ``timeout``. A thread would not work — the match runs in a single
+       C call that never yields to let a signal or flag stop it — but a process
+       can be killed. On timeout the rule is treated as "no match" and a warning
+       is logged.
+    """
+    re_flags = _resolve_flags(flags)
+
+    # Preferred: linear-time RE2, immune to ReDoS by construction.
+    try:
+        import re2  # type: ignore
+
+        try:
+            return bool(re2.compile(pattern, re_flags).search(text))
+        except Exception:
+            # re2 rejects some constructs (backreferences/lookaround); fall
+            # through to the sandboxed re path rather than silently skipping.
+            pass
+    except ImportError:
+        pass
+
+    # Fallback: run re in a killable subprocess with a hard timeout.
+    ctx: Any
+    try:
+        ctx = mp.get_context("fork")
+    except ValueError:  # platforms without fork (e.g. Windows)
+        ctx = mp.get_context("spawn")
+
+    q = ctx.Queue()
+    proc = ctx.Process(target=_regex_worker, args=(pattern, re_flags, text, q))
+    proc.daemon = True
+    proc.start()
+    proc.join(timeout)
+    if proc.is_alive():
+        proc.terminate()
+        proc.join()
+        logger.warning(
+            "content_regex evaluation exceeded %.1fs and was terminated "
+            "(possible catastrophic backtracking); treating as no match",
+            timeout,
+        )
+        return False
+    try:
+        # Short blocking get: the child has exited (join returned), but allow a
+        # brief moment for the queued result to become readable.
+        return bool(q.get(timeout=0.5))
+    except Exception:
+        return False
 
 
 def evaluate_pack_rule(
@@ -124,10 +215,12 @@ def evaluate_pack_rule(
         flags = rule_def.get("flags")
         if flags is not None and not isinstance(flags, list):
             flags = None
-        rx = compile_content_regex(pattern, flags)
         nodes = report.get("nodes", []) or []
         text = "\n".join((n.get("content_preview") or "") for n in nodes)
-        return bool(rx.search(text))
+        # Bounded evaluation: pack patterns are attacker-influenced and re has
+        # no timeout, so a catastrophic-backtracking pattern is capped by a hard
+        # wall-clock limit (or run under linear-time RE2 if installed).
+        return content_regex_search(pattern, flags, text)
 
     if rtype == "ioc_present":
         ioc_types = rule_def.get("ioc_types")

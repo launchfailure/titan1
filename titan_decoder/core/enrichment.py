@@ -271,7 +271,7 @@ class EnrichmentEngine:
         self, data: bytes, label: str = "sample"
     ) -> List[Dict[str, Any]]:
         """Scan data with YARA rules."""
-        matches = []
+        matches: List[Dict[str, Any]] = []
 
         if not self.yara_rules:
             return matches
