@@ -1,0 +1,4 @@
+http://a.example/x
+203.0.113.5
+bad.example.net
+op@evil.example

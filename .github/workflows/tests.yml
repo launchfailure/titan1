@@ -63,3 +63,9 @@ jobs:
         # output / bounded-time invariants over random + corpus-derived inputs.
         run: |
           python fuzz/fuzz_decoders.py --seconds 60
+
+      - name: Performance regression gate
+        # Deterministic node counts checked exactly; wall-clock is normalized
+        # against a calibration workload so a slow runner does not false-fail.
+        run: |
+          python tools/bench.py --check

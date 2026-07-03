@@ -1,0 +1,46 @@
+{
+  "calibration": 0.008021353000003728,
+  "cases": {
+    "big_nested_base64": {
+      "node_count": 2,
+      "time": 0.037521523000123125
+    },
+    "big_xor": {
+      "node_count": 3,
+      "time": 0.08621514300011768
+    },
+    "cfb_macro.doc": {
+      "node_count": 2,
+      "time": 0.028990089000217267
+    },
+    "gzip_text.bin": {
+      "node_count": 3,
+      "time": 0.026056290000269655
+    },
+    "high_entropy.bin": {
+      "node_count": 1,
+      "time": 0.0014527560001624806
+    },
+    "multi_ioc.txt": {
+      "node_count": 1,
+      "time": 0.007082603999606363
+    },
+    "nested_base64.txt": {
+      "node_count": 2,
+      "time": 0.0056889200000114215
+    },
+    "pdf_js.pdf": {
+      "node_count": 2,
+      "time": 0.03420137299963244
+    },
+    "plain_iocs.txt": {
+      "node_count": 1,
+      "time": 0.007701952999923378
+    },
+    "xor_url.bin": {
+      "node_count": 2,
+      "time": 0.01273646399977224
+    }
+  },
+  "time_threshold": 3.0
+}
