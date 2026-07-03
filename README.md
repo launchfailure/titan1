@@ -404,11 +404,34 @@ License: MIT (see LICENSE).
 
 ## 🙏 Credits
 
-Built for the cybersecurity community.
+Titan Decoder Engine is built for — and with — the cybersecurity community: the
+malware analysts, incident responders, digital forensics examiners, and law
+enforcement teams who reverse-engineer hostile payloads every day. Thank you for
+the bug reports, sample submissions, and field feedback that shape each release.
 
-**Key Technologies:**
-- Python 3.10+ (stdlib only for core)
-- Optional: psutil, geoip2, python-whois, yara-python, requests
+**Maintained by** [PragmaConflux](https://github.com/pragmaconflux) and released
+under the [MIT License](LICENSE). Contributions are welcome — see
+[CONTRIBUTING.md](CONTRIBUTING.md) to get started, and please review our
+[Code of Conduct](CODE_OF_CONDUCT.md) and [Security Policy](SECURITY.md).
+
+**Core stack**
+- Python 3.10+ — the decoding engine and all 21 core modules run on the standard
+  library alone, with no external dependencies required.
+
+**Optional integrations** (see [requirements-optional.txt](requirements-optional.txt))
+enable enrichment and advanced analysis features:
+
+| Library | Used for |
+| --- | --- |
+| [psutil](https://github.com/giampaolo/psutil) | Runtime resource governor (per-module CPU/memory limits) |
+| [geoip2](https://github.com/maxmind/GeoIP2-python) | Geolocation enrichment of extracted network IOCs |
+| [python-whois](https://github.com/richardpenman/whois) | Domain registration lookups during IOC enrichment |
+| [yara-python](https://github.com/VirusTotal/yara-python) | Signature-based detection over decoded payloads |
+| [requests](https://github.com/psf/requests) | Optional network-backed enrichment lookups |
+| [PyYAML](https://github.com/yaml/pyyaml) | Loading detection rule packs and configuration |
+
+Gratitude to the maintainers of these projects and to the broader open-source
+security ecosystem their work makes possible.
 
 ---
 
