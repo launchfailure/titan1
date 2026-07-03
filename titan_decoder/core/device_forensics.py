@@ -53,10 +53,11 @@ class ForensicsEngine:
 
     def __init__(self, max_preview_bytes: int = 200_000) -> None:
         self.max_preview_bytes = max_preview_bytes
-        self.imei_re = re.compile(r"\b\d{15}\b")
-        # IMSI is typically 15 digits (MCC+MNC+MSIN). Keep this strict to avoid
-        # noisy matches on unrelated numeric fields.
-        self.imsi_re = re.compile(r"\b\d{15}\b")
+        # Both IMEI and IMSI are 15-digit numbers; they are disambiguated after
+        # matching: an IMEI's final digit is a Luhn check digit, an IMSI's is
+        # not. (A single shared regex with an IMEI==IMSI pattern previously
+        # made the IMSI bucket structurally empty.)
+        self.fifteen_digit_re = re.compile(r"\b\d{15}\b")
         self.iccid_re = re.compile(r"\b89\d{15,19}\b")
         self.ip_re = re.compile(
             r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}"
@@ -131,16 +132,37 @@ class ForensicsEngine:
                     break
         return sorted(set(hits))
 
+    @staticmethod
+    def _luhn_valid(digits: str) -> bool:
+        """Luhn checksum (IMEI check digit validation)."""
+        total = 0
+        for i, ch in enumerate(reversed(digits)):
+            d = int(ch)
+            if i % 2 == 1:
+                d *= 2
+                if d > 9:
+                    d -= 9
+            total += d
+        return total % 10 == 0
+
     def _detect_mobile_ids(self, text: str) -> Dict[str, List[str]]:
-        imeis = [m.group(0) for m in self.imei_re.finditer(text)]
-        iccids = [m.group(0) for m in self.iccid_re.finditer(text)]
-        # IMSI is broader; filter out obvious IMEIs/ICCIDs already captured
-        ims_candidates = [m.group(0) for m in self.imsi_re.finditer(text)]
-        imsis = [v for v in ims_candidates if v not in imeis and v not in iccids]
+        iccids = set(m.group(0) for m in self.iccid_re.finditer(text))
+        imeis: List[str] = []
+        imsis: List[str] = []
+        for m in self.fifteen_digit_re.finditer(text):
+            v = m.group(0)
+            if v in iccids:
+                continue
+            # Luhn-valid 15-digit numbers are (candidate) IMEIs; the rest are
+            # treated as IMSI candidates (IMSIs carry no check digit).
+            if self._luhn_valid(v):
+                imeis.append(v)
+            else:
+                imsis.append(v)
         return {
             "imei": sorted(set(imeis)),
             "imsi": sorted(set(imsis)),
-            "iccid": sorted(set(iccids)),
+            "iccid": sorted(iccids),
         }
 
     def _detect_burner_patterns(self, text: str) -> Dict[str, Any]:

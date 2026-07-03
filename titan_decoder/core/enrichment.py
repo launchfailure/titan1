@@ -36,7 +36,10 @@ class EnrichmentEngine:
         self.whois_available = False
         self.yara_rules = None
 
-        # Rate limiting
+        # Rate limiting: enforce a minimum interval between WHOIS queries by
+        # *waiting*, not by skipping. The previous skip-based approach meant
+        # that in a batch of lookups only the first indicator was ever
+        # enriched; the rest were permanently marked "_rate_limited".
         self.whois_cache: Dict[str, Any] = {}
         self.whois_cooldown = 2.0  # seconds between queries
         self.last_whois_query = 0.0
@@ -62,6 +65,18 @@ class EnrichmentEngine:
             self._cache = None
             self._cache_init_error = str(e)
             logger.warning(f"Enrichment cache disabled (init failed): {e}")
+
+    def active_providers(self) -> list:
+        """Providers that actually initialized (library present, DB/rules
+        loaded) — as opposed to what the config merely asked for."""
+        providers = []
+        if self.geo_reader is not None:
+            providers.append("geo")
+        if self.whois_available:
+            providers.append("whois")
+        if self.yara_rules is not None:
+            providers.append("yara")
+        return providers
 
     def cache_info(self) -> Dict[str, Any]:
         info: Dict[str, Any] = {
@@ -104,6 +119,14 @@ class EnrichmentEngine:
             payload["_cache"][provider] = {"hit": False, "cached_at": cached_at}
         except Exception:
             pass
+
+    def _whois_wait(self) -> None:
+        """Sleep just long enough to honor the WHOIS cooldown, then claim the slot."""
+        now = time.time()
+        wait = self.whois_cooldown - (now - self.last_whois_query)
+        if wait > 0:
+            time.sleep(wait)
+        self.last_whois_query = time.time()
 
     def _init_geo(self):
         """Initialize GeoIP reader if available."""
@@ -190,25 +213,21 @@ class EnrichmentEngine:
             elif ip in self.whois_cache:
                 result["whois"] = self.whois_cache[ip]
             else:
-                now = time.time()
-                if now - self.last_whois_query >= self.whois_cooldown:
-                    try:
-                        import whois as whois_lib
+                try:
+                    import whois as whois_lib
 
-                        self.last_whois_query = now
-                        whois_data = whois_lib.whois(ip)
-                        result["whois"] = {
-                            "org": getattr(whois_data, "org", None),
-                            "registrar": getattr(whois_data, "registrar", None),
-                            "country": getattr(whois_data, "country", None),
-                        }
-                        self.whois_cache[ip] = result["whois"]
-                        self._cache_set("whois", "ipv4", ip, {"whois": result.get("whois")})
-                    except Exception as e:
-                        logger.debug(f"WHOIS lookup failed for {ip}: {e}")
-                        result["whois"] = None
-                else:
-                    result["whois"] = {"_rate_limited": True}
+                    self._whois_wait()
+                    whois_data = whois_lib.whois(ip)
+                    result["whois"] = {
+                        "org": getattr(whois_data, "org", None),
+                        "registrar": getattr(whois_data, "registrar", None),
+                        "country": getattr(whois_data, "country", None),
+                    }
+                    self.whois_cache[ip] = result["whois"]
+                    self._cache_set("whois", "ipv4", ip, {"whois": result.get("whois")})
+                except Exception as e:
+                    logger.debug(f"WHOIS lookup failed for {ip}: {e}")
+                    result["whois"] = None
 
         return result
 
@@ -225,30 +244,26 @@ class EnrichmentEngine:
             elif domain in self.whois_cache:
                 result["whois"] = self.whois_cache[domain]
             else:
-                now = time.time()
-                if now - self.last_whois_query >= self.whois_cooldown:
-                    try:
-                        import whois as whois_lib
+                try:
+                    import whois as whois_lib
 
-                        self.last_whois_query = now
-                        whois_data = whois_lib.whois(domain)
-                        result["whois"] = {
-                            "registrar": getattr(whois_data, "registrar", None),
-                            "creation_date": str(
-                                getattr(whois_data, "creation_date", None)
-                            ),
-                            "expiration_date": str(
-                                getattr(whois_data, "expiration_date", None)
-                            ),
-                            "name_servers": getattr(whois_data, "name_servers", []),
-                        }
-                        self.whois_cache[domain] = result["whois"]
-                        self._cache_set("whois", "domain", domain, {"whois": result.get("whois")})
-                    except Exception as e:
-                        logger.debug(f"WHOIS lookup failed for {domain}: {e}")
-                        result["whois"] = None
-                else:
-                    result["whois"] = {"_rate_limited": True}
+                    self._whois_wait()
+                    whois_data = whois_lib.whois(domain)
+                    result["whois"] = {
+                        "registrar": getattr(whois_data, "registrar", None),
+                        "creation_date": str(
+                            getattr(whois_data, "creation_date", None)
+                        ),
+                        "expiration_date": str(
+                            getattr(whois_data, "expiration_date", None)
+                        ),
+                        "name_servers": getattr(whois_data, "name_servers", []),
+                    }
+                    self.whois_cache[domain] = result["whois"]
+                    self._cache_set("whois", "domain", domain, {"whois": result.get("whois")})
+                except Exception as e:
+                    logger.debug(f"WHOIS lookup failed for {domain}: {e}")
+                    result["whois"] = None
 
         return result
 

@@ -16,11 +16,13 @@ from typing import Dict, List, Any
 def build_ioc_summary(
     report: Dict[str, Any], forensics: Dict[str, Any] | None = None
 ) -> Dict[str, Any]:
+    # Extract from every node's preview, not just Text-classified ones, to
+    # match TitanEngine.run_analysis: malware routinely embeds C2 URLs/IPs in
+    # otherwise-binary content, and filtering on content_type silently dropped
+    # them from detections, risk scoring, and exports.
     nodes = report.get("nodes", [])
     all_text = "\n".join(
-        node.get("content_preview", "")
-        for node in nodes
-        if node.get("content_type") == "Text"
+        node.get("content_preview") or "" for node in nodes
     )
     from ..utils.helpers import extract_iocs
 
@@ -56,6 +58,25 @@ def export_csv(iocs: Dict[str, Any], path: Path):
         writer.writerows(rows)
 
 
+# The "hashes" IOC bucket contains multiple digest algorithms distinguishable
+# only by hex length (see helpers.extract_iocs). Exporting everything as
+# SHA-256 mislabels MD5/SHA-1 values in shared threat intel.
+_HASH_LEN_TO_STIX = {
+    32: "MD5",
+    40: "SHA-1",
+    64: "SHA-256",
+    128: "SHA-512",
+}
+_HASH_LEN_TO_MISP = {
+    32: "md5",
+    40: "sha1",
+    56: "sha224",
+    64: "sha256",
+    96: "sha384",
+    128: "sha512",
+}
+
+
 def export_stix_minimal(iocs: Dict[str, Any], path: Path):
     # Minimal STIX 2.1-like bundle (simplified)
     bundle = {
@@ -79,7 +100,9 @@ def export_stix_minimal(iocs: Dict[str, Any], path: Path):
         elif ind_type == "emails":
             pattern = f"[email-addr:value = '{safe}']"
         elif ind_type == "hashes":
-            pattern = f"[file:hashes.'SHA-256' = '{safe}']"
+            algo = _HASH_LEN_TO_STIX.get(len(value))
+            if algo:  # SHA-224/384 have no standard STIX vocab entry; skip
+                pattern = f"[file:hashes.'{algo}' = '{safe}']"
         elif ind_type == "imei":
             pattern = f"[x-device:imei = '{safe}']"
         elif ind_type == "imsi":
@@ -132,14 +155,14 @@ def export_misp(
         }
     }
 
-    # Map IOC types to MISP attribute types
+    # Map IOC types to MISP attribute types ("hashes" is resolved per-value by
+    # digest length below).
     type_mapping = {
         "ipv4": "ip-dst",
         "ipv4_public": "ip-dst",
         "urls": "url",
         "domains": "domain",
         "emails": "email-src",
-        "hashes": "sha256",
         "imei": "imei",
         "imsi": "imsi",
         "iccid": "sim-number",
@@ -150,11 +173,16 @@ def export_misp(
     # attribute twice.
     seen: set[tuple[str, str]] = set()
     for ioc_type, values in iocs.items():
-        misp_type = type_mapping.get(ioc_type)
-        if not misp_type:
+        if ioc_type != "hashes" and not type_mapping.get(ioc_type):
             continue
 
         for value in values:
+            if ioc_type == "hashes":
+                misp_type = _HASH_LEN_TO_MISP.get(len(str(value)))
+                if not misp_type:
+                    continue
+            else:
+                misp_type = type_mapping[ioc_type]
             if (misp_type, value) in seen:
                 continue
             seen.add((misp_type, value))

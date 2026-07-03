@@ -56,32 +56,39 @@ def _read_jsonl(path: Path) -> Iterator[Dict[str, Any]]:
 # default but keep it bounded so a single unterminated quote can't be read as a
 # multi-GB field.
 _CSV_FIELD_LIMIT = 16 * 1024 * 1024
-try:
-    csv.field_size_limit(_CSV_FIELD_LIMIT)
-except (OverflowError, ValueError):  # pragma: no cover - platform dependent
-    pass
 
 
 def _read_csv(path: Path) -> Iterator[Dict[str, Any]]:
-    with path.open("r", encoding="utf-8", errors="ignore", newline="") as handle:
-        reader = csv.DictReader(handle)
-        # Header is line 1, so data rows start at line 2.
-        row_no = 1
-        while True:
-            try:
-                row = next(reader)
-            except StopIteration:
-                break
-            except csv.Error:
-                # Malformed row (oversized field, bad quoting, embedded NUL):
-                # skip it instead of aborting the whole file (as JSONL does).
-                continue
-            row_no += 1
-            if not isinstance(row, dict):
-                continue
-            row = dict(row)
-            row.setdefault("_line", row_no)
-            yield row
+    # csv.field_size_limit is process-global; set it only for the duration of
+    # the read and restore it, so importing/using this module doesn't silently
+    # change CSV behavior for a host application.
+    try:
+        old_limit = csv.field_size_limit(_CSV_FIELD_LIMIT)
+    except (OverflowError, ValueError):  # pragma: no cover - platform dependent
+        old_limit = None
+    try:
+        with path.open("r", encoding="utf-8", errors="ignore", newline="") as handle:
+            reader = csv.DictReader(handle)
+            # Header is line 1, so data rows start at line 2.
+            row_no = 1
+            while True:
+                try:
+                    row = next(reader)
+                except StopIteration:
+                    break
+                except csv.Error:
+                    # Malformed row (oversized field, bad quoting, embedded NUL):
+                    # skip it instead of aborting the whole file (as JSONL does).
+                    continue
+                row_no += 1
+                if not isinstance(row, dict):
+                    continue
+                row = dict(row)
+                row.setdefault("_line", row_no)
+                yield row
+    finally:
+        if old_limit is not None:
+            csv.field_size_limit(old_limit)
 
 
 def _detect_format(path: Path) -> str:
@@ -102,7 +109,8 @@ def _detect_format(path: Path) -> str:
                     return "jsonl"
                 return "csv"  # default fallback
     except Exception:
-        return "csv"
+        pass
+    return "csv"  # empty/unreadable file: explicit default
 
 
 def load_records(path: Path) -> List[Dict[str, Any]]:

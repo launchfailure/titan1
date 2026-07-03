@@ -2,12 +2,82 @@
 
 ## Unreleased
 
+CLI:
+
+- Restore Ctrl+C: a signal handler set a flag nothing ever read, so SIGINT
+  could not stop a running analysis (and the `except KeyboardInterrupt`
+  handlers were unreachable). Interrupts now abort with exit code 130.
+- Fix batch mode printing literal `\n` instead of newlines.
+- Batch mode now processes files in sorted (deterministic) order, reuses one
+  engine across files, warns about single-file-only options it ignores, and
+  propagates its exit code under `python -m` invocation.
+- Fix `--perf-profile` always reporting 0 nodes processed / 0 throughput.
+- Validate `--evidence` paths before the analysis runs instead of after.
+- `--list-decoders --list-analyzers` together now lists both.
+
 Correctness:
 
+- Detections, risk scoring, enrichment, and IOC/case exports now extract IOCs
+  from every node preview (matching the engine report) instead of only
+  Text-classified nodes, which silently dropped C2 indicators embedded in
+  binary content from all downstream tooling.
+- Correlation no longer matches every run against itself (the current run was
+  recorded before correlating), and a user-configured `correlation_db_path`
+  no longer silently disables correlation (string path crashed on `.parent`).
+  The correlation DB now enforces `UNIQUE(type, value)` and stops re-inserting
+  duplicate indicator rows on every run.
+- STIX/MISP exports label hashes by digest length (MD5/SHA-1/SHA-256/…)
+  instead of exporting every hash as SHA-256.
+- IMSI detection worked never: the IMEI and IMSI regexes were identical and
+  IMSI candidates were then filtered against the IMEI list. IMEIs are now
+  Luhn-validated; 15-digit non-Luhn numbers are reported as IMSI candidates.
+- `top_links` ranked confidence lexicographically ("medium" > "high"); it now
+  compares numerically.
+- Fix the `<?xml` structure-scoring pattern (matched bare "xml" anywhere) and
+  anchor the two-byte MZ/BZ magics to the start of data.
+- Evidence event IDs are now unique and deterministic (monotonic counter);
+  wall-clock IDs collided within a microsecond and differed across runs.
+- Parse millisecond epoch timestamps in evidence logs (previously interpreted
+  as seconds, producing year-56000 dates).
+- Unicode-escape decoder handles surrogate pairs (`😀`); previously
+  one astral escape made the entire decode fail.
+- PDF stream extraction handles nested dictionaries (e.g. `/DecodeParms
+  <<...>>`), which the old `<<([^>]*)>>` regex could never match.
 - Stop IOC extraction from reporting dotted .NET/scripting member access in
   download-cradle payloads (e.g. `Net.WebClient`, `Net.HttpWebRequest`) as
   bogus domains. Their trailing labels are verified non-TLDs and added to a
   denylist, so real C2 domains are unaffected.
+
+Removed:
+
+- Parallel archive extraction. `tarfile` is not thread-safe (concurrent reads
+  can silently corrupt extracted content), the in-memory source gains nothing
+  from threads, and completion-order results made reports nondeterministic.
+  The `enable_parallel_extraction`/`max_parallel_workers` config keys are
+  gone; extraction is sequential and deterministic.
+- Phantom VirusTotal integration: the API-key config and "virustotal" provider
+  listing implied lookups that no code performed.
+- Dead config flags that nothing read: `enable_entropy_analysis`,
+  `enable_script_analysis`, `enable_shellcode_detection`,
+  `enable_string_extraction`, `enable_xor_keyfinding`,
+  `enable_polymorphic_detection`, `enable_yara_generation`,
+  `enable_html_reports`, `enable_pii_redaction` (log redaction is controlled
+  by `--no-redaction`), and `vault_prune_days` (use `--vault-prune-days`).
+
+Behavior:
+
+- WHOIS enrichment honors its cooldown by waiting between queries instead of
+  permanently skipping every indicator after the first with
+  `{"_rate_limited": true}`.
+- `meta.enrichment_providers` now lists providers that actually initialized
+  (library present, DB/rules loaded), not what the config requested.
+- A malformed `~/.titan_decoder/config.json` now logs a warning instead of
+  silently reverting every setting to defaults.
+
+Packaging / CI:
+
+- Project metadata migrated from `setup.py` to the `[project]` table in
+  `pyproject.toml`; ruff lint added to CI.
 
 ## 2.0.2 — Engine reliability fixes (2026-07-02)
 

@@ -164,5 +164,5 @@ On GitHub → Releases → “Draft a new release”, pick the `vX.Y.Z` tag, pas
 ## Common pitfalls
 
 - If `pip install titan-decoder` works locally but not for users: verify you uploaded both sdist + wheel.
-- If metadata looks wrong on PyPI: check `setup.py` fields and rerun `python -m build`.
+- If metadata looks wrong on PyPI: check the `[project]` table in `pyproject.toml` and rerun `python -m build`.
 - If a dependency is missing: add it to `install_requires` (core) or the `enrichment` extra.

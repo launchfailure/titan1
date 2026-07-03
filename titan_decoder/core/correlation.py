@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS indicators (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT NOT NULL,
     value TEXT NOT NULL,
-    first_seen_ts DATETIME DEFAULT CURRENT_TIMESTAMP
+    first_seen_ts DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(type, value)
 );
 CREATE TABLE IF NOT EXISTS analysis_links (
     analysis_id TEXT,
@@ -42,6 +43,9 @@ class CorrelationStore:
             self.conn.close()
 
     def record_analysis(self, analysis_id: str, iocs: Dict[str, Any]):
+        # Note: INSERT OR IGNORE relies on the UNIQUE(type, value) constraint;
+        # without it (as in pre-fix databases) every run re-inserted duplicate
+        # indicator rows.
         cur = self.conn.cursor()
         for t, values in iocs.items():
             for v in values:
@@ -56,10 +60,16 @@ class CorrelationStore:
                 if not row:
                     continue
                 ind_id = row[0]
+                # Avoid duplicate links for the same run.
                 cur.execute(
-                    "INSERT INTO analysis_links(analysis_id, indicator_id) VALUES (?, ?)",
+                    "SELECT 1 FROM analysis_links WHERE analysis_id=? AND indicator_id=?",
                     (analysis_id, ind_id),
                 )
+                if cur.fetchone() is None:
+                    cur.execute(
+                        "INSERT INTO analysis_links(analysis_id, indicator_id) VALUES (?, ?)",
+                        (analysis_id, ind_id),
+                    )
         self.conn.commit()
 
     def correlate(self, iocs: Dict[str, Any]) -> List[Dict[str, Any]]:
