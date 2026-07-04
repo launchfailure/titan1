@@ -16,13 +16,13 @@
   "nodes": [
     {
       "artifact_name": null,
-      "content_preview": "\u001f\b\u0000\u0000\u0000\u0000\u0000\u0002\u0003sWOWKU\u001c\u0015\u0018\u0015\u0018|\u0002\u0000\u0015d(\u0002\u0000\u0000",
+      "content_preview": "\u001f\b\u0000\u0000\u0000\u0000\u0000\u0000sWOWKU\u001c\u0015\u0018\u0015\u0018|\u0002\u0000\u0015d(\u0002\u0000\u0000",
       "content_type": "Binary",
-      "decode_score": 0.4158166969147006,
+      "decode_score": 0.4128180236285375,
       "decoded_length": 680,
       "decoder_used": "Gzip",
       "depth": 0,
-      "entropy": 4.408,
+      "entropy": 4.3676,
       "id": 0,
       "method": "DECODE_Gzip",
       "parent": null,
@@ -36,7 +36,7 @@
         "reason": "root input blob"
       },
       "pruned": false,
-      "sha256": "115ca5f9e5f3196b6430eae49a6e98e4271ad3db2963bcea1f30cc199a916349",
+      "sha256": "83ee1326482e6e07a28ed2c5b9f766fb955b5fd0e26980769dac6707919bcb20",
       "source_length": 44
     },
     {
@@ -53,12 +53,12 @@
       "parent": 0,
       "provenance": {
         "artifact_name": null,
-        "confidence": 0.4158166969147006,
+        "confidence": 0.4128180236285375,
         "origin": "decode",
         "parent_id": 0,
-        "parent_sha256": "115ca5f9e5f3196b6430eae49a6e98e4271ad3db2963bcea1f30cc199a916349",
+        "parent_sha256": "83ee1326482e6e07a28ed2c5b9f766fb955b5fd0e26980769dac6707919bcb20",
         "produced_by": "Gzip",
-        "reason": "decode from node 0 via Gzip (confidence 0.416)"
+        "reason": "decode from node 0 via Gzip (confidence 0.413)"
       },
       "pruned": false,
       "sha256": "fce19bda996c620a3132d58f7eb577522a519f6abd56292a686b86e8cb35c3d8",

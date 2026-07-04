@@ -96,9 +96,15 @@ def build_inputs() -> Dict[str, bytes]:
     inputs["xor_url.bin"] = bytes(
         b ^ 0x5A for b in b"config c2=http://malware.example/c2/panel endpoint"
     )
-    # mtime=0: gzip embeds the current time by default, which would make this
-    # input (and thus its root-node hash) differ on every generation.
-    inputs["gzip_text.bin"] = gzip.compress(b"INFO log line ok\n" * 40, mtime=0)
+    # Deterministic gzip input across the whole Python matrix. mtime=0 zeroes
+    # the timestamp; bytes 8 (XFL) and 9 (OS) of the gzip header otherwise vary
+    # by Python build/platform, which would change the compressed root hash on
+    # different runners. Both are informational and ignored by decoders, so
+    # pinning them makes the input byte-reproducible everywhere.
+    _gz = bytearray(gzip.compress(b"INFO log line ok\n" * 40, mtime=0))
+    _gz[8] = 0x00  # XFL
+    _gz[9] = 0xff  # OS = unknown (fixed)
+    inputs["gzip_text.bin"] = bytes(_gz)
     inputs["cfb_macro.doc"] = build_cfb(
         [("Macros/VBA/Module1", b'Sub AutoOpen()\n url="http://evil.example/c2"\nEnd Sub\n')]
     )

@@ -115,6 +115,10 @@ class PluginManager:
         self.decoders.sort(key=lambda d: d.priority, reverse=True)
         self.analyzers.sort(key=lambda a: a.priority, reverse=True)
 
+    # Package-infrastructure modules in the built-in plugin dir that are not
+    # plugins and must not be discovered/loaded as such.
+    _RESERVED_MODULES = frozenset({"api.py"})
+
     def _load_plugins_from_dir(self, plugin_dir: Path):
         """Load plugins from a specific directory."""
         for item in plugin_dir.iterdir():
@@ -122,6 +126,7 @@ class PluginManager:
                 item.is_file()
                 and item.suffix == ".py"
                 and not item.name.startswith("_")
+                and item.name not in self._RESERVED_MODULES
             ):
                 self._load_plugin_file(item)
 

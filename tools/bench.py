@@ -46,6 +46,9 @@ BASELINE_PATH = os.path.join(_ROOT, "tools", "bench_baseline.json")
 # case is a regression. Generous, because CI timing is noisy; still catches a
 # genuine 2x+ algorithmic slowdown.
 TIME_THRESHOLD = 3.0
+# Baseline times below this (seconds) are overhead/noise dominated; gate those
+# cases on node count only, not wall-clock.
+TIME_FLOOR = 0.02
 RUNS = 5
 
 
@@ -112,8 +115,14 @@ def check() -> int:
     baseline = json.load(open(BASELINE_PATH))
     current = run_bench()
 
-    # Hardware speed factor: how much slower/faster this machine is vs baseline.
-    speed = current["calibration"] / baseline["calibration"] if baseline["calibration"] else 1.0
+    # Hardware speed factor: how much slower/faster this machine is vs baseline
+    # (>1 = slower runner, <1 = faster runner). Clamp to >=1.0 so a *faster*
+    # machine never tightens the budget below the raw baseline: the tiny, mostly
+    # overhead-bound corpus timings do not scale with a CPU-bound calibration,
+    # so shrinking the budget on a fast runner produced false regressions. We
+    # only ever relax the budget (scale it up) on a slower runner.
+    raw_speed = current["calibration"] / baseline["calibration"] if baseline["calibration"] else 1.0
+    speed = max(1.0, raw_speed)
     threshold = baseline.get("time_threshold", TIME_THRESHOLD)
 
     failures = []
@@ -131,7 +140,13 @@ def check() -> int:
             )
         budget = base["time"] * speed * threshold
         marker = "  OK"
-        if cur["time"] > budget:
+        # Only gate on wall-clock for cases with a meaningful baseline time.
+        # Sub-TIME_FLOOR timings are dominated by fixed Python overhead and
+        # measurement noise, which no hardware normalization can stabilize; the
+        # exact node-count check above is the reliable regression signal there.
+        if base["time"] < TIME_FLOOR:
+            marker = "  OK (time not gated: <floor)"
+        elif cur["time"] > budget:
             marker = "  REGRESSION"
             failures.append(
                 f"{name}: {cur['time']:.4f}s > budget {budget:.4f}s "
@@ -143,7 +158,10 @@ def check() -> int:
         )
 
     print("-" * 64)
-    print(f"machine speed factor vs baseline: {speed:.2f}")
+    print(
+        f"machine speed factor vs baseline: {raw_speed:.2f} "
+        f"(budget scale {speed:.2f}, clamped to >=1.0)"
+    )
     if failures:
         print("\nREGRESSIONS:", file=sys.stderr)
         for f in failures:
