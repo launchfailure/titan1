@@ -74,3 +74,6 @@ __pycache__/
 *.sqlite
 *.sqlite3
 .titan_decoder/
+
+# Committed detection-quality history (overrides the *.jsonl rule above)
+!docs/detection_quality_history.jsonl

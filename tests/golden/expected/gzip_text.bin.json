@@ -121,11 +121,7 @@
         "analyzers": [],
         "api_version": "1.0",
         "decoders": [],
-        "loaded_plugins": [],
-        "plugin_dirs": [
-          "/root/.titan_decoder/plugins",
-          "/home/user/titan1/titan_decoder/plugins"
-        ]
+        "loaded_plugins": []
       }
     },
     "effective_config": {

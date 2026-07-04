@@ -55,6 +55,13 @@ def normalize_report(report: Dict) -> Dict:
         tool = rm.get("tool")
         if isinstance(tool, dict):
             tool.pop("version", None)
+        # Plugin dirs are absolute home paths (e.g. /root vs /home/runner) that
+        # differ across machines; drop them so the report is matrix-stable.
+        components = rm.get("components")
+        if isinstance(components, dict):
+            plugins = components.get("plugins")
+            if isinstance(plugins, dict):
+                plugins.pop("plugin_dirs", None)
     return r
 
 
