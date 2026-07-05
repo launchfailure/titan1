@@ -198,20 +198,13 @@ class PruningEngine:
         self.min_score_threshold = self.config.get("min_score_threshold", 0.01)
         self.max_depth = self.config.get("max_recursion_depth", 5)
 
-        # Advanced pruning policies
+        # Pruning policy toggles (each one gates a rule in should_prune_node).
         self.policies = {
             "enable_quality_pruning": self.config.get("enable_quality_pruning", True),
             "enable_resource_pruning": self.config.get("enable_resource_pruning", True),
             "enable_depth_based_limits": self.config.get(
                 "enable_depth_based_limits", True
             ),
-            "quality_decay_threshold": self.config.get("quality_decay_threshold", 0.05),
-            "max_consecutive_low_scores": self.config.get(
-                "max_consecutive_low_scores", 3
-            ),
-            "min_content_similarity": self.config.get("min_content_similarity", 0.8),
-            "prune_empty_decodes": self.config.get("prune_empty_decodes", True),
-            "prune_identical_content": self.config.get("prune_identical_content", True),
         }
 
         # Depth-based node limits (more restrictive at deeper levels)
@@ -303,13 +296,3 @@ class PruningEngine:
             return True
 
         return False
-
-    def get_pruning_stats(self) -> Dict[str, Any]:
-        """Get statistics about pruning decisions."""
-        return {
-            "policies_enabled": self.policies,
-            "depth_limits": self.depth_limits,
-            "max_nodes": self.max_nodes,
-            "min_score_threshold": self.min_score_threshold,
-            "max_depth": self.max_depth,
-        }

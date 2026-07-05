@@ -29,15 +29,10 @@ class Config:
         "max_tar_files": 25,
         "max_tar_total_size": 10 * 1024 * 1024,  # 10MB
         "max_tar_file_size": 50 * 1024 * 1024,  # 50MB per file
-        # Enhanced pruning policies
+        # Pruning policies (each toggles a rule in PruningEngine)
         "enable_quality_pruning": True,
         "enable_resource_pruning": True,
         "enable_depth_based_limits": True,
-        "quality_decay_threshold": 0.05,
-        "max_consecutive_low_scores": 3,
-        "min_content_similarity": 0.8,
-        "prune_empty_decodes": True,
-        "prune_identical_content": True,
         # Plugin system
         "plugin_dirs": [],
         "enable_logging": True,
