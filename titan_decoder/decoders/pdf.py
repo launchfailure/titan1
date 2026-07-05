@@ -336,8 +336,10 @@ def _ascii85_decode(data: bytes) -> bytes:
     return bytes(out)
 
 
-def _lzw_decode(data: bytes, early_change: int = 1) -> bytes:
-    """Decode PDF LZWDecode (variable-width codes, 9-12 bits)."""
+def _lzw_decode(
+    data: bytes, early_change: int = 1, max_output: int = 100 * 1024 * 1024
+) -> bytes:
+    """Decode PDF LZWDecode (variable-width codes, 9-12 bits), output-bounded."""
     out = bytearray()
     bit_buffer = 0
     bit_count = 0
@@ -375,8 +377,10 @@ def _lzw_decode(data: bytes, early_change: int = 1) -> bytes:
                 if dict_size + early_change - 1 >= (1 << code_width) and code_width < 12:
                     code_width += 1
             prev = entry
-            if len(out) > 200 * 1024 * 1024:
-                break
+            if len(out) >= max_output:
+                # Hard stop: a `break` here would only exit this inner loop and
+                # the outer byte loop would keep growing the output unbounded.
+                return bytes(out[:max_output])
     return bytes(out)
 
 
@@ -598,7 +602,9 @@ class PDFDocument:
                 ec = 1
                 if isinstance(parm, dict):
                     ec = self.resolve(parm.get("EarlyChange", 1)) or 1
-                data = _lzw_decode(data, early_change=int(ec))
+                data = _lzw_decode(
+                    data, early_change=int(ec), max_output=self.max_output
+                )
             else:
                 # Unsupported / image filter (DCTDecode, etc.): stop here.
                 break

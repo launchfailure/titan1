@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+Audit cleanup (post-roadmap):
+
+- Tolerate trailing bytes after a complete gzip/bz2/zlib/xz stream: zero
+  padding or appended data (both common in real-world samples and carved
+  artifacts) previously made the *entire* decode fail, discarding fully
+  decoded content and its IOCs. A truncated or invalid first stream still
+  fails, a partial trailing member never leaks partial output, and the
+  decompression-bomb output cap is unchanged.
+- Make the PDF `LZWDecode` output cap a hard stop and bound it by the
+  document's configured `max_output`: the previous `break` only exited the
+  inner code loop, so a crafted stream could keep growing output past the cap.
+- Remove dead pruning-policy config (`quality_decay_threshold`,
+  `max_consecutive_low_scores`, `min_content_similarity`,
+  `prune_empty_decodes`, `prune_identical_content`): the keys were stored and
+  echoed into `run_manifest.effective_config` but no logic ever read them, so
+  they promised tuning knobs that did nothing. Unknown keys in existing user
+  configs are still accepted and simply ignored, as before.
+- Remove an always-false prune check in the analyzer extraction path (decoded
+  content is never score-pruned by definition) and other dead code
+  (`PruningEngine.get_pruning_stats`, unused `ResourceManager` timeout
+  attributes).
+- Batch mode now warns that `--evidence-timeline-out` is ignored instead of
+  ignoring it silently.
+
 Decoder correctness (Milestone 1):
 
 - Replace the OLE signature-window carver with a real Compound File Binary

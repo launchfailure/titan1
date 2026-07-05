@@ -133,7 +133,7 @@ class TitanEngine:
                 "min_score_threshold": self.config.get("min_score_threshold", 0.01),
                 "max_recursion_depth": self.MAX_RECURSION_DEPTH,
                 "max_data_size": self.config.get("max_data_size", 50 * 1024 * 1024),
-                # Enhanced pruning policies
+                # Pruning policies
                 "enable_quality_pruning": self.config.get(
                     "enable_quality_pruning", True
                 ),
@@ -142,19 +142,6 @@ class TitanEngine:
                 ),
                 "enable_depth_based_limits": self.config.get(
                     "enable_depth_based_limits", True
-                ),
-                "quality_decay_threshold": self.config.get(
-                    "quality_decay_threshold", 0.05
-                ),
-                "max_consecutive_low_scores": self.config.get(
-                    "max_consecutive_low_scores", 3
-                ),
-                "min_content_similarity": self.config.get(
-                    "min_content_similarity", 0.8
-                ),
-                "prune_empty_decodes": self.config.get("prune_empty_decodes", True),
-                "prune_identical_content": self.config.get(
-                    "prune_identical_content", True
                 ),
             }
         )
@@ -433,26 +420,18 @@ class TitanEngine:
                         node.decode_score = archive_score
                         node.decoder_used = analyzer.name
 
-                        # Analyze each extracted file
+                        # Analyze each extracted file. Extracted content is
+                        # never score-pruned (is_decoded_content=True); the
+                        # depth limit and global node cap inside analyze_blob
+                        # are what bound the fan-out.
                         for name, content in extracted:
-                            content_type = (
-                                "Text" if looks_like_text(content) else "Binary"
-                            )
-                            if not self.pruning_engine.should_prune_node(
-                                node_score=archive_score,
-                                depth=depth + 1,
-                                current_node_count=len(self.nodes),
-                                data_size=len(content),
-                                content_type=content_type,
+                            self.analyze_blob(
+                                content,
+                                node.id,
+                                depth + 1,
                                 is_decoded_content=True,
-                            ):
-                                self.analyze_blob(
-                                    content,
-                                    node.id,
-                                    depth + 1,
-                                    is_decoded_content=True,
-                                    artifact_name=name,
-                                )
+                                artifact_name=name,
+                            )
 
                         if self.include_decision_trace:
                             self.decision_trace.append(

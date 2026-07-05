@@ -22,12 +22,6 @@ class ResourceManager:
 
     def __init__(self, config: dict):
         self.config = config
-        self.analysis_timeout = config.get(
-            "analysis_timeout_seconds", 300
-        )  # 5 minutes default
-        self.decode_timeout = config.get(
-            "decode_timeout_seconds", 10
-        )  # 10 seconds per decode
 
     @contextmanager
     def timeout_context(self, seconds: int, operation_name: str = "operation"):
