@@ -20,6 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Security",
 ]
 # Core engine is intentionally dependency-light.
@@ -38,6 +39,10 @@ titan-decoder = "titan_decoder.cli:main"
 dev = [
     "pytest>=9.1.1",
     "ruff>=0.15.20",
+    "mypy>=1.19.1",
+    "pytest-cov>=5.0.0",
+    "hypothesis>=6.100.0",
+    "jsonschema>=4.20.0",
     "build>=1.5.0",
     "twine>=6.2.0",
 ]
@@ -55,6 +60,34 @@ version = { attr = "titan_decoder.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["titan_decoder*"]
+
+[tool.mypy]
+# Non-strict baseline (roadmap: "start non-strict, ratchet up"). Type errors
+# block merge in CI for every module NOT on the ratchet list below. The intent
+# is to tighten this over time: turn on stricter flags and remove modules from
+# the ignore list as they are annotated.
+python_version = "3.10"
+ignore_missing_imports = true
+no_implicit_optional = false
+warn_unused_ignores = false
+warn_return_any = false
+check_untyped_defs = false
+exclude = "(^|/)(tests|fuzz|tools)/"
+
+# Ratchet list: legacy modules with pre-existing type errors. Each entry is a
+# TODO to annotate and remove. New code must stay off this list.
+[[tool.mypy.overrides]]
+module = [
+    "titan_decoder.core.analyzers.base",
+    "titan_decoder.core.correlation",
+    "titan_decoder.core.engine",
+    "titan_decoder.core.evidence_parsers",
+    "titan_decoder.core.graph_export",
+    "titan_decoder.core.ioc_export",
+    "titan_decoder.core.vault",
+    "titan_decoder.plugins",
+]
+ignore_errors = true
 
 [tool.ruff]
 target-version = "py310"

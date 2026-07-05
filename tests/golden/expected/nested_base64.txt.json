@@ -1,0 +1,194 @@
+{
+  "iocs": {
+    "domains": [
+      "c2.example"
+    ],
+    "emails": [],
+    "hashes": [],
+    "ipv4": [],
+    "ipv4_private": [],
+    "ipv4_public": [],
+    "urls": [
+      "http://c2.example/panel"
+    ]
+  },
+  "meta": {
+    "schema_version": "1.2",
+    "tool": "Titan Decoder Engine"
+  },
+  "node_count": 2,
+  "nodes": [
+    {
+      "artifact_name": null,
+      "content_preview": "V1cxV2FGa3lPWFZKUjJnd1pFaEJOa3g1T1dwTmFUVnNaVWRHZEdOSGVHeE1NMEpvWW0xV2MwbEhTalZrUjFaNlNVZG9iR050VlQwPQ==",
+      "content_type": "Text",
+      "decode_score": 0.18413057027111251,
+      "decoded_length": 41,
+      "decoder_used": "RecursiveBase64",
+      "depth": 0,
+      "entropy": 5.1344,
+      "id": 0,
+      "method": "DECODE_RecursiveBase64",
+      "parent": null,
+      "provenance": {
+        "artifact_name": null,
+        "confidence": null,
+        "origin": "input",
+        "parent_id": null,
+        "parent_sha256": null,
+        "produced_by": null,
+        "reason": "root input blob"
+      },
+      "pruned": false,
+      "sha256": "0a8a05128388a03017ae6274d8a397b6936eb09ea8d4299ab0ea5d6d54d54649",
+      "source_length": 104
+    },
+    {
+      "artifact_name": null,
+      "content_preview": "beacon http://c2.example/panel bytes here",
+      "content_type": "Text",
+      "decode_score": 0.0,
+      "decoded_length": 41,
+      "decoder_used": null,
+      "depth": 1,
+      "entropy": 4.0545,
+      "id": 1,
+      "method": "ANALYZE",
+      "parent": 0,
+      "provenance": {
+        "artifact_name": null,
+        "confidence": 0.18413057027111251,
+        "origin": "decode",
+        "parent_id": 0,
+        "parent_sha256": "0a8a05128388a03017ae6274d8a397b6936eb09ea8d4299ab0ea5d6d54d54649",
+        "produced_by": "RecursiveBase64",
+        "reason": "decode from node 0 via RecursiveBase64 (confidence 0.184)"
+      },
+      "pruned": true,
+      "sha256": "c058730e5bfaaae41cb84f280cbe515e10414d3fa0c575c52a62587ffde46401",
+      "source_length": 41
+    }
+  ],
+  "run_manifest": {
+    "components": {
+      "analyzers": [
+        "ELF",
+        "PE",
+        "TAR",
+        "ZIP"
+      ],
+      "decoders": [
+        "Base64",
+        "Base64URL",
+        "Bz2",
+        "Gzip",
+        "HTMLEntity",
+        "Hex",
+        "LZMA",
+        "OLE",
+        "PDF",
+        "PEM",
+        "ROT13",
+        "RecursiveBase64",
+        "URLDecoder",
+        "UTF16",
+        "UnicodeEscape",
+        "XOR",
+        "ZLIB"
+      ],
+      "plugins": {
+        "analyzers": [],
+        "api_version": "1.0",
+        "decoders": [],
+        "loaded_plugins": []
+      }
+    },
+    "effective_config": {
+      "analysis_timeout_seconds": 300,
+      "analyzer_timeout_seconds": 10,
+      "analyzers": {
+        "elf": true,
+        "pe": true,
+        "tar": true,
+        "zip": true
+      },
+      "correlation_db_path": null,
+      "decode_timeout_seconds": 10,
+      "decoders": {
+        "asn1": false,
+        "base32": false,
+        "base64": true,
+        "base64url": true,
+        "bz2": true,
+        "gzip": true,
+        "hex": true,
+        "html_entity": true,
+        "lzma": true,
+        "ole": true,
+        "pdf": true,
+        "pem": true,
+        "quoted_printable": false,
+        "recursive_base64": true,
+        "rot13": true,
+        "unicode_escape": true,
+        "url": true,
+        "utf16": true,
+        "uuencode": false,
+        "xor": true,
+        "zlib": true
+      },
+      "detection_rule_packs": [],
+      "enable_correlation": false,
+      "enable_depth_based_limits": true,
+      "enable_enrichment_cache": true,
+      "enable_geo_enrichment": false,
+      "enable_logging": true,
+      "enable_quality_pruning": true,
+      "enable_resource_pruning": true,
+      "enable_whois": false,
+      "enable_yara": false,
+      "enrichment_cache_path": null,
+      "geo_db_path": null,
+      "include_decision_trace": false,
+      "log_level": "INFO",
+      "max_compression_ratio": 100,
+      "max_consecutive_low_scores": 3,
+      "max_data_size": 52428800,
+      "max_memory_mb": 1024,
+      "max_node_count": 100,
+      "max_recursion_depth": 5,
+      "max_report_size_mb": null,
+      "max_tar_file_size": 52428800,
+      "max_tar_files": 25,
+      "max_tar_total_size": 10485760,
+      "max_zip_file_size": 52428800,
+      "max_zip_files": 25,
+      "max_zip_total_size": 10485760,
+      "min_content_similarity": 0.8,
+      "min_score_threshold": 0.01,
+      "plugin_dirs": [],
+      "prune_empty_decodes": true,
+      "prune_identical_content": true,
+      "quality_decay_threshold": 0.05,
+      "seed": null,
+      "strict": false,
+      "vault_db_path": null,
+      "vault_dir": null,
+      "yara_rules_path": null
+    },
+    "limits": {
+      "analysis_timeout_seconds": 300,
+      "analyzer_timeout_seconds": 10,
+      "decode_timeout_seconds": 10,
+      "max_data_size": 52428800,
+      "max_memory_mb": 1024,
+      "max_node_count": 100,
+      "max_recursion_depth": 5,
+      "min_score_threshold": 0.01
+    },
+    "tool": {
+      "name": "Titan Decoder Engine",
+      "schema_version": "1.2"
+    }
+  }
+}

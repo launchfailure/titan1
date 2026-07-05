@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import List, Tuple
 import base64
 import bz2
 import lzma
@@ -429,52 +429,152 @@ def _xor_text_likeness(data: bytes) -> float:
     return sum(_XOR_SCORE[b] for b in data) / len(data)
 
 
-class XorDecoder(Decoder):
-    """Single-byte XOR decoder.
+def _best_key_over_hist(hist: list) -> tuple:
+    """Return ``(best_key, best_total)`` maximizing text-likeness over a byte
+    histogram.
 
-    Brute-forces all 256 keys and picks the one that best reveals readable
-    text/commands/URLs using a text-likeness score, not raw printable count --
-    printable count cannot choose among the several all-printable candidates a
-    single-byte XOR produces, which is why an ASCII-XOR'd config (e.g. a C2 URL
-    keyed with 0x5A, whose ciphertext has no high bits) was previously missed.
+    Each XOR column (and the single-byte case over the whole sample) is a
+    single-byte XOR, so the best key is found by scoring all 256 keys against
+    the histogram of present byte values — cost bounded by the number of
+    distinct bytes, independent of input length.
+    """
+    table = _XOR_SCORE
+    present = [(b, c) for b, c in enumerate(hist) if c]
+    best_key = 0
+    best_score = float("-inf")
+    for key in range(256):
+        s = 0.0
+        for b, c in present:
+            s += table[b ^ key] * c
+        if s > best_score:
+            best_score = s
+            best_key = key
+    return best_key, best_score
+
+
+def _histogram(data: bytes) -> list:
+    hist = [0] * 256
+    for b in data:
+        hist[b] += 1
+    return hist
+
+
+def _best_column_key(column: bytes) -> int:
+    if not column:
+        return 0
+    return _best_key_over_hist(_histogram(column))[0]
+
+
+def _xor_bytes(data: bytes, key: bytes) -> bytes:
+    if len(key) == 1:
+        return data.translate(bytes(i ^ key[0] for i in range(256)))
+    klen = len(key)
+    return bytes(b ^ key[i % klen] for i, b in enumerate(data))
+
+
+class XorDecoder(Decoder):
+    """XOR decoder: single-byte and repeating-key (key lengths 1--8).
+
+    Single-byte keys are recovered by a 256-key brute force. Repeating keys are
+    recovered per key length by a column-wise frequency analysis: for each
+    candidate length L, every L-th byte forms a column that is itself a
+    single-byte XOR, so the best key byte for each column is found independently
+    and the columns are reassembled into the full key. This recovers, e.g., a
+    4KB config XOR'd with a 4-byte key that single-byte analysis cannot touch.
+
+    Cost stays bounded by a **sampling** strategy: all candidate keys are scored
+    on a bounded prefix sample, and the full input is only decoded once, for the
+    single accepted key. This lets the size cap rise well above the old 512-byte
+    limit without an unbounded brute force.
 
     Accepts only a clearly text-like reveal that beats reading the bytes as-is,
-    so it does not scramble already-readable, random, hex, or base64 data.
+    with a stricter margin for longer keys (which have more freedom to overfit
+    noise), so it does not scramble already-readable, random, hex, or base64
+    data.
     """
+
+    # Upper bound on input size XOR will attempt. Scoring is sampled, and the
+    # single full decode on acceptance is a linear pass, so this can be large.
+    MAX_SIZE = 1024 * 1024
+    # Bytes of the input used to score candidate keys.
+    SAMPLE_SIZE = 4096
+    MAX_KEY_LEN = 8
 
     def can_decode(self, data: bytes) -> bool:
         n = len(data)
-        if n < 8 or n > 512:  # keep the 256-key brute force cheap and bounded
+        if n < 8 or n > self.MAX_SIZE:
             return False
         if len(set(data)) < 8:  # near-uniform / padding is not XOR'd text
             return False
         # hex/base64 have dedicated decoders; don't XOR-scramble them.
         if looks_like_hex(data) or looks_like_base64(data):
             return False
+        # XOR is a bijection, so XOR'd *text* keeps text-level entropy (~4-5).
+        # Near-random input (entropy ~8, e.g. compressed/encrypted/random data)
+        # cannot be XOR'd text; skip it. This also keeps the (bounded but
+        # non-trivial) column analysis off the many high-entropy binary nodes
+        # the engine sees.
+        from ..utils.helpers import entropy
+
+        if entropy(data[: self.SAMPLE_SIZE]) > 6.5:
+            return False
         return True
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
-        raw = _xor_text_likeness(data)
-        best = raw
-        best_out = data
-        best_key = 0
-        for key in range(1, 256):
-            decoded = data.translate(bytes(i ^ key for i in range(256)))
-            score = _xor_text_likeness(decoded)
-            if score > best:
-                best = score
-                best_out = decoded
+        sample = data[: self.SAMPLE_SIZE]
+        raw = _xor_text_likeness(sample)
+        slen = len(sample)
+
+        # ``best_selection`` includes a per-length penalty so a longer key must
+        # be meaningfully better to win; ``best_true`` is the unpenalized
+        # text-likeness used for the acceptance gate.
+        best_selection = raw
+        best_true = raw
+        best_key: bytes | None = None
+
+        # Single-byte (length 1): scored over the sample histogram, no penalty.
+        sb_key, sb_total = _best_key_over_hist(_histogram(sample))
+        sb_score = sb_total / slen if slen else raw
+        if sb_key != 0 and sb_score > best_selection:
+            best_selection = sb_score
+            best_true = sb_score
+            best_key = bytes([sb_key])
+
+        # Repeating keys (lengths 2..8) via per-column frequency analysis.
+        for klen in range(2, self.MAX_KEY_LEN + 1):
+            if len(sample) < klen * 4:  # too little data to trust the recovery
+                continue
+            key = bytes(_best_column_key(sample[col::klen]) for col in range(klen))
+            if all(k == 0 for k in key):
+                continue
+            score = _xor_text_likeness(_xor_bytes(sample, key))
+            selection = score - self._length_penalty(klen)
+            if selection > best_selection:
+                best_selection = selection
+                best_true = score
                 best_key = key
 
-        # Require a genuine, clearly text-like reveal that beats the raw reading.
-        if (
-            best_key != 0
-            and best >= 0.70
-            and best >= raw + 0.20
-            and looks_like_text(best_out)
+        if best_key is None:
+            return data, False
+
+        # Acceptance gate on the sample's true text-likeness.
+        if not (
+            best_true >= 0.70
+            and best_true >= raw + 0.20
+            and looks_like_text(_xor_bytes(sample, best_key))
         ):
-            return best_out, True
+            return data, False
+
+        # Accepted: decode the full input once with the chosen key.
+        full = _xor_bytes(data, best_key)
+        if looks_like_text(full[: self.SAMPLE_SIZE]):
+            return full, True
         return data, False
+
+    @staticmethod
+    def _length_penalty(klen: int) -> float:
+        # Longer keys need a cleaner reveal to be accepted.
+        return 0.03 * (klen - 1)
 
     @property
     def name(self) -> str:
@@ -482,81 +582,133 @@ class XorDecoder(Decoder):
 
 
 class PDFDecoder(Decoder):
-    """PDF file stream decoder - extracts compressed streams and objects."""
+    """Object-graph-aware PDF decoder.
+
+    Parses the PDF into an object table (via
+    :class:`titan_decoder.decoders.pdf.PDFDocument`), decompresses object
+    streams (``/Type /ObjStm``) so their packed objects become visible,
+    resolves indirect references, and applies ``/Filter`` chains
+    (FlateDecode/ASCIIHexDecode/ASCII85Decode/LZWDecode, with predictors).
+
+    It then extracts the security-relevant parts by reference rather than by
+    regex: decoded stream bodies, ``/JS`` / ``/JavaScript`` action code,
+    ``/OpenAction`` targets, and ``/EmbeddedFile`` contents. This resolves a
+    stream referenced only as ``5 0 R`` and recovers objects packed inside an
+    object stream — neither of which the old regex/window approach could see.
+    """
 
     def __init__(self, max_output_size: int = DEFAULT_MAX_DECOMPRESSED_SIZE):
         self.max_output_size = max_output_size
 
     def can_decode(self, data: bytes) -> bool:
         """Check if data looks like a PDF file."""
-        result = data.startswith(b"%PDF-") and b"%%EOF" in data
-        return result
+        return data.startswith(b"%PDF-") and b"%%EOF" in data
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
-        """Extract and decompress PDF streams and objects."""
+        """Parse the PDF object graph and extract decoded/decoded-by-ref content."""
+        from .pdf import PDFDocument, PDFStream
+
         try:
-            extracted_content = []
-            total = 0  # Cap total extracted bytes (FlateDecode streams can be bombs).
-
-            # Find stream bodies, then inspect the dictionary that precedes
-            # each `stream` keyword. A dict-matching regex like <<([^>]*)>>
-            # cannot handle nested dictionaries (e.g. /DecodeParms <<...>>),
-            # which are common in real PDFs, so instead look at a bounded
-            # window before the stream keyword, cut at the previous object
-            # boundary to avoid reading the prior object's dictionary.
-            stream_re = re.compile(rb"stream\r?\n(.*?)\r?\nendstream", re.DOTALL)
-
-            for match in stream_re.finditer(data):
-                if total >= self.max_output_size:
-                    break
-                stream_data = match.group(1)
-                window = data[max(0, match.start() - 2048) : match.start()]
-                boundary = max(window.rfind(b"endobj"), window.rfind(b"endstream"))
-                if boundary != -1:
-                    window = window[boundary:]
-                # Check if this stream uses FlateDecode compression
-                if b"/FlateDecode" in window:
-                    try:
-                        # Bound the inflate output so a crafted stream cannot
-                        # expand without limit (decompression bomb).
-                        decompressed = _bounded_decompress(
-                            zlib.decompressobj,
-                            stream_data,
-                            self.max_output_size - total,
-                        )
-                        extracted_content.append(decompressed)
-                        total += len(decompressed)
-                    except Exception:
-                        # Decompression failed or exceeded the cap: keep the raw
-                        # (compressed, hence small) stream instead.
-                        extracted_content.append(stream_data)
-                        total += len(stream_data)
-                else:
-                    extracted_content.append(stream_data)
-                    total += len(stream_data)
-
-            # Also extract JavaScript if present
-            js_pattern = b"/JavaScript\\s*(.*?)\\s*endobj"
-            js_matches = re.findall(js_pattern, data, re.DOTALL | re.IGNORECASE)
-            for js in js_matches:
-                extracted_content.append(js.strip())
-
-            # Extract embedded files
-            embedded_pattern = b"/EmbeddedFile\\s*(.*?)\\s*endobj"
-            embedded_matches = re.findall(
-                embedded_pattern, data, re.DOTALL | re.IGNORECASE
-            )
-            for embedded in embedded_matches:
-                extracted_content.append(embedded.strip())
-
-            if extracted_content:
-                # Return concatenated extracted content
-                return b"\n".join(extracted_content), True
-
-            return data, False
-
+            doc = PDFDocument(data, max_output=self.max_output_size)
         except Exception:
             return data, False
+
+        try:
+            parts: List[bytes] = []
+            total = 0
+
+            def add(chunk: bytes) -> bool:
+                nonlocal total
+                if not chunk:
+                    return True
+                room = self.max_output_size - total
+                if room <= 0:
+                    return False
+                if len(chunk) > room:
+                    chunk = chunk[:room]
+                parts.append(chunk)
+                total += len(chunk)
+                return True
+
+            # 1. Decode every stream body (bounded), labeled by object id.
+            for (num, gen), obj in sorted(doc.objects.items()):
+                if total >= self.max_output_size:
+                    break
+                if not isinstance(obj, PDFStream):
+                    continue
+                try:
+                    decoded = doc.decode_stream(obj)
+                except Exception:
+                    decoded = obj.raw
+                if decoded:
+                    if not add(f"=== obj {num} {gen} stream ===\n".encode()):
+                        break
+                    if not add(decoded):
+                        break
+
+            # 2. Extract JavaScript, OpenAction, and embedded files by reference.
+            self._extract_actions(doc, add)
+
+            if parts:
+                # Cap the joined result too (join separators add bytes past the
+                # per-chunk accounting).
+                return b"\n".join(parts)[: self.max_output_size], True
+            return data, False
+        except Exception:
+            return data, False
+
+    def _extract_actions(self, doc, add) -> None:
+        from .pdf import PDFName, PDFStream
+
+        def to_bytes(val) -> bytes:
+            val = doc.resolve(val)
+            if isinstance(val, bytes):
+                return val
+            if isinstance(val, PDFStream):
+                try:
+                    return doc.decode_stream(val)
+                except Exception:
+                    return val.raw
+            if isinstance(val, PDFName):
+                return val.value.encode("latin-1", "replace")
+            if isinstance(val, str):
+                return val.encode("utf-8", "replace")
+            return b""
+
+        for key, obj in sorted(doc.objects.items()):
+            d = obj.dict if isinstance(obj, PDFStream) else obj
+            if not isinstance(d, dict):
+                continue
+            # JavaScript actions: /JS may be a string or an indirect stream ref.
+            if "JS" in d:
+                js = to_bytes(d.get("JS"))
+                if js:
+                    add(b"=== /JS action ===\n")
+                    add(js)
+            if "JavaScript" in d:
+                js = to_bytes(d.get("JavaScript"))
+                if js:
+                    add(b"=== /JavaScript ===\n")
+                    add(js)
+            # OpenAction: auto-run on document open.
+            if "OpenAction" in d:
+                oa = doc.resolve(d.get("OpenAction"))
+                if isinstance(oa, dict) and "JS" in oa:
+                    js = to_bytes(oa.get("JS"))
+                    if js:
+                        add(b"=== /OpenAction /JS ===\n")
+                        add(js)
+            # Embedded files: /EF -> /F -> file stream.
+            if "EF" in d:
+                ef = doc.resolve(d.get("EF"))
+                if isinstance(ef, dict):
+                    for fk in ("F", "UF", "DOS", "Mac", "Unix"):
+                        if fk in ef:
+                            content = to_bytes(ef.get(fk))
+                            if content:
+                                add(b"=== /EmbeddedFile ===\n")
+                                add(content)
+                                break
 
     @property
     def name(self) -> str:
@@ -564,116 +716,123 @@ class PDFDecoder(Decoder):
 
 
 class OLEDecoder(Decoder):
-    """OLE (Object Linking and Embedding) file decoder - extracts embedded content."""
+    """Compound File Binary (OLE2) decoder.
 
-    # Per-signature match cap: each signature occurrence extracts a window and,
-    # for VBA, scans for end markers. Without a cap, a crafted OLE file full of
-    # repeated signatures yields gigabytes of output (memory bomb) and the VBA
-    # end-marker scan becomes O(n^2). Real OLE files have very few matches.
-    MAX_MATCHES_PER_SIGNATURE = 64
+    Walks the real CFB structure (header, FAT/DIFAT, directory tree, mini
+    stream) via :class:`titan_decoder.decoders.cfb.CFBReader`, enumerates
+    streams by their directory path, and decompresses VBA source from module
+    streams using the [MS-OVBA] container format. Extracted artifacts are
+    labeled with their real stream path (e.g. ``Macros/VBA/Module1``) rather
+    than a byte window carved around a magic string, which eliminated the old
+    carver's false positives (signature bytes appearing in random stream data).
+
+    Output is a small text index of stream paths/sizes followed by the stream
+    bodies, all bounded by ``max_output_size`` so a crafted file with many or
+    huge streams cannot amplify without limit.
+    """
 
     def __init__(self, max_output_size: int = DEFAULT_MAX_DECOMPRESSED_SIZE):
         self.max_output_size = max_output_size
 
     def can_decode(self, data: bytes) -> bool:
-        """Check if data looks like an OLE file."""
-        if len(data) < 8:
+        """Check if data looks like a CFB/OLE2 file."""
+        if len(data) < 512:
             return False
-        # OLE signature: D0 CF 11 E0 A1 B1 1A E1
+        # CFB signature: D0 CF 11 E0 A1 B1 1A E1
         return data[:8] == b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
-        """Extract embedded content from OLE files (bounded)."""
+        """Parse the CFB structure and extract real streams + VBA source."""
+        from .cfb import CFBReader, is_vba_module_stream, CFBError
+
         try:
-            extracted_content = []
-            total = 0
-            generators = (
-                self._extract_ole_objects(data),
-                self._extract_vba_macros(data),
-                self._extract_embedded_files(data),
-            )
-            for gen in generators:
-                if total >= self.max_output_size:
-                    break
-                for chunk in gen:
-                    room = self.max_output_size - total
-                    if room <= 0:
-                        break
-                    if len(chunk) > room:
-                        chunk = chunk[:room]
-                    extracted_content.append(chunk)
-                    total += len(chunk)
-
-            if extracted_content:
-                return b"\n".join(extracted_content), True
-
+            reader = CFBReader(data, max_total_bytes=self.max_output_size)
+        except CFBError:
             return data, False
-
         except Exception:
             return data, False
 
-    def _extract_ole_objects(self, data: bytes):
-        """Yield windows around OLE object signatures."""
-        ole_signatures = [
-            b"\x01\x00\x00\x00",  # OLE object
-            b"Package",  # Embedded package
-        ]
-        for sig in ole_signatures:
-            pos = 0
-            count = 0
-            while count < self.MAX_MATCHES_PER_SIGNATURE:
-                pos = data.find(sig, pos)
-                if pos == -1:
-                    break
-                start = max(0, pos - 100)
-                end = min(len(data), pos + 1000)
-                yield data[start:end]
-                pos += len(sig)
-                count += 1
+        try:
+            parts: List[bytes] = []
+            total = 0
 
-    def _extract_vba_macros(self, data: bytes):
-        """Yield VBA macro content around project signatures."""
-        vba_indicators = [b"VBA", b"PROJECT", b"Attribute VB_Name"]
-        end_markers = [b"\x00\x00", b"End Sub", b"End Function"]
-        for indicator in vba_indicators:
-            pos = 0
-            count = 0
-            while count < self.MAX_MATCHES_PER_SIGNATURE:
-                pos = data.find(indicator, pos)
-                if pos == -1:
+            for path, entry in reader.streams():
+                if total >= self.max_output_size:
                     break
-                end = len(data)
-                for marker in end_markers:
-                    marker_pos = data.find(marker, pos)
-                    if marker_pos != -1 and marker_pos < end:
-                        end = marker_pos + len(marker)
-                macro_content = data[pos:end]
-                if len(macro_content) > 10:  # Only if substantial content
-                    yield macro_content
-                pos += len(indicator)
-                count += 1
+                try:
+                    stream = reader.read_stream(entry)
+                except Exception:
+                    continue
+                if not stream:
+                    continue
 
-    def _extract_embedded_files(self, data: bytes):
-        """Yield windows around embedded file headers."""
-        file_headers = [
-            b"%PDF-",  # PDF
-            b"PK\x03\x04",  # ZIP
-            b"MZ",  # PE
-            b"\x7fELF",  # ELF
-            b"BZ",  # BZIP2
-            b"\x1f\x8b",  # GZIP
-        ]
-        for header in file_headers:
-            pos = 0
-            count = 0
-            while count < self.MAX_MATCHES_PER_SIGNATURE:
-                pos = data.find(header, pos)
-                if pos == -1:
+                emitted = stream
+                label = path
+                # VBA module streams hold their source as an MS-OVBA compressed
+                # container. Recover the decompressed source so downstream IOC
+                # extraction sees the actual macro text, not the packed bytes.
+                if is_vba_module_stream(path):
+                    src = self._decompress_module(stream)
+                    if src:
+                        emitted = src
+                        label = f"{path} (decompressed VBA)"
+
+                room = self.max_output_size - total
+                if room <= 0:
                     break
-                end = min(len(data), pos + 10000)  # 10KB should be enough for headers
-                yield data[pos:end]
-                pos += len(header)
-                count += 1
+                header = f"=== stream: {label} ({len(emitted)} bytes) ===\n".encode(
+                    "utf-8", errors="replace"
+                )
+                chunk = header + emitted
+                if len(chunk) > room:
+                    chunk = chunk[:room]
+                parts.append(chunk)
+                total += len(chunk)
+
+            if parts:
+                return b"\n".join(parts), True
+            return data, False
+        except Exception:
+            return data, False
+
+    def _decompress_module(self, stream: bytes) -> bytes:
+        """Recover VBA source from a module stream.
+
+        A module stream stores the compressed source at an offset given in the
+        project ``dir`` stream. Rather than fully parse ``dir``, locate the
+        MS-OVBA container by its ``0x01`` signature byte and try decompressing
+        from each candidate offset, returning the largest well-formed,
+        text-like result. This is bounded to a handful of candidates.
+        """
+        from .cfb import decompress_ovba, CFBError
+
+        best = b""
+        candidates = 0
+        pos = 0
+        while candidates < 32:
+            idx = stream.find(b"\x01", pos)
+            if idx == -1:
+                break
+            pos = idx + 1
+            candidates += 1
+            try:
+                out = decompress_ovba(stream[idx:], max_output=self.max_output_size)
+            except CFBError:
+                continue
+            except Exception:
+                continue
+            # Accept only a substantial, mostly-printable result (VBA source is
+            # ASCII text); this rejects false 0x01 offsets in binary padding.
+            if len(out) > len(best) and self._looks_like_source(out):
+                best = out
+        return best
+
+    @staticmethod
+    def _looks_like_source(data: bytes) -> bool:
+        if len(data) < 8:
+            return False
+        printable = sum(1 for b in data[:4096] if 9 <= b <= 13 or 32 <= b <= 126)
+        return printable >= 0.80 * min(len(data), 4096)
 
     @property
     def name(self) -> str:

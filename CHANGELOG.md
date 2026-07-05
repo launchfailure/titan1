@@ -2,6 +2,73 @@
 
 ## Unreleased
 
+Decoder correctness (Milestone 1):
+
+- Replace the OLE signature-window carver with a real Compound File Binary
+  (CFB/OLE2) parser: it walks the header, FAT/DIFAT, directory tree, and
+  mini-stream, enumerates streams by their real directory path (e.g.
+  `Macros/VBA/Module1`), and decompresses VBA source from module streams via
+  the MS-OVBA compressed-container format. Extracted artifacts are named after
+  real stream paths and the old window-carving false positives (signature bytes
+  in random data) are gone.
+- Make the PDF decoder object-graph aware: it parses indirect objects,
+  decompresses object streams (`/Type /ObjStm`) so their packed objects become
+  visible, resolves indirect references, and applies `/Filter` chains
+  (FlateDecode, ASCIIHexDecode, ASCII85Decode, LZWDecode, with predictors). It
+  extracts `/JS`, `/OpenAction`, and `/EmbeddedFile` by reference rather than by
+  regex — resolving a stream referenced only as `5 0 R` and recovering objects
+  packed inside an object stream.
+- Extend the XOR decoder to repeating keys (lengths 2–8) via per-column
+  frequency analysis, with sampled scoring that raises the size cap to 1 MB
+  while keeping cost bounded (single full decode only on acceptance) and an
+  entropy gate that skips near-random input.
+
+Detection quality (Milestone 1/4):
+
+- Add `tools/eval_detections.py` measuring per-rule precision/recall over a
+  synthetic labeled corpus (`tools/corpus_samples.py`); the risk-score weights
+  in `risk_scoring.py` cite that measurement. Numbers committed in
+  `docs/detection_metrics.json` and `docs/DETECTION_QUALITY.md`, with
+  per-release history in `docs/detection_quality_history.jsonl`. Fixed
+  TITAN-001 to catch collapsed `RecursiveBase64` nesting.
+
+Structure & verification (Milestone 2):
+
+- Decompose `cli.main()` from a ~900-line function into a thin dispatcher plus
+  independently-testable stages (load_input, run_analysis, attach_evidence,
+  run_detections, write_outputs, …); CLI behaviors are asserted at the stage
+  level.
+- Add a fuzz harness (`fuzz/`) over every decoder and analyzer enforcing the
+  never-raise / bounded-output / bounded-time invariants, with a checked-in seed
+  corpus, Hypothesis property tests, and a bounded CI job.
+- Wire mypy (non-strict baseline with a ratchet list), a pytest-cov 70% floor,
+  and Python 3.13 into CI.
+- Defend the rule-pack ReDoS surface: pack `content_regex` patterns run under
+  linear-time RE2 when available, else in a killable subprocess with a hard
+  timeout — a catastrophic `(a+)+$` pattern is bounded instead of hanging.
+
+Contract, reproducibility & performance (Milestone 3):
+
+- Bump the report schema to 1.2 with first-class per-node provenance (origin,
+  producing decoder/analyzer, parent hash, confidence, artifact name, reason).
+  CI validates every emitted report against `docs/report.schema.json`, the
+  schema and code version are locked in step, and a compatibility policy is
+  documented (`docs/SCHEMA_COMPATIBILITY.md`).
+- Add a golden differential corpus (`tools/golden.py`) so any change in analysis
+  output surfaces as a reviewable diff, plus reproducibility assertions
+  (byte-identical normalized reports across runs).
+- Add a performance regression gate (`tools/bench.py`) against a committed
+  baseline: node counts checked exactly, wall-clock hardware-normalized.
+
+Beyond A+ (Milestone 4):
+
+- Publish a threat model (`docs/THREAT_MODEL.md`) with an executable red-team
+  suite and property tests over the safety-critical resource bounds.
+- Add a versioned plugin API contract (`titan_decoder.plugins.api`,
+  `docs/PLUGIN_API.md`) with load-time compatibility checking.
+- Add supply-chain integrity: a deterministic CycloneDX SBOM, reproducible-build
+  guidance, and a signing release workflow (`docs/SUPPLY_CHAIN.md`).
+
 CLI:
 
 - Restore Ctrl+C: a signal handler set a flag nothing ever read, so SIGINT

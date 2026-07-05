@@ -1,0 +1,167 @@
+{
+  "iocs": {
+    "domains": [
+      "l.bq"
+    ],
+    "emails": [],
+    "hashes": [],
+    "ipv4": [],
+    "ipv4_private": [],
+    "ipv4_public": [],
+    "urls": []
+  },
+  "meta": {
+    "schema_version": "1.2",
+    "tool": "Titan Decoder Engine"
+  },
+  "node_count": 1,
+  "nodes": [
+    {
+      "artifact_name": null,
+      "content_preview": "\u001b\u0018?\rk\u0005In2\u000f\u0004H[V:WL6JE4\u0003\u001aaF\\\u0006H<$\u0011mw\u000f/#}c\u0002n\u001aO\\\u04f6[!GEq1~\bC\\f1\u0011c\u01d1N|_l},G\u0019\nw,eEr\rnD5 k\u0014\u0443\"%34Y\u0006\f\tG^fyK?\n\f\f\u0734<JM\u0014}\\R\u0012\u0006=MH\u0006\t\u03a6&\u38f8Z\u02cb\u001fFY\u0179\tWk\u055c\u0016~r^v:\u0013\u000b9\ub553\u001f\u0007\rj}B\u001eq\u0012pO-EW#\u0002EzaN-\u07e6\u0000\u0001?o*{wno\\,IVM)\u0001A\u0013\u0003/3FA@r\u0019\u0018U`9#S\u03e8H\u001ba\u001e-\u0728\u063fTE\u0006\u001f1\u007fw \u001b\u03ba\u007f\f\r^7^k\u001bf+~:wo\n-C?\u0013\u0002K=UZZYY\u0019oD5sB\n\u0011\u0006\u0006TwXd\\i9Sm/dHY+$\u0010{Q\u007f}v\u0018Z{j.\u0014pX\\A[$k\u001e\u0002m% =\u0019\r\u02b29\u001dc4\u05a0\u01banpAj\\yA\u0016^\u0014 fScZ|\u007f}Q\u0011\u0016Dc\u000b%O\u0164\tBATF|A@]\u000b\t\rZ;v\u0015EcV\u0011AFvezR(5\u0018]\u0011v~^\u000bEq{\rs3b#n=3b}S\u0013!aw\t;xG%C_c\t>\u000554n\u0019I\u0017\u00050=)\u0017T_\u00133D&i?)!K9y\u0007\u0015-~7q\u000e\f7dWw*\b*\u000e-,ZBbV)\u066elM\"\"6N\u05c3)\u001cFPb<esCRVg%f\u0210.\u001bH~f\u0015\u0007Q>]\b\u0003\u037eK~o\u0006\u0011kWe\u0000\te\b\u000f%tfT8F\u0013&\u0013\u0015\u0010\u05e992H\u0000D<I]r.\u013e\u0003\u0016\\;f;|w\u0560?'\f\u001c\u0007(zf~r\u0016\u0699\r(U\b!\u0014v]c\f\u0015^\"\t+\u0005n`>s{\u000bu\u00bb4L\\@%E\u0000/O\u000e\u0003\u0015f1GW9J\u0006KB\u0015+:-\u0003'7S\u0005\u0015B/T\u001cL\u0016.6(Xp\u0366\u001e\u0014\r\u000e5R{\u0012/$\u0014r&Qk \u000e\uc899^C2\u001bX`71\u0003!pm\u001fs \u001b9\u0016$\t\u0000dF\u0469n\u0005\u0004\u0011hw:\u007fIIhq\u0000'O\u0016\u0413W\u001aXx@SQ{J7\u0010\u068d\u001f!c_%6l\u0017\u000f\u0282+\u0007\f\u0018mV\n\t\u0005V\u0006k\u001ch\u001c~\u000e+\n.\u001c\u000b\b>qd\u000fkY\u001b\u0010\ud74a\u0018\u0017\u0018F\nb-\\I\u01c4\u0018\fo\u001b\u007f4\u001a\u001bV>0(a=\u0018/\u000e}\u0010}f/\u000b9\u0016:]zQ/b)Zz\u0019!\u0014a`uF\u0018TV?sw1P|`\u0004-3f\u0010R\u0016m\u0004\\\u00029\\0m5\u0003\u051bj{\u001bAOP\u0015t\u000fn/r\u0000x[[]\f<\u001cshLgo\u52ec\u0010%/H\u0016d\uf2eaRPz\u0001w^\u0000\u001co7#~l.bq\":[4V\u007fl\u052b\u000f\u0015FFD2\u0018>}v]\u0015|-(\u0011_\u01bc\u0001 \f`_#x\u065bvX`\u01dc\u0017\u01bbR\u0000\u00165\u001f\u0019\u00165b\r?M\u0018b\u0429\r\u0012(\u000eH\u0011/\u0010E{\u0292\u0003,\u0107C\u000e;k\u07e1SphJ\u0012\t\u001cG\rj\ucb9b@\u00029FYn1[zmo{;\u0689\u0476.Lz4\u06d3s\u007f\u0018;<9|M,dF/tB\u0684\u03fe-=%3}\u05b9Ke\u0005 ~\u0006X>d\u001dT0M\u0002\u000ex~Im\u001b\u0013\u0019QZx\u0012*r5\u0012.\u0011~t\u0014VV\u001e\u7f99\u0015\u0004B8y}\u0018-\u0015MZM\u000e'5m~=L\u001a\u007fN+B\u001av\u0507]\u02aa\t}\u001dj\u0013\u0006\u007f4<Gz\u0014>@_\u0002w|/$,r+yZha\u0011Mr$\u0679pS-\u0015IJZ@\u00b4o\u0017+vVm\u0017_;G",
+      "content_type": "Binary",
+      "decode_score": 0.0,
+      "decoded_length": 2048,
+      "decoder_used": null,
+      "depth": 0,
+      "entropy": 7.9037,
+      "id": 0,
+      "method": "ANALYZE",
+      "parent": null,
+      "provenance": {
+        "artifact_name": null,
+        "confidence": null,
+        "origin": "input",
+        "parent_id": null,
+        "parent_sha256": null,
+        "produced_by": null,
+        "reason": "root input blob"
+      },
+      "pruned": true,
+      "sha256": "6c995cc637182119ccccc03d521fe863d5c54fda83e0689da74e8f35f44bb660",
+      "source_length": 2048
+    }
+  ],
+  "run_manifest": {
+    "components": {
+      "analyzers": [
+        "ELF",
+        "PE",
+        "TAR",
+        "ZIP"
+      ],
+      "decoders": [
+        "Base64",
+        "Base64URL",
+        "Bz2",
+        "Gzip",
+        "HTMLEntity",
+        "Hex",
+        "LZMA",
+        "OLE",
+        "PDF",
+        "PEM",
+        "ROT13",
+        "RecursiveBase64",
+        "URLDecoder",
+        "UTF16",
+        "UnicodeEscape",
+        "XOR",
+        "ZLIB"
+      ],
+      "plugins": {
+        "analyzers": [],
+        "api_version": "1.0",
+        "decoders": [],
+        "loaded_plugins": []
+      }
+    },
+    "effective_config": {
+      "analysis_timeout_seconds": 300,
+      "analyzer_timeout_seconds": 10,
+      "analyzers": {
+        "elf": true,
+        "pe": true,
+        "tar": true,
+        "zip": true
+      },
+      "correlation_db_path": null,
+      "decode_timeout_seconds": 10,
+      "decoders": {
+        "asn1": false,
+        "base32": false,
+        "base64": true,
+        "base64url": true,
+        "bz2": true,
+        "gzip": true,
+        "hex": true,
+        "html_entity": true,
+        "lzma": true,
+        "ole": true,
+        "pdf": true,
+        "pem": true,
+        "quoted_printable": false,
+        "recursive_base64": true,
+        "rot13": true,
+        "unicode_escape": true,
+        "url": true,
+        "utf16": true,
+        "uuencode": false,
+        "xor": true,
+        "zlib": true
+      },
+      "detection_rule_packs": [],
+      "enable_correlation": false,
+      "enable_depth_based_limits": true,
+      "enable_enrichment_cache": true,
+      "enable_geo_enrichment": false,
+      "enable_logging": true,
+      "enable_quality_pruning": true,
+      "enable_resource_pruning": true,
+      "enable_whois": false,
+      "enable_yara": false,
+      "enrichment_cache_path": null,
+      "geo_db_path": null,
+      "include_decision_trace": false,
+      "log_level": "INFO",
+      "max_compression_ratio": 100,
+      "max_consecutive_low_scores": 3,
+      "max_data_size": 52428800,
+      "max_memory_mb": 1024,
+      "max_node_count": 100,
+      "max_recursion_depth": 5,
+      "max_report_size_mb": null,
+      "max_tar_file_size": 52428800,
+      "max_tar_files": 25,
+      "max_tar_total_size": 10485760,
+      "max_zip_file_size": 52428800,
+      "max_zip_files": 25,
+      "max_zip_total_size": 10485760,
+      "min_content_similarity": 0.8,
+      "min_score_threshold": 0.01,
+      "plugin_dirs": [],
+      "prune_empty_decodes": true,
+      "prune_identical_content": true,
+      "quality_decay_threshold": 0.05,
+      "seed": null,
+      "strict": false,
+      "vault_db_path": null,
+      "vault_dir": null,
+      "yara_rules_path": null
+    },
+    "limits": {
+      "analysis_timeout_seconds": 300,
+      "analyzer_timeout_seconds": 10,
+      "decode_timeout_seconds": 10,
+      "max_data_size": 52428800,
+      "max_memory_mb": 1024,
+      "max_node_count": 100,
+      "max_recursion_depth": 5,
+      "min_score_threshold": 0.01
+    },
+    "tool": {
+      "name": "Titan Decoder Engine",
+      "schema_version": "1.2"
+    }
+  }
+}

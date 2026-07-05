@@ -36,7 +36,7 @@ class ScoringEngine:
         "Hex": 2,
         "ROT13": 1,
         "UTF16": 2,
-        "XOR": 5,  # Expensive due to brute force
+        "XOR": 5,  # Expensive: brute force + repeating-key column analysis
         "ZIP": 3,
         "TAR": 3,
     }

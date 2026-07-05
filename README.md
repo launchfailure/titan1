@@ -75,11 +75,23 @@ python -c 'import json; r=json.load(open("report.json")); print((r.get("risk_ass
 - **21 Built-in Decoders (+ plugins)** — 17 always on, 4 opt-in:
   - *Always on (17):* Base64, RecursiveBase64, Base64URL, PEM, Gzip, Bz2, LZMA, Zlib, Hex, XOR, ROT13, URL decode, HTML entities, Unicode escape, UTF-16, PDF, OLE
   - *Opt-in (4):* Base32, UUEncode, ASN.1, QuotedPrintable — see [Opt-in decoders](#opt-in-decoders) below
+- **Real structural parsers, not carvers**:
+  - *OLE/CFB:* walks the Compound File structure (FAT/DIFAT/directory/mini-stream),
+    names artifacts by real stream path (e.g. `Macros/VBA/Module1`), and
+    decompresses VBA source via MS-OVBA.
+  - *PDF:* object-graph aware — resolves indirect references, decompresses object
+    streams (`/Type /ObjStm`), follows `/Filter` chains
+    (Flate/ASCIIHex/ASCII85/LZW), and extracts `/JS`, `/OpenAction`, and
+    `/EmbeddedFile` by reference.
+  - *XOR:* single-byte and repeating-key (2–8) recovery via column frequency
+    analysis with sampled scoring.
 - **Smart Detection**: Auto-enables format-specific decoders
 - **Recursive Analysis**: Handles nested encodings (configurable depth)
 - **Archive Support**: ZIP, TAR with anti-zip-bomb protections
 - **Binary Analysis**: PE, ELF metadata extraction
 - **IOC Extraction**: IPs, URLs, domains, emails, hashes with normalization
+- **Per-node provenance**: every artifact records how it was produced (decoder/
+  analyzer, parent hash, confidence) — retraceable from the root input
 
 ### Forensics & Intelligence
 - **Device Forensics**: VM detection, mobile IDs (IMEI/IMSI/ICCID), burner patterns

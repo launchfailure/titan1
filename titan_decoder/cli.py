@@ -16,7 +16,8 @@ from .core.evidence_correlation import top_pivots, build_last_seen, build_entity
 from .core.evidence_links import build_links_from_evidence_events, top_links
 
 
-def main():
+def build_parser() -> argparse.ArgumentParser:
+    """Construct the CLI argument parser (thin, side-effect-free)."""
     parser = argparse.ArgumentParser(
         description="Titan Decoder Engine - Advanced payload analysis tool"
     )
@@ -278,36 +279,33 @@ def main():
         dest="enable_redaction",
         help="Disable PII redaction in logs",
     )
-    args = parser.parse_args()
+    return parser
 
-    def _parse_evidence_specs(specs: list[str] | None):
-        if not specs:
-            return None
-        results = []
-        for spec in specs:
-            if not spec:
-                continue
-            if ":" not in spec:
-                raise SystemExit(
-                    "--evidence must be in KIND:PATH form (e.g., dns:logs/dns.csv)"
-                )
-            kind, path_s = spec.split(":", 1)
-            path = Path(path_s)
-            if not path.exists():
-                raise SystemExit(f"Evidence path not found: {path}")
-            results.append(parse_evidence_file(path, kind))
-        return combine_parse_results(results)
 
-    # Note: no custom SIGINT handler here. Python's default KeyboardInterrupt
-    # is the abort mechanism (caught around the analysis calls below); a custom
-    # handler that merely sets a flag would swallow Ctrl+C without stopping
-    # anything.
+def _parse_evidence_specs(specs: "list[str] | None"):
+    """Parse ``--evidence KIND:PATH`` specs into a combined parse result."""
+    if not specs:
+        return None
+    results = []
+    for spec in specs:
+        if not spec:
+            continue
+        if ":" not in spec:
+            raise SystemExit(
+                "--evidence must be in KIND:PATH form (e.g., dns:logs/dns.csv)"
+            )
+        kind, path_s = spec.split(":", 1)
+        path = Path(path_s)
+        if not path.exists():
+            raise SystemExit(f"Evidence path not found: {path}")
+        results.append(parse_evidence_file(path, kind))
+    return combine_parse_results(results)
 
-    # Load configuration
-    config = Config(args.config) if args.config else Config()
+
+def apply_cli_config(args, config) -> None:
+    """Apply CLI-level config overrides that must land before any early exit."""
     if args.trace:
         config.set("include_decision_trace", True)
-
     # CLI-level overrides that should be reflected in run_manifest.
     if args.seed is not None:
         random.seed(int(args.seed))
@@ -317,12 +315,20 @@ def main():
     if args.strict:
         config.set("strict", True)
 
+
+def handle_info_commands(args, config) -> "int | None":
+    """Handle early-exit informational / vault subcommands.
+
+    Returns an exit code if one of these commands handled the invocation, or
+    ``None`` if normal analysis should proceed. Kept as one stage so main() is a
+    thin dispatcher and each mode is independently testable.
+    """
     # Print schema version and exit.
     if args.print_schema_version:
         from titan_decoder.core.engine import SCHEMA_VERSION
 
         print(json.dumps({"schema_version": SCHEMA_VERSION}))
-        sys.exit(0)
+        return 0
 
     # List rule packs and exit.
     if args.list_rule_packs:
@@ -330,7 +336,7 @@ def main():
         for p in (config.get("detection_rule_packs", []) or []):
             packs.append({"path": str(p), "exists": Path(p).exists()})
         print(json.dumps({"rule_packs": packs}, indent=2))
-        sys.exit(0)
+        return 0
 
     # Validate rule packs and exit.
     if args.rules_validate:
@@ -354,7 +360,7 @@ def main():
                 ok = False
                 results.append({"path": str(p), "ok": False, "error": str(e)})
         print(json.dumps({"ok": ok, "results": results}, indent=2))
-        sys.exit(0 if ok else 1)
+        return 0 if ok else 1
 
     # List decoders/analyzers and exit.
     if args.list_decoders or args.list_analyzers:
@@ -373,30 +379,36 @@ def main():
             ]
             listing["analyzers"] = sorted(ans, key=lambda x: x["name"])
         print(json.dumps(listing, indent=2))
-        sys.exit(0)
+        return 0
 
     # Doctor mode: run diagnostics and exit (no input file required).
     if args.doctor:
         diag = _run_doctor(config)
         print(json.dumps(diag, indent=2))
-        sys.exit(0 if diag.get("ok") else 1)
+        return 0 if diag.get("ok") else 1
 
     # Vault prune/list/search modes (no input file required).
     if args.vault_prune_days is not None:
         result = _vault_prune(config, int(args.vault_prune_days))
         print(json.dumps(result, indent=2))
-        sys.exit(0)
+        return 0
     if args.vault_list_recent is not None:
         recent = _vault_list_recent(config, int(args.vault_list_recent))
         print(json.dumps({"recent": recent}, indent=2))
-        sys.exit(0)
+        return 0
 
     # Vault search mode: query prior runs and exit (no input file required).
     if args.vault_search:
         matches = _vault_search(config, args.vault_search, args.vault_search_type)
         print(json.dumps({"query": args.vault_search, "matches": matches}, indent=2))
-        sys.exit(0)
+        return 0
 
+    return None
+
+
+def apply_runtime_config(args, config) -> None:
+    """Apply offline override, analysis profiles, depth/artifact overrides, and
+    set up logging. Runs after early-exit commands, before analysis."""
     # Hard offline override: disable all outbound enrichment regardless of config.
     if args.offline:
         config.set("enable_geo_enrichment", False)
@@ -445,65 +457,74 @@ def main():
             log_json=bool(args.log_json),
         )
 
-    # Batch mode (sys.exit so the status code survives `python -m` invocation,
-    # not just the console-script wrapper).
-    if args.batch:
-        sys.exit(run_batch_analysis(args, config))
 
-    # Normal analysis mode
+def load_input(args, config) -> bytes:
+    """Read the input payload, or empty bytes for evidence-only mode.
+
+    Exits (SystemExit) with the appropriate code/message on a missing input
+    source, unreadable/empty file — the same behavior main() had inline, now
+    independently testable.
+    """
     if not args.file:
         # Evidence-only mode: ingest IR logs/artifacts without a payload to
         # decode. With no input source at all, this is an error.
         if not args.evidence:
             print("Error: --file, --batch, or --evidence is required")
             sys.exit(1)
-        data = b""
-    else:
-        if not args.file.exists():
-            print(f"Error: Input file {args.file} does not exist")
-            sys.exit(1)
+        return b""
 
-        # Read input data with error handling
-        try:
-            data = args.file.read_bytes()
-        except PermissionError:
-            print(f"Error: Permission denied reading {args.file}")
-            sys.exit(1)
-        except OSError as e:
-            print(f"Error: Could not read file {args.file}: {e}")
-            sys.exit(1)
+    if not args.file.exists():
+        print(f"Error: Input file {args.file} does not exist")
+        sys.exit(1)
 
-        if len(data) == 0:
-            print(f"Error: Input file {args.file} is empty")
-            sys.exit(1)
-
-        # Check file size
-        max_size = config.get("max_data_size", 50 * 1024 * 1024)
-        if len(data) > max_size:
-            if not args.quiet:
-                print(
-                    f"Warning: File size ({len(data)} bytes) exceeds max_data_size ({max_size} bytes)",
-                    file=sys.stderr,
-                )
-                print(
-                    "Analysis may be slow or incomplete. Increase max_data_size in config if needed.",
-                    file=sys.stderr,
-                )
-
-    # Optional IR evidence ingestion (logs/artifacts). Parsed before the
-    # (potentially long) analysis so a bad --evidence path fails fast instead
-    # of wasting a completed run.
-    evidence_result = None
+    # Read input data with error handling
     try:
-        evidence_result = _parse_evidence_specs(args.evidence)
+        data = args.file.read_bytes()
+    except PermissionError:
+        print(f"Error: Permission denied reading {args.file}")
+        sys.exit(1)
+    except OSError as e:
+        print(f"Error: Could not read file {args.file}: {e}")
+        sys.exit(1)
+
+    if len(data) == 0:
+        print(f"Error: Input file {args.file} is empty")
+        sys.exit(1)
+
+    # Check file size
+    max_size = config.get("max_data_size", 50 * 1024 * 1024)
+    if len(data) > max_size:
+        if not args.quiet:
+            print(
+                f"Warning: File size ({len(data)} bytes) exceeds max_data_size ({max_size} bytes)",
+                file=sys.stderr,
+            )
+            print(
+                "Analysis may be slow or incomplete. Increase max_data_size in config if needed.",
+                file=sys.stderr,
+            )
+    return data
+
+
+def parse_evidence_stage(args):
+    """Parse optional IR evidence inputs, before the (long) analysis.
+
+    A bad ``--evidence`` path fails fast (SystemExit) instead of wasting a
+    completed run; other parse errors degrade to no evidence.
+    """
+    try:
+        return _parse_evidence_specs(args.evidence)
     except SystemExit:
         raise
     except Exception as e:
         if args.verbose:
             print(f"Warning: failed to parse evidence inputs: {e}", file=sys.stderr)
-        evidence_result = None
+        return None
 
-    # Run analysis with optional profiling and error handling
+
+def run_analysis_stage(args, config, data):
+    """Initialize the engine and run analysis (with optional profiling and the
+    offline network guard). Returns ``(report, engine)``."""
     try:
         engine = TitanEngine(config)
     except Exception as e:
@@ -609,6 +630,11 @@ def main():
     if args.seed is not None:
         report["meta"]["seed"] = int(args.seed)
 
+    return report, engine
+
+
+def attach_evidence_stage(args, report, evidence_result) -> None:
+    """Attach normalized IR evidence (events/indicators/links) to the report."""
     # Attach normalized evidence (parsed before the analysis above).
     if evidence_result is not None:
         # Deterministic ordering for stable reports.
@@ -640,6 +666,11 @@ def main():
             "top_links": top_links(links, limit=10),
         }
 
+def run_detections_stage(args, config, report, evidence_result):
+    """Run detection rules and risk scoring if requested.
+
+    Returns ``(detections, risk_assessment)`` and persists both into the report.
+    """
     # Run detections and risk scoring if requested
     detections = []
     risk_assessment = None
@@ -688,6 +719,11 @@ def main():
                 file=sys.stderr,
             )
 
+    return detections, risk_assessment
+
+
+def run_enrichment_stage(args, config, report, evidence_result) -> None:
+    """Optionally enrich IOCs (explicit opt-in; blocked by --offline)."""
     # Optional enrichment (explicit opt-in; blocked by --offline)
     if args.enable_enrichment and not args.offline:
         if args.progress and not args.quiet:
@@ -724,6 +760,13 @@ def main():
                 file=sys.stderr,
             )
 
+def write_outputs_stage(args, config, report, engine, detections, risk_assessment, evidence_result) -> int:
+    """Run all exports, contract validation, output, and compute the exit code.
+
+    Covers forensics, IOC/case-report/correlation, timeline, graph, JSONL,
+    vault, strict validation, the report-size guard, stdout/file output, and the
+    ``--fail-on-risk-level`` exit code. Returns the process exit code.
+    """
     # Optional forensic attribution summary
     forensics_summary = None
     if args.forensics_out or args.forensics_print:
@@ -952,6 +995,52 @@ def main():
                 )
         print("=" * 80, file=sys.stderr)
 
+    return exit_code
+
+
+def main():
+    """Thin dispatcher: parse args, then drive the analysis stages.
+
+    Each stage below is an independently callable, unit-testable function; this
+    function only wires them together and translates the final exit code into a
+    process exit. Keeping the orchestration flat here (rather than one ~900-line
+    body) is what makes the CLI behaviors — batch handling, exit codes,
+    evidence-before-analysis ordering — testable at the stage level.
+    """
+    args = build_parser().parse_args()
+
+    # Note: no custom SIGINT handler here. Python's default KeyboardInterrupt is
+    # the abort mechanism (caught around the analysis calls); a custom handler
+    # that merely sets a flag would swallow Ctrl+C without stopping anything.
+    config = Config(args.config) if args.config else Config()
+    apply_cli_config(args, config)
+
+    # Early-exit informational / vault subcommands.
+    rc = handle_info_commands(args, config)
+    if rc is not None:
+        sys.exit(rc)
+
+    apply_runtime_config(args, config)
+
+    # Batch mode (sys.exit so the status code survives `python -m` invocation,
+    # not just the console-script wrapper).
+    if args.batch:
+        sys.exit(run_batch_analysis(args, config))
+
+    # Evidence parsed before the (potentially long) analysis so a bad path fails
+    # fast instead of wasting a completed run.
+    data = load_input(args, config)
+    evidence_result = parse_evidence_stage(args)
+
+    report, engine = run_analysis_stage(args, config, data)
+    attach_evidence_stage(args, report, evidence_result)
+    detections, risk_assessment = run_detections_stage(
+        args, config, report, evidence_result
+    )
+    run_enrichment_stage(args, config, report, evidence_result)
+    exit_code = write_outputs_stage(
+        args, config, report, engine, detections, risk_assessment, evidence_result
+    )
     sys.exit(exit_code)
 
 

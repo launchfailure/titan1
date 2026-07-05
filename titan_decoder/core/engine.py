@@ -44,7 +44,7 @@ from .. import __version__ as TITAN_VERSION
 logger = logging.getLogger(__name__)
 
 
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "1.2"
 
 
 class AnalysisNode:
@@ -70,6 +70,13 @@ class AnalysisNode:
         self.decoder_used = None
         self.pruned = False
 
+        # Provenance: how this blob was produced. ``artifact_name`` is the label
+        # the producing analyzer gave the extracted item (e.g. a CFB stream path
+        # or an archive member name); ``provenance`` is the full derivation
+        # record filled in by the engine once the tree is complete.
+        self.artifact_name: Optional[str] = None
+        self.provenance: Optional[Dict[str, Any]] = None
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "id": self.id,
@@ -85,6 +92,8 @@ class AnalysisNode:
             "decode_score": self.decode_score,
             "decoder_used": self.decoder_used,
             "pruned": self.pruned,
+            "artifact_name": self.artifact_name,
+            "provenance": self.provenance,
         }
 
 
@@ -298,6 +307,7 @@ class TitanEngine:
         parent_id: Optional[int] = None,
         depth: int = 0,
         is_decoded_content: bool = False,
+        artifact_name: Optional[str] = None,
     ) -> None:
         """Recursively analyze a blob of data with intelligent scoring and pruning."""
         # Global safety checks: wall-clock and memory bounds.
@@ -353,6 +363,7 @@ class TitanEngine:
 
         node = AnalysisNode(data, parent_id, depth, "ANALYZE")
         node.id = len(self.nodes)
+        node.artifact_name = artifact_name
         self.nodes.append(node)
 
         # Check for duplicate content (hash deduplication), O(1) via running set.
@@ -436,7 +447,11 @@ class TitanEngine:
                                 is_decoded_content=True,
                             ):
                                 self.analyze_blob(
-                                    content, node.id, depth + 1, is_decoded_content=True
+                                    content,
+                                    node.id,
+                                    depth + 1,
+                                    is_decoded_content=True,
+                                    artifact_name=name,
                                 )
 
                         if self.include_decision_trace:
@@ -546,6 +561,61 @@ class TitanEngine:
         if best_score < self.pruning_engine.min_score_threshold:
             node.pruned = True
 
+    def _finalize_provenance(self) -> None:
+        """Attach a first-class provenance record to every node.
+
+        Each node's blob was produced by an operation on its parent (or is the
+        root input). The record captures *why the node exists and how it was
+        produced* — the producing decoder/analyzer, the parent hash it was
+        derived from, the confidence (decode score), the offset/label where
+        known, and a human-readable reason — enough for an analyst (or a court)
+        to retrace the derivation from the root input to any artifact.
+        """
+        by_id = {n.id: n for n in self.nodes}
+        for node in self.nodes:
+            if node.parent is None:
+                node.provenance = {
+                    "origin": "input",
+                    "produced_by": None,
+                    "parent_id": None,
+                    "parent_sha256": None,
+                    "confidence": None,
+                    "artifact_name": node.artifact_name,
+                    "reason": "root input blob",
+                }
+                continue
+
+            parent = by_id.get(node.parent)
+            producer = getattr(parent, "decoder_used", None) if parent else None
+            parent_method = getattr(parent, "method", "") if parent else ""
+            if parent_method.startswith("ANALYZE_"):
+                origin = "extract"
+            elif parent_method.startswith("DECODE_"):
+                origin = "decode"
+            else:
+                origin = "derive"
+            confidence = getattr(parent, "decode_score", None) if parent else None
+
+            if node.artifact_name:
+                reason = (
+                    f"{origin} of artifact '{node.artifact_name}' from node "
+                    f"{node.parent} via {producer}"
+                )
+            else:
+                reason = f"{origin} from node {node.parent} via {producer}"
+            if isinstance(confidence, (int, float)):
+                reason += f" (confidence {confidence:.3f})"
+
+            node.provenance = {
+                "origin": origin,
+                "produced_by": producer,
+                "parent_id": node.parent,
+                "parent_sha256": getattr(parent, "sha256", None) if parent else None,
+                "confidence": confidence,
+                "artifact_name": node.artifact_name,
+                "reason": reason,
+            }
+
     def _reset_optional_decoders(self) -> None:
         """Restore off-by-default decoders to their configured baseline.
 
@@ -576,6 +646,7 @@ class TitanEngine:
         self.decision_trace = []
         self._reset_optional_decoders()
         self.analyze_blob(input_data, None, 0)
+        self._finalize_provenance()
 
         finished_wall = datetime.now(timezone.utc)
         duration_ms = int((time.monotonic() - (self._analysis_started_monotonic or 0)) * 1000)

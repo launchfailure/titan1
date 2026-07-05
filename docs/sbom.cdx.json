@@ -1,0 +1,87 @@
+{
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "component:psutil",
+      "name": "psutil",
+      "purl": "pkg:pypi/psutil@7.2.2",
+      "scope": "optional",
+      "type": "library",
+      "version": "7.2.2"
+    },
+    {
+      "bom-ref": "component:geoip2",
+      "name": "geoip2",
+      "purl": "pkg:pypi/geoip2@5.2.0",
+      "scope": "optional",
+      "type": "library",
+      "version": "5.2.0"
+    },
+    {
+      "bom-ref": "component:python-whois",
+      "name": "python-whois",
+      "purl": "pkg:pypi/python-whois@0.9.6",
+      "scope": "optional",
+      "type": "library",
+      "version": "0.9.6"
+    },
+    {
+      "bom-ref": "component:yara-python",
+      "name": "yara-python",
+      "purl": "pkg:pypi/yara-python@4.5.4",
+      "scope": "optional",
+      "type": "library",
+      "version": "4.5.4"
+    },
+    {
+      "bom-ref": "component:requests",
+      "name": "requests",
+      "purl": "pkg:pypi/requests@2.34.2",
+      "scope": "optional",
+      "type": "library",
+      "version": "2.34.2"
+    },
+    {
+      "bom-ref": "component:PyYAML",
+      "name": "PyYAML",
+      "purl": "pkg:pypi/PyYAML@6.0.3",
+      "scope": "optional",
+      "type": "library",
+      "version": "6.0.3"
+    },
+    {
+      "bom-ref": "component:google-re2",
+      "name": "google-re2",
+      "purl": "pkg:pypi/google-re2@optional",
+      "scope": "optional",
+      "type": "library",
+      "version": "optional"
+    }
+  ],
+  "metadata": {
+    "component": {
+      "bom-ref": "component:titan-decoder",
+      "description": "Advanced payload decoding and analysis engine",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "titan-decoder",
+      "purl": "pkg:pypi/titan-decoder@2.0.2",
+      "type": "application",
+      "version": "2.0.2"
+    },
+    "tools": [
+      {
+        "name": "gen_sbom.py",
+        "vendor": "PragmaConflux"
+      }
+    ]
+  },
+  "serialNumber": "urn:uuid:0f672a18-1add-b7c0-b698-cfdf257f5113",
+  "specVersion": "1.5",
+  "version": 1
+}

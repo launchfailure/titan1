@@ -14,6 +14,32 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Versioned plugin API contract (MAJOR.MINOR). A third party ships a decoder or
+# analyzer against this interface without reading engine internals. Plugins may
+# declare the API version they were built for via a module-level
+# ``PLUGIN_API_VERSION`` or a class attribute; the manager loads a plugin only
+# when its declared MAJOR matches. See docs/PLUGIN_API.md for the full contract.
+#
+# MAJOR bump = breaking change to the base-class method signatures / semantics.
+# MINOR bump = additive, backward-compatible extension.
+PLUGIN_API_VERSION = "1.0"
+
+
+def _api_major(version: str) -> int:
+    try:
+        return int(str(version).split(".", 1)[0])
+    except (ValueError, AttributeError):
+        return -1
+
+
+def is_api_compatible(declared: str) -> bool:
+    """Return True if a plugin declaring ``declared`` is loadable here.
+
+    Compatible when the MAJOR versions match: the engine may add MINOR features
+    without breaking older plugins, but a MAJOR change is breaking.
+    """
+    return _api_major(declared) == _api_major(PLUGIN_API_VERSION)
+
 
 class PluginDecoder(ABC):
     """Base class for plugin decoders."""
@@ -89,6 +115,10 @@ class PluginManager:
         self.decoders.sort(key=lambda d: d.priority, reverse=True)
         self.analyzers.sort(key=lambda a: a.priority, reverse=True)
 
+    # Package-infrastructure modules in the built-in plugin dir that are not
+    # plugins and must not be discovered/loaded as such.
+    _RESERVED_MODULES = frozenset({"api.py"})
+
     def _load_plugins_from_dir(self, plugin_dir: Path):
         """Load plugins from a specific directory."""
         for item in plugin_dir.iterdir():
@@ -96,6 +126,7 @@ class PluginManager:
                 item.is_file()
                 and item.suffix == ".py"
                 and not item.name.startswith("_")
+                and item.name not in self._RESERVED_MODULES
             ):
                 self._load_plugin_file(item)
 
@@ -111,6 +142,20 @@ class PluginManager:
                 module = importlib.util.module_from_spec(spec)
                 sys.modules[module_name] = module
                 spec.loader.exec_module(module)
+
+                # Enforce the versioned API contract: a plugin may declare the
+                # API version it targets; skip it on a breaking (MAJOR) mismatch
+                # rather than loading an incompatible extension.
+                declared = getattr(module, "PLUGIN_API_VERSION", None)
+                if declared is not None and not is_api_compatible(str(declared)):
+                    logger.warning(
+                        "Skipping plugin %s: declares API %s, engine provides %s "
+                        "(incompatible major version)",
+                        plugin_file.name,
+                        declared,
+                        PLUGIN_API_VERSION,
+                    )
+                    return
 
                 # Find plugin classes in the module
                 self._register_plugin_classes(module, plugin_file.stem)
@@ -163,6 +208,7 @@ class PluginManager:
     def get_plugin_info(self) -> Dict[str, Any]:
         """Get information about loaded plugins."""
         return {
+            "api_version": PLUGIN_API_VERSION,
             "plugin_dirs": [str(d) for d in self.plugin_dirs],
             "loaded_plugins": list(self.loaded_plugins.keys()),
             "decoders": [d.name for d in self.decoders],
