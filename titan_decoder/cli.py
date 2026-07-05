@@ -1287,6 +1287,7 @@ def run_batch_analysis(args, config):
             ("--graph", args.graph),
             ("--jsonl-out", args.jsonl_out),
             ("--timeline-out", args.timeline_out),
+            ("--evidence-timeline-out", args.evidence_timeline_out),
             ("--forensics-out", args.forensics_out),
         )
         if flag

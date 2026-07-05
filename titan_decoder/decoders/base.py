@@ -8,6 +8,7 @@ import binascii
 import re
 
 from ..utils.helpers import (
+    entropy,
     looks_like_base64,
     looks_like_gzip,
     looks_like_bz2,
@@ -31,18 +32,36 @@ def _bounded_decompress(make_decompressor, data: bytes, max_output: int) -> byte
     ``.eof`` and ``.unused_data``. Concatenated streams (e.g. multi-member gzip)
     are handled by creating a new decompressor per stream. ``decompress`` returns
     at most ``max_length`` bytes and buffers the rest, so peak memory stays
-    bounded. Raises ValueError if the total output would exceed ``max_output``.
+    bounded. Raises ValueError if the total output would exceed ``max_output``,
+    or if the *first* stream is invalid/truncated. Trailing bytes after at least
+    one complete stream (zero padding, appended payloads — both common in
+    real-world samples) are tolerated: everything decoded so far is returned
+    instead of discarding a valid decode because of what follows it.
     """
     result = bytearray()
     remaining = data
+    first_stream = True
     while remaining:
         decompressor = make_decompressor()
         # Allow one byte past the remaining budget so overflow is detectable.
         budget = max_output - len(result) + 1
-        result += decompressor.decompress(remaining, budget)
-        if len(result) > max_output or not decompressor.eof:
+        try:
+            chunk = decompressor.decompress(remaining, budget)
+        except Exception:
+            if first_stream:
+                raise
+            break  # trailing garbage after a complete stream
+        if len(result) + len(chunk) > max_output:
             raise ValueError("decompressed output exceeds maximum allowed size")
+        if not decompressor.eof:
+            if first_stream:
+                raise ValueError("truncated or incomplete compressed stream")
+            # Trailing bytes happened to look like a stream start but never
+            # completed: drop the partial chunk, keep the finished streams.
+            break
+        result += chunk
         remaining = decompressor.unused_data
+        first_stream = False
     return bytes(result)
 
 
@@ -514,8 +533,6 @@ class XorDecoder(Decoder):
         # cannot be XOR'd text; skip it. This also keeps the (bounded but
         # non-trivial) column analysis off the many high-entropy binary nodes
         # the engine sees.
-        from ..utils.helpers import entropy
-
         if entropy(data[: self.SAMPLE_SIZE]) > 6.5:
             return False
         return True
