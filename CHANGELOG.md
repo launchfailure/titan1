@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+Reproducible builds:
+
+- Make the sdist byte-reproducible. `bdist_wheel` honors `SOURCE_DATE_EPOCH`
+  but setuptools stores sdist tar members with filesystem mtimes, so every
+  build differed. New `tools/repack_sdist.py` normalizes the tarball (member
+  mtimes to `SOURCE_DATE_EPOCH`, ownership/modes, member order, gzip
+  timestamp) with a content-preservation self-check, and the release workflow
+  runs it after `python -m build`.
+
 Audit cleanup (post-roadmap):
 
 - Tolerate trailing bytes after a complete gzip/bz2/zlib/xz stream: zero
