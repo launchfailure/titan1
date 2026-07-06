@@ -37,10 +37,13 @@ jobs:
 
       - name: Reproducible build
         # Pin SOURCE_DATE_EPOCH to the tagged commit time for byte-reproducible
-        # sdist/wheel artifacts.
+        # sdist/wheel artifacts. bdist_wheel honors it natively; the sdist does
+        # not (setuptools embeds filesystem mtimes), so it is normalized by
+        # tools/repack_sdist.py after the build.
         run: |
           export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
           python -m build
+          python tools/repack_sdist.py dist/*.tar.gz
 
       - name: Sign artifacts (Sigstore, keyless)
         run: |

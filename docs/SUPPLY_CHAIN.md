@@ -27,8 +27,21 @@ The distribution is built with `SOURCE_DATE_EPOCH` pinned so the sdist/wheel are
 byte-reproducible across build hosts:
 
 ```bash
-SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) python -m build
+export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
+python -m build
+python tools/repack_sdist.py dist/*.tar.gz
 ```
+
+The wheel is reproducible from `python -m build` alone — `bdist_wheel` honors
+`SOURCE_DATE_EPOCH`. The sdist is not: setuptools stores each tar member with
+its **filesystem** mtime (at sub-second precision), which encodes the moment
+the build host checked out or generated the file. The
+[`tools/repack_sdist.py`](../tools/repack_sdist.py) step erases exactly that
+variance — member mtimes set to `SOURCE_DATE_EPOCH`, ownership and modes
+normalized, members sorted, gzip timestamp zeroed — while verifying the file
+contents are preserved byte-for-byte. The release workflow runs the same step,
+so an independent builder running the three commands above gets the published
+artifacts.
 
 Because the core has no compiled extensions and no runtime dependencies, a
 reproducible build is achievable end-to-end: two independent builders producing
