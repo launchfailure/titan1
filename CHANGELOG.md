@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+Docs:
+
+- Document the interactive `titan` UI in the day-to-day guide
+  (`docs/USAGE.md`) — a dedicated "Interactive mode" section covering
+  auto-detect vs. single-decoder, saving output, and the aggressive toggle —
+  and note both entry points (`titan` / `titan-decoder`). Add the interactive
+  UI to the README feature list and the announcement quick-start.
+
 Tests:
 
 - Make `test_utf16_decoder.py` deterministic. The random-binary
