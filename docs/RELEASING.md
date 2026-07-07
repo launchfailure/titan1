@@ -59,7 +59,70 @@ On GitHub → Releases → “Draft a new release”:
 
 That’s enough to share widely and get feedback.
 
+## Automated release via GitHub Actions (recommended)
+
+The repo ships a release pipeline in [.github/workflows/release.yml](../.github/workflows/release.yml)
+that runs automatically when you **push a `v*` tag**. You do not need to build,
+sign, or upload anything by hand. On a tag push it:
+
+1. Verifies the committed SBOM (`docs/sbom.cdx.json`) matches a fresh regeneration.
+2. Does a **reproducible build** (`SOURCE_DATE_EPOCH` pinned to the tagged commit;
+   the sdist tarball is normalized by `tools/repack_sdist.py`).
+3. **Signs** the `.whl` and `.tar.gz` with Sigstore (keyless, via OIDC).
+4. Uploads the wheel, sdist, signatures, and SBOM as **GitHub Release** assets.
+5. **Optionally publishes to PyPI** — only if you have opted in (see below).
+
+So the everyday release is just:
+
+```bash
+# 1. Bump the version
+#    edit titan_decoder/__init__.py  ->  __version__ = "X.Y.Z"
+# 2. Run tests + update docs/CHANGELOG as needed
+python -m pytest -q
+# 3. Commit, then tag and push the tag
+git tag -a vX.Y.Z -m "Titan Decoder vX.Y.Z"
+git push origin vX.Y.Z
+```
+
+### Enabling automated PyPI publishing (one-time, opt-in)
+
+The `publish-pypi` job is **disabled by default** so it can never break a
+release. It uses PyPI **Trusted Publishing** (OpenID Connect) — no API token is
+stored anywhere. To turn it on:
+
+1. **Configure a Trusted Publisher on PyPI.** On the `titan-decoder` project page
+   (or, for the very first upload, as a
+   [pending publisher](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/)):
+   PyPI → *Manage* → *Publishing* → *Add a new pending/trusted publisher* →
+   *GitHub Actions*, and enter:
+   - **Owner:** `pragmaconflux`
+   - **Repository:** `titan1`
+   - **Workflow name:** `release.yml`
+   - **Environment name:** `pypi`
+2. **Create the `pypi` GitHub Environment** (optional but recommended for a
+   manual approval gate): GitHub → *Settings* → *Environments* → *New environment*
+   → name it `pypi`. The workflow already targets `environment: pypi`.
+3. **Set the opt-in variable.** GitHub → *Settings* → *Secrets and variables* →
+   *Actions* → *Variables* → *New repository variable*:
+   - **Name:** `PUBLISH_TO_PYPI`
+   - **Value:** `true`
+
+After that, every `v*` tag push builds, signs, creates the GitHub Release, **and**
+publishes to PyPI, so users can `pip install titan-decoder`.
+
+To pause PyPI publishing again, set `PUBLISH_TO_PYPI` to anything other than
+`true` (or delete the variable). GitHub-only releases keep working unchanged.
+
+> The manual `twine` / API-token workflow below is the fallback (handy for a
+> one-off **TestPyPI** dry run). With Trusted Publishing enabled you do **not**
+> need an API token or `~/.pypirc` for real releases.
+
 ## One-time setup
+
+> **Manual path (fallback).** The steps in this section and the "PyPI release
+> checklist" below cover the token-based `twine` upload. If you enabled the
+> automated Trusted Publishing pipeline above, you can skip the API token and
+> `~/.pypirc` for real releases — keep this only for TestPyPI dry runs.
 
 1. Create accounts
 - PyPI: https://pypi.org/
