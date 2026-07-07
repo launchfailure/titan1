@@ -34,7 +34,25 @@ pip install -e .
 pip install -e '.[enrichment]'
 ```
 
-### 2. Analyze Your First File
+### 2. Try the interactive UI (no flags to memorize)
+
+Prefer a menu over command-line flags? Just run:
+
+```bash
+titan
+```
+
+This launches an interactive console where you can:
+
+- **Auto-detect & decode** — paste a payload (or point at a file) and let the
+  full engine recursively decode it and extract IOCs, or
+- **Choose a specific decoder** — pick Base64, Hex, XOR, Gzip, ROT13, URL, and
+  more from a menu, then feed it text, a hex string, or a file.
+
+It's the same engine and decoders the `titan-decoder` CLI uses, just menu-driven.
+(You can also reach it via `titan-decoder --interactive` / `-i`.)
+
+### 3. Analyze Your First File (scriptable CLI)
 
 ```bash
 # Quick analysis
@@ -55,7 +73,7 @@ titan-decoder --file suspicious.bin --out report.json \\
     --evidence firewall:/path/flows.csv
 ```
 
-### 3. View Results
+### 4. View Results
 
 ```bash
 # Check the report (no jq required)

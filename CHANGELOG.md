@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+Interactive UI:
+
+- Add a menu-driven interactive console, launched with the new `titan` command
+  (or `titan-decoder --interactive` / `-i`). Instead of memorizing CLI flags,
+  users get a menu to auto-detect & fully decode a payload, or pick a specific
+  decoder (Base64, Hex, XOR, Gzip, ROT13, URL, UTF-16, …) and feed it typed
+  text, a hex string, or a file. It's a thin, stdlib-only presentation layer
+  over the same engine and decoders the `titan-decoder` CLI drives — no analysis
+  logic is duplicated. Results render as decoded text or a hexdump, and
+  auto-detect shows the recursive decode tree plus extracted IOCs. New
+  `titan_decoder/interactive.py` module with unit tests that drive the loop via
+  injected I/O (no real TTY required).
+
 Reproducible builds:
 
 - Make the sdist byte-reproducible. `bdist_wheel` honors `SOURCE_DATE_EPOCH`

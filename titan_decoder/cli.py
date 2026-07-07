@@ -26,6 +26,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="version",
         version=f"titan-decoder {TITAN_VERSION}",
     )
+    parser.add_argument(
+        "--interactive",
+        "-i",
+        action="store_true",
+        help="Launch the interactive menu-driven UI (same as the 'titan' command)",
+    )
     parser.add_argument("--file", "-f", type=Path, help="Input file to analyze")
     parser.add_argument(
         "--batch", type=Path, help="Directory containing files to analyze in batch mode"
@@ -1008,6 +1014,13 @@ def main():
     evidence-before-analysis ordering — testable at the stage level.
     """
     args = build_parser().parse_args()
+
+    # Interactive UI: hand off to the menu-driven front end and exit. Kept as an
+    # early branch so none of the analysis-oriented argument validation runs.
+    if args.interactive:
+        from .interactive import main as interactive_main
+
+        sys.exit(interactive_main())
 
     # Note: no custom SIGINT handler here. Python's default KeyboardInterrupt is
     # the abort mechanism (caught around the analysis calls); a custom handler
