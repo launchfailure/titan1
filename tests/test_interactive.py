@@ -125,6 +125,49 @@ def test_list_decoders_action():
     assert "Base64" in text
 
 
+def test_options_toggle_aggressive():
+    # Open options, toggle aggressive (3), back (b), quit. The menu should now
+    # advertise aggressive mode.
+    rc, text = _run(["4", "3", "b", "q"])
+    assert rc == 0
+    assert "Aggressive auto-detect is now on" in text
+    assert "aggressive" in text  # main-menu options line reflects it
+
+
+def test_aggressive_engine_enables_optin_decoders_and_lowers_threshold():
+    app = InteractiveApp(input_fn=lambda p: "", out=io.StringIO(), style=Style(False))
+
+    base = app._configured_engine()
+    base_names = {d.name for d in base.decoders}
+    # Opt-in decoders are off by default.
+    assert "Base32" not in base_names
+    assert base.pruning_engine.min_score_threshold == app._baseline_min_score
+
+    app.aggressive = True
+    agg = app._configured_engine()
+    agg_names = {d.name for d in agg.decoders}
+    # All four opt-in decoders are now enabled ("ASN.1" is the ASN1 decoder name).
+    for name in ("Base32", "UUEncode", "QuotedPrintable", "ASN.1"):
+        assert name in agg_names
+    assert agg.pruning_engine.min_score_threshold == 0.0
+    assert agg.MAX_RECURSION_DEPTH >= 6
+
+
+def test_aggressive_toggle_is_reversible():
+    # Flipping aggressive on then off must return to exactly the baseline, no
+    # matter the toggle order — the core-engine defaults must not drift.
+    app = InteractiveApp(input_fn=lambda p: "", out=io.StringIO(), style=Style(False))
+    baseline = {d.name for d in app._configured_engine().decoders}
+
+    app.aggressive = True
+    app._configured_engine()  # mutates session config
+    app.aggressive = False
+    restored = app._configured_engine()
+
+    assert {d.name for d in restored.decoders} == baseline
+    assert restored.pruning_engine.min_score_threshold == app._baseline_min_score
+
+
 def test_options_change_profile():
     # Open options, set profile to full, back, then quit; the menu should now
     # reflect the new profile.

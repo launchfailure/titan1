@@ -76,6 +76,16 @@ This launches an interactive console where you can:
 - **Choose a specific decoder** — pick Base64, Hex, XOR, Gzip, ROT13, URL, and
   more from a menu, then feed it text, a hex string, or a file.
 
+You can also **save the decoded output** (or the full JSON report) to a file
+when prompted after a decode.
+
+Under **Options** you can switch the analysis profile, toggle offline mode, and
+turn on **aggressive auto-detect** — a session-only mode that enables the opt-in
+decoders (Base32/UUencode/Quoted-Printable/ASN.1), searches deeper, and keeps
+weaker/shorter decodes. It's handy for hands-on testing (noisier for real
+triage), and it never changes the defaults used by `titan-decoder` or your
+analysis runs.
+
 It's the same engine and decoders the `titan-decoder` CLI uses, just menu-driven.
 (You can also reach it via `titan-decoder --interactive` / `-i`.)
 
