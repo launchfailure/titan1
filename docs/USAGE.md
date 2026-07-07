@@ -26,13 +26,52 @@ From the repo root:
 
   - `pip install -r requirements-optional.txt`
 
+Installing gives you **two commands**:
+
+- **`titan`** — the interactive, menu-driven UI (see below). Easiest way in.
+- **`titan-decoder`** — the scriptable CLI used throughout the rest of this guide.
+
 Run the CLI:
 
 - `titan-decoder --help`
 
-If `titan-decoder` isn’t on your PATH yet, you can run:
+If the commands aren’t on your PATH yet, you can run them as modules:
 
-- `python -m titan_decoder.cli --help`
+- `python -m titan_decoder.cli --help`   (the `titan-decoder` CLI)
+- `python -m titan_decoder.interactive`  (the `titan` UI)
+
+## Interactive mode (the `titan` command)
+
+If you’d rather not memorize flags, just run:
+
+```bash
+titan          # or: titan-decoder --interactive   (same thing)
+```
+
+You get a menu:
+
+- **[1] Auto-detect & decode** — paste a payload (or point at a file) and let the
+  full engine recursively decode it and extract IOCs. It prints the decode tree
+  and any indicators found.
+- **[2] Choose a specific decoder** — pick one decoder (Base64, Hex, XOR, ROT13,
+  Gzip, URL, UTF-16, …) and feed it typed text, a hex string, or a file. Good for
+  short/simple test strings, which single-decoder mode handles directly.
+- **[3] List available decoders**.
+- **[4] Options** — switch the analysis profile (safe/fast/full), toggle
+  offline/online, and turn on **aggressive auto-detect**.
+
+After a decode you can **save the output**: single-decoder mode offers to write
+the raw decoded bytes to a file, and auto-detect offers to save the full JSON
+report (the same structure documented below).
+
+**Aggressive auto-detect** (Options → [3]) makes an auto-detect run try harder:
+it enables the opt-in decoders (Base32/UUencode/Quoted-Printable/ASN.1), searches
+deeper, and keeps weaker/shorter decodes. It’s handy for hands-on testing but
+noisier for real triage. It is **session-only** — it never changes the defaults
+used by `titan-decoder` or a real analysis run.
+
+It’s the same engine and decoders as the CLI, so anything you can do here you can
+also script with `titan-decoder` (below).
 
 ## The 3 “starter” commands (copy/paste)
 

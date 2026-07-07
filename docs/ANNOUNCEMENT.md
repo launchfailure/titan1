@@ -17,7 +17,9 @@ Open-sourcing **Titan Decoder**: a payload decoding + forensic analysis engine f
 - JSONL export + local vault history/search
 
 Repo: https://github.com/pragmaconflux/titan1
-Quick start:
+Quick start (interactive menu — no flags to memorize):
+`titan`
+Quick start (scriptable CLI):
 `titan-decoder --file suspicious.bin --progress --enable-detections --out report.json`
 
 Pipeline-friendly (quiet + JSONL events):

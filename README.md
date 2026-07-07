@@ -127,6 +127,9 @@ python -c 'import json; r=json.load(open("report.json")); print((r.get("risk_ass
 ## 📋 Features
 
 ### Core Capabilities
+- **Two ways to run** — the interactive **`titan`** menu (auto-detect or pick a
+  decoder; input text/hex/a file; save decoded output or the JSON report; opt-in
+  aggressive mode) and the scriptable **`titan-decoder`** CLI, over the same engine.
 - **21 Built-in Decoders (+ plugins)** — 17 always on, 4 opt-in:
   - *Always on (17):* Base64, RecursiveBase64, Base64URL, PEM, Gzip, Bz2, LZMA, Zlib, Hex, XOR, ROT13, URL decode, HTML entities, Unicode escape, UTF-16, PDF, OLE
   - *Opt-in (4):* Base32, UUEncode, ASN.1, QuotedPrintable — see [Opt-in decoders](#opt-in-decoders) below
