@@ -46,8 +46,9 @@ def test_registry_has_expected_decoders():
 
 def test_specific_decoder_base64_roundtrip():
     payload = base64.b64encode(b"Hello Titan!").decode()
-    # menu=2 (pick decoder), decoder=1 (Base64), input=1 (text), payload, quit
-    rc, text = _run(["2", "1", "1", payload, "q"])
+    # menu=2 (pick decoder), decoder=1 (Base64), input=1 (text), payload,
+    # ""=skip the save prompt, quit
+    rc, text = _run(["2", "1", "1", payload, "", "q"])
     assert rc == 0
     assert "Decoded with Base64" in text
     assert "Hello Titan!" in text
@@ -62,8 +63,9 @@ def test_specific_decoder_reports_failure_cleanly():
 
 
 def test_hex_input_mode():
-    # Hex *input mode* (2) turns "48656c6c6f" into b"Hello", then we ROT13 it.
-    rc, text = _run(["2", "1", "2", "48656c6c6f", "q"])  # Base64 on b"Hello"
+    # Hex *input mode* (2) turns "48656c6c6f" into b"Hello", then we Base64 it.
+    # Trailing "" safely skips the save prompt whether the decode succeeds or not.
+    rc, text = _run(["2", "1", "2", "48656c6c6f", "", "q"])  # Base64 on b"Hello"
     assert rc == 0
     # b"Hello" is not valid base64 padding-wise -> clean failure is fine; the
     # point is the hex input mode parsed without crashing.
@@ -78,10 +80,42 @@ def test_hex_input_mode_rejects_bad_hex():
 
 def test_auto_detect_extracts_iocs():
     payload = base64.b64encode(b"beacon to http://evil.example.com/c2").decode()
-    rc, text = _run(["1", "1", payload, "q"])  # auto-detect, text input
+    # auto-detect, text input, ""=skip the "save report" prompt, quit
+    rc, text = _run(["1", "1", payload, "", "q"])
     assert rc == 0
     assert "Auto-analysis complete" in text
     assert "evil.example.com" in text
+
+
+def test_save_decoded_output_to_file(tmp_path):
+    out_file = tmp_path / "decoded.bin"
+    payload = base64.b64encode(b"Hello Titan!").decode()
+    # decode Base64, then save the decoded bytes to out_file
+    rc, text = _run(["2", "1", "1", payload, str(out_file), "q"])
+    assert rc == 0
+    assert "Saved" in text
+    assert out_file.read_bytes() == b"Hello Titan!"
+
+
+def test_save_creates_missing_parent_dirs(tmp_path):
+    out_file = tmp_path / "nested" / "sub" / "out.bin"
+    plain = b"deep enough to pass base64 detection"
+    payload = base64.b64encode(plain).decode()
+    rc, text = _run(["2", "1", "1", payload, str(out_file), "q"])
+    assert rc == 0
+    assert out_file.read_bytes() == plain
+
+
+def test_save_report_json(tmp_path):
+    report_file = tmp_path / "report.json"
+    payload = base64.b64encode(b"see http://evil.example.com/x").decode()
+    rc, text = _run(["1", "1", payload, str(report_file), "q"])
+    assert rc == 0
+    assert report_file.exists()
+    import json as _json
+
+    data = _json.loads(report_file.read_text())
+    assert "nodes" in data and "iocs" in data
 
 
 def test_list_decoders_action():

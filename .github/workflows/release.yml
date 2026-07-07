@@ -59,3 +59,33 @@ jobs:
             dist/*.tar.gz
             dist/*.sigstore*
             docs/sbom.cdx.json
+
+      # Hand the built (unsigned) distributions to the optional publish job.
+      - name: Stash distributions for PyPI publish
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+
+  # Optional PyPI publish. Disabled by default so it can never break a release:
+  # it only runs once the maintainer opts in by setting the repository variable
+  # PUBLISH_TO_PYPI=true AND configuring a PyPI Trusted Publisher for this
+  # workflow (https://docs.pypi.org/trusted-publishers/). No API token needed.
+  publish-pypi:
+    needs: build-sign
+    if: ${{ vars.PUBLISH_TO_PYPI == 'true' }}
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # trusted publishing (OIDC), no stored token required
+    steps:
+      - name: Download built distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
