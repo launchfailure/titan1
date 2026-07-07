@@ -15,6 +15,7 @@ the loop can be driven with injected input/output streams.
 from __future__ import annotations
 
 import binascii
+import json
 import os
 import sys
 from dataclasses import dataclass
@@ -357,6 +358,23 @@ class InteractiveApp:
         self._print(self.st.red("  Unknown choice."))
         return None
 
+    # -- output persistence -------------------------------------------------
+
+    def _maybe_save(self, data: bytes, prompt: str) -> None:
+        """Offer to write ``data`` to a file. Blank input skips (the default)."""
+        path_s = self._ask(f"  {prompt} (path, or Enter to skip): ").strip().strip("'\"")
+        if not path_s:
+            return
+        path = Path(os.path.expanduser(path_s))
+        try:
+            if path.parent and not path.parent.exists():
+                path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+        except OSError as e:
+            self._print(self.st.red(f"  Could not write {path}: {e}"))
+            return
+        self._print(self.st.green(f"  Saved {len(data)} byte(s) → {path}"))
+
     # -- menu actions -------------------------------------------------------
 
     def _configured_engine(self) -> TitanEngine:
@@ -393,6 +411,9 @@ class InteractiveApp:
             return
         self._print()
         self._print(format_engine_summary(self.st, report))
+        self._print()
+        report_json = json.dumps(report, indent=2).encode("utf-8")
+        self._maybe_save(report_json, "Save full JSON report to")
 
     def action_pick_decoder(self) -> None:
         self._print()
@@ -422,6 +443,9 @@ class InteractiveApp:
             return
         self._print()
         self._print(format_decode_result(self.st, choice.label, source_len, decoded, success))
+        if success and decoded:
+            self._print()
+            self._maybe_save(decoded, "Save decoded output to")
 
     def action_list_decoders(self) -> None:
         self._print()

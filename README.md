@@ -22,17 +22,44 @@ Maintainers:
 
 ### 1. Install
 
+The core engine has **no external dependencies** and needs **Python 3.10+**.
+
+**Option A — install directly from GitHub (no clone needed):**
+
 ```bash
-# Clone repository
+pip install "git+https://github.com/pragmaconflux/titan1.git"
+```
+
+**Option B — clone, then install:**
+
+```bash
 git clone https://github.com/pragmaconflux/titan1.git
 cd titan1
-
-# Install core (no external dependencies required)
-pip install -e .
-
-# Optional: install enrichment/advanced feature dependencies
-pip install -e '.[enrichment]'
+pip install .            # or: pip install -e .   (editable, for development)
 ```
+
+Optional enrichment/advanced-feature dependencies:
+
+```bash
+pip install "titan-decoder[enrichment] @ git+https://github.com/pragmaconflux/titan1.git"
+# or, from a clone:  pip install -e '.[enrichment]'
+```
+
+> **Hit `error: externally-managed-environment`?** Modern Debian/Ubuntu block
+> installing into the system Python (PEP 668). Use a virtual environment:
+>
+> ```bash
+> python3 -m venv .venv          # needs python3-venv (apt install python3-venv)
+> source .venv/bin/activate      # Windows: .venv\Scripts\activate
+> pip install .                  # now works inside the venv
+> ```
+>
+> Re-run `source .venv/bin/activate` in each new terminal; `deactivate` to exit.
+> Prefer a globally-available command? Use [pipx](https://pipx.pypa.io):
+> `pipx install "git+https://github.com/pragmaconflux/titan1.git"`.
+
+Either way you get two commands: **`titan`** (interactive UI) and
+**`titan-decoder`** (scriptable CLI).
 
 ### 2. Try the interactive UI (no flags to memorize)
 

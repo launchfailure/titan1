@@ -14,6 +14,21 @@ Interactive UI:
   auto-detect shows the recursive decode tree plus extracted IOCs. New
   `titan_decoder/interactive.py` module with unit tests that drive the loop via
   injected I/O (no real TTY required).
+- Interactive UI can now save results to disk: after a single-decoder decode it
+  offers to write the raw decoded bytes to a file, and after an auto-detect run
+  it offers to save the full JSON report. Blank input skips (the default), and
+  missing parent directories are created.
+
+Packaging / install:
+
+- Document installing without cloning:
+  `pip install "git+https://github.com/pragmaconflux/titan1.git"` (and a `pipx`
+  variant). README now covers the Python 3.10+ requirement and the
+  Debian/Ubuntu `externally-managed-environment` (PEP 668) venv workaround.
+- Add an **optional** PyPI publish job to the release workflow, gated behind the
+  `PUBLISH_TO_PYPI` repository variable and PyPI Trusted Publishing (OIDC, no
+  stored token). It is disabled by default and cannot affect existing releases
+  until a maintainer opts in.
 
 Reproducible builds:
 
