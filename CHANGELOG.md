@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+Tests:
+
+- Make `test_utf16_decoder.py` deterministic. The random-binary
+  no-hallucination checks drew unseeded `os.urandom` blobs and asserted zero
+  UTF-16 false positives, so an unlucky draw could flake CI (observed once on
+  the 3.11 job). Seeded RNGs give the same coverage with reproducible results.
+
 Interactive UI:
 
 - Add a menu-driven interactive console, launched with the new `titan` command
