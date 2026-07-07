@@ -291,6 +291,15 @@ class InteractiveApp:
         # Session options.
         self.profile: str = "fast"  # safe | fast | full
         self.offline: bool = True
+        # Aggressive auto-detect (session-only). When on, auto-detect enables the
+        # opt-in decoders, searches deeper, and lowers the keep-threshold so
+        # weaker/short decodes survive. It is applied per-run to the engine
+        # config only — the core-engine defaults the CLI/tests rely on are never
+        # touched. Baselines are captured so the toggle is fully reversible
+        # regardless of how many times it's flipped in a session.
+        self.aggressive: bool = False
+        self._baseline_decoders = dict(self.config.get("decoders", {}) or {})
+        self._baseline_min_score = self.config.get("min_score_threshold", 0.01)
 
     # -- low-level I/O helpers ---------------------------------------------
 
@@ -377,8 +386,18 @@ class InteractiveApp:
 
     # -- menu actions -------------------------------------------------------
 
+    # Opt-in decoders that "aggressive" mode switches on for auto-detect.
+    _AGGRESSIVE_DECODERS = ("base32", "uuencode", "quoted_printable", "asn1")
+
     def _configured_engine(self) -> TitanEngine:
-        """Build an engine honouring the session's profile/offline options."""
+        """Build an engine honouring the session's profile / aggressive options.
+
+        Every setting is (re)applied on each call, so the resulting engine
+        reflects the *current* toggle state no matter how the options were
+        flipped. Aggressive settings are layered on top of the profile and are
+        restored to the captured baselines when the toggle is off — so turning
+        aggressive on and back off returns to exactly the normal behaviour.
+        """
         cfg = self.config
         if self.profile == "safe":
             cfg.set("max_recursion_depth", 3)
@@ -389,6 +408,20 @@ class InteractiveApp:
         elif self.profile == "full":
             cfg.set("max_recursion_depth", 8)
             cfg.set("max_node_count", 200)
+
+        # Start decoders/threshold from the captured baseline every time.
+        decoders = dict(self._baseline_decoders)
+        if self.aggressive:
+            for name in self._AGGRESSIVE_DECODERS:
+                decoders[name] = True
+            cfg.set("min_score_threshold", 0.0)
+            # Deepen the search a little, but never *below* the profile's budget.
+            cfg.set("max_recursion_depth", max(int(cfg.get("max_recursion_depth", 5)), 6))
+            cfg.set("max_node_count", max(int(cfg.get("max_node_count", 100)), 200))
+        else:
+            cfg.set("min_score_threshold", self._baseline_min_score)
+        cfg.set("decoders", decoders)
+
         return TitanEngine(cfg)
 
     def action_auto_detect(self) -> None:
@@ -397,7 +430,8 @@ class InteractiveApp:
             return
         data, source_len = payload
         self._print()
-        self._print(self.st.dim("  Running full engine (auto-detect)…"))
+        mode = " [aggressive]" if self.aggressive else ""
+        self._print(self.st.dim(f"  Running full engine (auto-detect){mode}…"))
         try:
             if self.offline:
                 from .core.offline_guard import block_network
@@ -468,6 +502,10 @@ class InteractiveApp:
             self._print(
                 f"    [2] Network           : {self.st.cyan('offline' if self.offline else 'online')}"
             )
+            self._print(
+                f"    [3] Aggressive auto-detect : {self.st.cyan('on' if self.aggressive else 'off')}"
+                f"  {self.st.dim('(opt-in decoders, deeper search, keep weak decodes)')}"
+            )
             self._print("    [b] Back")
             sel = self._ask(self.st.cyan("  options> ")).strip().lower()
             if sel in ("b", "back", ""):
@@ -486,6 +524,19 @@ class InteractiveApp:
                     self.offline = False
                 else:
                     self._print(self.st.red("    Unknown value."))
+            elif sel == "3":
+                # Simple toggle. Aggressive only affects auto-detect ([1] on the
+                # main menu); single-decoder mode is unchanged.
+                self.aggressive = not self.aggressive
+                state = "on" if self.aggressive else "off"
+                self._print(self.st.green(f"    Aggressive auto-detect is now {state}."))
+                if self.aggressive:
+                    self._print(
+                        self.st.dim(
+                            "    Heads-up: expect more (and weaker) results — good for "
+                            "hands-on testing, noisier for real triage."
+                        )
+                    )
             else:
                 self._print(self.st.red("    Unknown choice."))
 
@@ -505,10 +556,11 @@ class InteractiveApp:
         self._print()
         self._print(st.bold("  What would you like to do?"))
         net = "offline" if self.offline else "online"
+        agg = ", aggressive" if self.aggressive else ""
         self._print(f"    [1] {st.green('Auto-detect & decode')}   {st.dim('(run the full engine)')}")
         self._print("    [2] Choose a specific decoder")
         self._print("    [3] List available decoders")
-        self._print(f"    [4] Options {st.dim(f'(profile={self.profile}, {net})')}")
+        self._print(f"    [4] Options {st.dim(f'(profile={self.profile}, {net}{agg})')}")
         self._print("    [q] Quit")
         return self._ask(st.cyan("  titan> ")).strip().lower()
 

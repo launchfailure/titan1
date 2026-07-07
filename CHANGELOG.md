@@ -25,6 +25,13 @@ Interactive UI:
   offers to write the raw decoded bytes to a file, and after an auto-detect run
   it offers to save the full JSON report. Blank input skips (the default), and
   missing parent directories are created.
+- Interactive UI gains an **aggressive auto-detect** toggle (Options → [3]). When
+  on, an auto-detect run enables the opt-in decoders
+  (Base32/UUencode/Quoted-Printable/ASN.1), searches deeper, and lowers the
+  keep-threshold so weaker/shorter decodes survive — useful for hands-on testing.
+  It is strictly session-scoped: the settings are applied per-run to the engine
+  config and fully restored when toggled off, so the core-engine defaults used by
+  `titan-decoder`, the test suite, and real analysis runs are never changed.
 
 Packaging / install:
 
