@@ -33,6 +33,41 @@ def test_compute_risk_score_with_detections():
     assert len(result["top_reasons"]) > 0
 
 
+def test_severity_floor_lifts_lone_medium_detection():
+    # Regression: a single medium-severity detection contributes only 15 points
+    # (< the MEDIUM threshold of 25), so before the floor a fired rule like
+    # "LOLBin Script Execution" read LOW. The severity floor must lift it to
+    # MEDIUM so a genuine detection is not under-prioritized.
+    report = {"nodes": [{"id": 0, "depth": 1, "entropy": 4.0}]}
+    iocs = {}
+    detections = [{"rule_id": "TITAN-003", "name": "LOLBin", "severity": "medium"}]
+
+    result = RiskScoringEngine().compute_risk_score(report, iocs, detections)
+    assert result["risk_level"] == "MEDIUM"
+    assert result["risk_score"] >= 25
+
+
+def test_severity_floor_maps_high_and_critical():
+    eng = RiskScoringEngine()
+    report = {"nodes": [{"id": 0, "depth": 0, "entropy": 3.0}]}
+    high = eng.compute_risk_score(
+        report, {}, [{"rule_id": "X", "name": "h", "severity": "high"}]
+    )
+    crit = eng.compute_risk_score(
+        report, {}, [{"rule_id": "Y", "name": "c", "severity": "critical"}]
+    )
+    assert high["risk_level"] in ("HIGH", "CRITICAL") and high["risk_score"] >= 50
+    assert crit["risk_level"] == "CRITICAL" and crit["risk_score"] >= 75
+
+
+def test_severity_floor_does_not_affect_clean_runs():
+    # No detections -> floor never applies; benign inputs stay CLEAN/LOW.
+    report = {"nodes": [{"id": 0, "depth": 0, "entropy": 3.0}]}
+    result = RiskScoringEngine().compute_risk_score(report, {}, [])
+    assert result["risk_level"] == "CLEAN"
+    assert result["risk_score"] == 0
+
+
 def test_get_top_risky_nodes():
     report = {
         "nodes": [
