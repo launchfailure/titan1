@@ -161,7 +161,7 @@ python -c 'import json; r=json.load(open("report.json")); print((r.get("risk_ass
 - **Enrichment**: Geo/WHOIS/YARA (optional, requires config) with deterministic local cache + refresh control
 
 ### Export & Reporting
-- **IOC Formats**: JSON, CSV, STIX 2.1, MISP
+- **IOC Formats**: JSON, CSV, STIX 2.1 (minimal bundle), MISP
 - **Case Reports**: Markdown/HTML summaries for investigators
 - **Timeline Export**: CSV/JSON for Timesketch, Excel
 - **Evidence Timeline Export**: CSV/JSON from normalized `--evidence` inputs
@@ -394,7 +394,7 @@ titan_decoder/
 │   ├── device_forensics.py   # VM/mobile/burner detection
 │   ├── vault.py              # Local history/search store
 │   ├── ioc_export.py         # JSON/CSV/STIX/MISP export
-│   ├── case_report.py        # Markdown reports
+│   ├── case_report.py        # Markdown/HTML case reports
 │   ├── timeline.py           # Event timeline export
 │   ├── correlation.py        # IOC correlation cache
 │   ├── resource_manager.py   # Timeouts and limits
@@ -406,7 +406,9 @@ titan_decoder/
 │   └── analyzers/
 │       └── base.py           # ZIP, TAR, PE, ELF
 ├── decoders/
-│   └── base.py               # 21 built-in decoders (17 on, 4 opt-in) (+ plugins)
+│   ├── base.py               # 21 built-in decoders (17 on, 4 opt-in) (+ plugins)
+│   ├── cfb.py                # OLE/CFB compound-file parser (MS-OVBA)
+│   └── pdf.py                # PDF object-graph parser
 ├── plugins/                  # Plugin system
 └── utils/
     └── helpers.py            # IOC extraction, entropy
@@ -480,7 +482,7 @@ under the [MIT License](LICENSE). Contributions are welcome — see
 [Code of Conduct](CODE_OF_CONDUCT.md) and [Security Policy](SECURITY.md).
 
 **Core stack**
-- Python 3.10+ — the decoding engine and all 21 core modules run on the standard
+- Python 3.10+ — the decoding engine and every core module run on the standard
   library alone, with no external dependencies required.
 
 **Optional integrations** (see [requirements-optional.txt](requirements-optional.txt))

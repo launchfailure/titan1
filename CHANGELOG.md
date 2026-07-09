@@ -14,6 +14,14 @@ Detection quality:
 
 Docs:
 
+- README accuracy pass against the actual engine: corrected the "21 core
+  modules" wording (that number is the decoder count, not the module count),
+  noted case reports render Markdown **and** HTML, added the `decoders/cfb.py`
+  and `decoders/pdf.py` structural parsers to the architecture tree, and
+  labelled the STIX export as a minimal 2.1 bundle to match the implementation.
+  Verified every CLI flag, the Python API snippet, and the smoke-test command in
+  the README against the code.
+
 - Document the interactive `titan` UI in the day-to-day guide
   (`docs/USAGE.md`) — a dedicated "Interactive mode" section covering
   auto-detect vs. single-decoder, saving output, and the aggressive toggle —
