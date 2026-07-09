@@ -12,10 +12,12 @@ documents the methodology, the current numbers, and how to reproduce them.
   matched its exact design sample would show up as a miss) covering deep base64
   nesting, CFB macro docs with a network IOC, LOLBin command lines, high-entropy
   packed blobs, multi-stage IOC infrastructure, XOR-obfuscated C2, and PDFs
-  carrying an embedded PE/ELF; and **12 benign**, including **adversarial
+  carrying an embedded PE/ELF; and **13 benign**, including **adversarial
   near-misses** that deliberately sit just under a rule's trigger (a single-URL
   doc, a JS-only PDF with no embedded executable, a single-layer base64 blob, a
-  two-domain config, a benign shell script) to stress false-positive precision.
+  two-domain config, a benign shell script, and a documentation snippet that
+  *names* PowerShell/cmd.exe without any abuse context) to stress false-positive
+  precision.
   The corpus is fully deterministic (seeded RNG, no `os.urandom`). **No real
   malware is stored in the repository — only the generator (the harness).**
 - **Harness** — `tools/eval_detections.py` runs the full engine plus the
@@ -44,8 +46,10 @@ Committed machine-readable numbers: [`detection_metrics.json`](detection_metrics
 | TITAN-007 | 1.000     | 1.000  | 1.000 |
 
 Each rule now has **two** positive samples (recall is measured on more than one
-example), and precision is checked against 12 benign samples that include
-adversarial near-misses.
+example), and precision is checked against 13 benign samples that include
+adversarial near-misses. The LOLBin rule (TITAN-003) requires an actual
+abuse/execution-context token, so a document that merely *names* PowerShell or
+cmd.exe no longer false-positives.
 
 **Risk separation:** benign samples score at most **7**; every malicious sample
 scores at least **15**. The classes do not overlap.

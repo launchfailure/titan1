@@ -43,6 +43,30 @@ def test_office_macro_network_detection():
     assert any(d["rule_id"] == "TITAN-002" for d in detections)
 
 
+def _lolbin_fires(preview: str) -> bool:
+    report = {"nodes": [{"depth": 0, "content_preview": preview}]}
+    engine = CorrelationRulesEngine()
+    dets = engine.evaluate_all(report, {})
+    return any(d["rule_id"] == "TITAN-003" for d in dets)
+
+
+def test_lolbin_fires_with_abuse_context():
+    # A LOLBin name together with a strong abuse token should fire.
+    assert _lolbin_fires("powershell -nop -w hidden -enc SQBFAFgA")
+    assert _lolbin_fires("regsvr32 /s /i:file.sct scrobj.dll")
+    assert _lolbin_fires("cmd.exe /c whoami & echo done")
+
+
+def test_lolbin_does_not_fire_on_bare_mention():
+    # Benign documentation that merely names a LOLBin (no abuse context) must
+    # NOT fire — this was the false positive the rule hardening addresses.
+    assert not _lolbin_fires(
+        "On Windows, open PowerShell or cmd.exe and run the installer."
+    )
+    assert not _lolbin_fires("This script uses wscript to display a dialog.")
+    assert not _lolbin_fires("See the PowerShell docs for details.")
+
+
 def test_custom_rule_addition():
     engine = CorrelationRulesEngine()
     initial_count = len(engine.rules)

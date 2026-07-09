@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+Detection quality:
+
+- Harden the LOLBin rule (TITAN-003): it now requires a LOLBin name to co-occur
+  with a strong abuse/execution-context token (encoded command, hidden window,
+  download cradle, script-COM registration, `/c`, etc.) instead of firing on a
+  bare mention. A benign document that merely names "PowerShell" or "cmd.exe" no
+  longer false-positives. Adds a benign "tool mention" corpus sample that would
+  have tripped the old rule, plus direct unit tests; all rules stay
+  precision/recall 1.000 on the corpus.
+
 Docs:
 
 - Document the interactive `titan` UI in the day-to-day guide

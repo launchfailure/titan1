@@ -239,22 +239,61 @@ class CorrelationRulesEngine:
 
         return has_ole and has_network
 
-    def _detect_lolbin_pattern(self, report: Dict[str, Any]) -> bool:
-        """Detect LOLBin execution patterns."""
-        nodes = report.get("nodes", [])
-        lolbins = [
-            "powershell",
-            "cmd.exe",
-            "wscript",
-            "cscript",
-            "mshta",
-            "rundll32",
-            "regsvr32",
-        ]
+    # Living-off-the-land binaries commonly abused for execution.
+    _LOLBINS = (
+        "powershell",
+        "cmd.exe",
+        "wscript",
+        "cscript",
+        "mshta",
+        "rundll32",
+        "regsvr32",
+    )
 
+    # Strong abuse/execution-context indicators. A bare *mention* of a LOLBin
+    # ("open PowerShell", "run cmd.exe") is common in benign documentation and
+    # must NOT fire; the rule requires the LOLBin to co-occur with one of these
+    # download-cradle / hidden-exec / script-COM tokens, which are rare in benign
+    # prose. Kept as substrings so they match inside command lines regardless of
+    # surrounding quoting.
+    _LOLBIN_CONTEXT = (
+        "-enc",
+        "-encodedcommand",
+        "-nop",
+        "-noprofile",
+        "-w hidden",
+        "-windowstyle hidden",
+        "-exec bypass",
+        "executionpolicy bypass",
+        "iex",
+        "invoke-expression",
+        "downloadstring",
+        "downloadfile",
+        "net.webclient",
+        "/c ",
+        "/k ",
+        "scrobj.dll",
+        "javascript:",
+        "vbscript:",
+        "/i:",
+        "//nologo",
+        ".sct",
+    )
+
+    def _detect_lolbin_pattern(self, report: Dict[str, Any]) -> bool:
+        """Detect LOLBin *execution* patterns.
+
+        Requires both a LOLBin name and a strong abuse-context token (encoded
+        command, hidden window, download cradle, script-COM registration, …).
+        This avoids the false positive where a benign document merely mentions
+        "PowerShell" or "cmd.exe": the name alone is insufficient.
+        """
+        nodes = report.get("nodes", [])
         text = "\n".join(node.get("content_preview", "").lower() for node in nodes)
 
-        return any(lolbin in text for lolbin in lolbins)
+        if not any(lolbin in text for lolbin in self._LOLBINS):
+            return False
+        return any(ctx in text for ctx in self._LOLBIN_CONTEXT)
 
     def _detect_encrypted_payload(self, report: Dict[str, Any]) -> bool:
         """Detect high entropy payloads with minimal decoding."""
