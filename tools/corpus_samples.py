@@ -362,4 +362,16 @@ def build_corpus() -> List[Sample]:
         )
     )
 
+    # Documentation that *mentions* LOLBins by name without any abuse context.
+    # Before the LOLBin rule required execution context, this bare mention would
+    # false-positive on TITAN-003; it must now stay clean.
+    samples.append(
+        Sample(
+            "ben_tool_mention",
+            b"Troubleshooting guide: on Windows, open PowerShell or cmd.exe and run\n"
+            b"the installer. PowerShell 5.1+ is required; wscript is not used.\n",
+            malicious=False,
+        )
+    )
+
     return samples
