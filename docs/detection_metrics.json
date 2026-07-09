@@ -1,93 +1,105 @@
 {
-  "corpus_size": 14,
-  "benign_count": 7,
-  "malicious_count": 7,
+  "corpus_size": 26,
+  "benign_count": 12,
+  "malicious_count": 14,
   "per_rule": {
     "TITAN-001": {
-      "tp": 1,
+      "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 13,
+      "tn": 24,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
     },
     "TITAN-002": {
-      "tp": 1,
+      "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 13,
+      "tn": 24,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
     },
     "TITAN-003": {
-      "tp": 1,
+      "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 13,
+      "tn": 24,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
     },
     "TITAN-004": {
-      "tp": 1,
+      "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 13,
+      "tn": 24,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
     },
     "TITAN-005": {
-      "tp": 1,
+      "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 13,
+      "tn": 24,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
     },
     "TITAN-006": {
-      "tp": 1,
+      "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 13,
+      "tn": 24,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
     },
     "TITAN-007": {
-      "tp": 1,
+      "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 13,
+      "tn": 24,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
     }
   },
   "risk_separation": {
-    "max_benign_score": 4,
+    "max_benign_score": 7,
     "min_malicious_score": 15,
     "separated": true,
     "benign_scores": [
       0,
       0,
       0,
+      0,
       2,
       2,
       2,
-      4
+      2,
+      4,
+      5,
+      6,
+      7
     ],
     "malicious_scores": [
       15,
-      15,
+      18,
+      25,
+      25,
+      25,
       26,
-      34,
-      34,
-      40,
-      42
+      50,
+      50,
+      50,
+      50,
+      50,
+      50,
+      75,
+      75
     ]
   },
   "per_sample": [
@@ -112,8 +124,8 @@
       "fired_rules": [
         "TITAN-002"
       ],
-      "risk_score": 34,
-      "risk_level": "MEDIUM"
+      "risk_score": 50,
+      "risk_level": "HIGH"
     },
     {
       "name": "mal_lolbin",
@@ -124,8 +136,8 @@
       "fired_rules": [
         "TITAN-003"
       ],
-      "risk_score": 15,
-      "risk_level": "LOW"
+      "risk_score": 25,
+      "risk_level": "MEDIUM"
     },
     {
       "name": "mal_packed",
@@ -148,8 +160,8 @@
       "fired_rules": [
         "TITAN-005"
       ],
-      "risk_score": 40,
-      "risk_level": "MEDIUM"
+      "risk_score": 50,
+      "risk_level": "HIGH"
     },
     {
       "name": "mal_xor_c2",
@@ -160,8 +172,8 @@
       "fired_rules": [
         "TITAN-006"
       ],
-      "risk_score": 34,
-      "risk_level": "MEDIUM"
+      "risk_score": 50,
+      "risk_level": "HIGH"
     },
     {
       "name": "mal_pdf_pe",
@@ -172,8 +184,92 @@
       "fired_rules": [
         "TITAN-007"
       ],
-      "risk_score": 42,
+      "risk_score": 75,
+      "risk_level": "CRITICAL"
+    },
+    {
+      "name": "mal_deep_base64_v2",
+      "malicious": true,
+      "expected_rules": [
+        "TITAN-001"
+      ],
+      "fired_rules": [
+        "TITAN-001"
+      ],
+      "risk_score": 25,
       "risk_level": "MEDIUM"
+    },
+    {
+      "name": "mal_office_macro_v2",
+      "malicious": true,
+      "expected_rules": [
+        "TITAN-002"
+      ],
+      "fired_rules": [
+        "TITAN-002"
+      ],
+      "risk_score": 50,
+      "risk_level": "HIGH"
+    },
+    {
+      "name": "mal_lolbin_regsvr32",
+      "malicious": true,
+      "expected_rules": [
+        "TITAN-003"
+      ],
+      "fired_rules": [
+        "TITAN-003"
+      ],
+      "risk_score": 25,
+      "risk_level": "MEDIUM"
+    },
+    {
+      "name": "mal_packed_v2",
+      "malicious": true,
+      "expected_rules": [
+        "TITAN-004"
+      ],
+      "fired_rules": [
+        "TITAN-004"
+      ],
+      "risk_score": 18,
+      "risk_level": "LOW"
+    },
+    {
+      "name": "mal_multistage_v2",
+      "malicious": true,
+      "expected_rules": [
+        "TITAN-005"
+      ],
+      "fired_rules": [
+        "TITAN-005"
+      ],
+      "risk_score": 50,
+      "risk_level": "HIGH"
+    },
+    {
+      "name": "mal_xor_c2_v2",
+      "malicious": true,
+      "expected_rules": [
+        "TITAN-006"
+      ],
+      "fired_rules": [
+        "TITAN-006"
+      ],
+      "risk_score": 50,
+      "risk_level": "HIGH"
+    },
+    {
+      "name": "mal_pdf_elf",
+      "malicious": true,
+      "expected_rules": [
+        "TITAN-007"
+      ],
+      "fired_rules": [
+        "TITAN-007"
+      ],
+      "risk_score": 75,
+      "risk_level": "CRITICAL"
     },
     {
       "name": "ben_readme",
@@ -225,6 +321,46 @@
     },
     {
       "name": "ben_source_code",
+      "malicious": false,
+      "expected_rules": [],
+      "fired_rules": [],
+      "risk_score": 0,
+      "risk_level": "CLEAN"
+    },
+    {
+      "name": "ben_single_url",
+      "malicious": false,
+      "expected_rules": [],
+      "fired_rules": [],
+      "risk_score": 7,
+      "risk_level": "LOW"
+    },
+    {
+      "name": "ben_pdf_js_only",
+      "malicious": false,
+      "expected_rules": [],
+      "fired_rules": [],
+      "risk_score": 5,
+      "risk_level": "LOW"
+    },
+    {
+      "name": "ben_single_base64_long",
+      "malicious": false,
+      "expected_rules": [],
+      "fired_rules": [],
+      "risk_score": 2,
+      "risk_level": "LOW"
+    },
+    {
+      "name": "ben_two_domains",
+      "malicious": false,
+      "expected_rules": [],
+      "fired_rules": [],
+      "risk_score": 6,
+      "risk_level": "LOW"
+    },
+    {
+      "name": "ben_shell_script",
       "malicious": false,
       "expected_rules": [],
       "fired_rules": [],

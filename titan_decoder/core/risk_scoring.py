@@ -20,13 +20,18 @@ class RiskScoringEngine:
     These 0--100 weights are measured against the synthetic labeled corpus in
     ``tools/corpus_samples.py`` via ``tools/eval_detections.py`` (results
     committed in ``docs/detection_metrics.json`` and summarized in
-    ``docs/DETECTION_QUALITY.md``). As of the last run: every built-in rule
-    (TITAN-001..007) scores precision 1.000 / recall 1.000 on that corpus, and
-    the overall risk score cleanly separates the classes — benign samples score
-    at most 4 while every malicious sample scores at least 15 (no overlap).
-    ``tests/test_detection_eval.py`` asserts this separation so a weight or rule
-    change that regresses it fails CI. Re-run the harness and refresh the
-    metrics file when tuning these constants.
+    ``docs/DETECTION_QUALITY.md``). As of the last run over the expanded corpus
+    (14 malicious / 12 benign, two positives per rule plus adversarial benign
+    near-misses): every built-in rule (TITAN-001..007) scores precision 1.000 /
+    recall 1.000, and the overall risk score cleanly separates the classes —
+    benign samples score at most 7 while every malicious sample scores at least
+    15 (no overlap). ``tests/test_detection_eval.py`` asserts this separation so
+    a weight or rule change that regresses it fails CI. Re-run the harness and
+    refresh the metrics file when tuning these constants.
+
+    A per-severity floor (``SEVERITY_FLOOR``) additionally guarantees a fired
+    rule never reads below its own severity, so a genuine detection is not
+    under-prioritized as LOW.
     """
 
     # Scoring weights (see "Weight validation" above).
@@ -34,6 +39,19 @@ class RiskScoringEngine:
     WEIGHT_DETECTION_HIGH = 25
     WEIGHT_DETECTION_MEDIUM = 15
     WEIGHT_DETECTION_LOW = 5
+
+    # Per-severity risk-level floor: a fired detection rule must never let the
+    # overall assessment read *below* the rule's own severity. Without this, a
+    # single medium-severity correlation rule contributes only
+    # WEIGHT_DETECTION_MEDIUM (15) — under the MEDIUM threshold (25) — so a fired
+    # "LOLBin Script Execution" or "Deep Base64 Nesting" rule read LOW, which is
+    # counterintuitive for an analyst triaging the result. These values are the
+    # minimum normalized score each severity guarantees and are aligned with the
+    # risk-level thresholds below (MEDIUM=25, HIGH=50, CRITICAL=75). The additive
+    # weights can still push *higher*; the floor only prevents reading lower.
+    # Benign inputs fire no rules (measured precision 1.000 on the corpus), so
+    # this only ever lifts true detections and cannot worsen class separation.
+    SEVERITY_FLOOR = {"low": 0, "medium": 25, "high": 50, "critical": 75}
     WEIGHT_IOC_PUBLIC_IP = 3
     WEIGHT_IOC_URL = 4
     WEIGHT_IOC_DOMAIN = 3
@@ -61,8 +79,14 @@ class RiskScoringEngine:
 
         # Detection rules
         detection_score = 0
+        detection_floor = 0
+        floor_severity = None
         for det in detections:
             severity = det.get("severity", "low")
+            floor = self.SEVERITY_FLOOR.get(severity, 0)
+            if floor > detection_floor:
+                detection_floor = floor
+                floor_severity = severity
             if severity == "critical":
                 detection_score += self.WEIGHT_DETECTION_CRITICAL
                 reasons.append(f"Critical: {det['name']}")
@@ -140,8 +164,19 @@ class RiskScoringEngine:
         breakdown["enrichment"] = enrichment_score
         score += enrichment_score
 
+        # Apply the per-severity floor: a fired rule must not read below its own
+        # severity (see SEVERITY_FLOOR). Applied after summing, so additive
+        # signal still pushes higher, but the score can never fall under the
+        # strongest fired rule's floor. ``raw_score`` keeps the pure additive
+        # value for transparency.
+        if detection_floor > score:
+            reasons.insert(
+                0, f"Risk floored to {floor_severity} by fired detection rule"
+            )
+        breakdown["detection_floor"] = detection_floor
+
         # Normalize to 0-100
-        normalized_score = min(score, 100)
+        normalized_score = min(max(score, detection_floor), 100)
 
         # Risk level
         if normalized_score >= 75:
