@@ -251,6 +251,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run detection rules and compute risk score",
     )
     parser.add_argument(
+        "--explain",
+        action="store_true",
+        help=(
+            "Print a human-readable Titan intelligence explanation to stderr "
+            "while preserving JSON stdout"
+        ),
+    )
+    parser.add_argument(
+        "--intelligence-out",
+        type=Path,
+        help="Write the intelligence summary to a separate JSON file",
+    )
+    parser.add_argument(
         "--rules-pack",
         action="append",
         type=Path,
@@ -728,6 +741,19 @@ def run_detections_stage(args, config, report, evidence_result):
     return detections, risk_assessment
 
 
+def attach_intelligence_stage(args, report, detections, risk_assessment) -> None:
+    """Attach deterministic analyst-oriented intelligence to every report."""
+    from .core.intelligence import IntelligenceEngine
+
+    engine = IntelligenceEngine()
+    report["intelligence"] = engine.analyze(
+        report,
+        iocs=report.get("iocs") or {},
+        detections=detections,
+        risk=risk_assessment,
+    )
+
+
 def run_enrichment_stage(args, config, report, evidence_result) -> None:
     """Optionally enrich IOCs (explicit opt-in; blocked by --offline)."""
     # Optional enrichment (explicit opt-in; blocked by --offline)
@@ -897,6 +923,35 @@ def write_outputs_stage(args, config, report, engine, detections, risk_assessmen
         if not ok:
             if not args.quiet:
                 print(json.dumps({"ok": False, "errors": errors}, indent=2), file=sys.stderr)
+            sys.exit(1)
+
+    # Optional human-readable intelligence output. It goes to stderr so
+    # JSON stdout remains machine-readable and backward compatible.
+    if args.explain:
+        from .core.explain import generate_explanation
+
+        print("\n" + generate_explanation(report) + "\n", file=sys.stderr)
+
+    if args.intelligence_out:
+        intelligence_json = json.dumps(report.get("intelligence") or {}, indent=2)
+        try:
+            args.intelligence_out.write_text(intelligence_json)
+            if not args.quiet:
+                print(
+                    f"Intelligence summary saved to {args.intelligence_out}",
+                    file=sys.stderr,
+                )
+        except PermissionError:
+            print(
+                f"Error: Permission denied writing to {args.intelligence_out}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        except OSError as e:
+            print(
+                f"Error: Could not write intelligence file: {e}",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     # Pre-serialize report once (used for stdout + file + size guard)
