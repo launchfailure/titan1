@@ -111,7 +111,11 @@ class GraphExporter:
                 f"{length} bytes",
                 f"Decode score: {score:.3f}",
             ]
-            attrs = [f'label="{self._dot_escape(chr(10).join(label_parts)).replace(chr(10), r"\n")}"', f'fillcolor="{color}"']
+            dot_label = self._dot_escape("\n".join(label_parts)).replace("\n", r"\n")
+            attrs = [
+                f'label="{dot_label}"',
+                f'fillcolor="{color}"',
+            ]
 
             if annotation:
                 reasons = ", ".join(annotation.get("reasons") or [])
@@ -121,9 +125,10 @@ class GraphExporter:
                     + f" ({annotation['score']}/100)"
                     + (f"\n{reasons}" if reasons else "")
                 )
-                attrs[0] = (
-                    f'label="{self._dot_escape(annotated_label).replace(chr(10), r"\n")}"'
+                dot_annotated_label = self._dot_escape(annotated_label).replace(
+                    "\n", r"\n"
                 )
+                attrs[0] = f'label="{dot_annotated_label}"' 
                 attrs.append('penwidth="2.5"')
 
             lines.append(f"  {node_id} [{', '.join(attrs)}];")
