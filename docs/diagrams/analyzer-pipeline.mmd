@@ -1,0 +1,10 @@
+flowchart TD
+    Bytes[Node bytes] --> Probe[Analyzer probes]
+    Probe --> Archive[ZIP/TAR]
+    Probe --> Executable[PE/ELF]
+    Probe --> Structured[PDF/OLE]
+    Archive --> Artifacts[Named bounded artifacts]
+    Structured --> Artifacts
+    Executable --> Metadata[Metadata]
+    Artifacts --> Graph[Artifact graph]
+    Metadata --> Report[Report node data]

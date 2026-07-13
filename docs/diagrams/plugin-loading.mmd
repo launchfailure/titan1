@@ -1,0 +1,8 @@
+flowchart LR
+    Config[Configured plugin_dirs] --> Manager[PluginManager]
+    User[User plugin directory] --> Manager
+    Builtin[Built-in plugin directory] --> Manager
+    Manager --> Decoders[Decoder registry]
+    Manager --> Analyzers[Analyzer registry]
+    Decoders --> Engine[TitanEngine]
+    Analyzers --> Engine

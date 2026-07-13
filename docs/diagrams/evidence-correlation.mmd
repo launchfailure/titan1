@@ -1,0 +1,11 @@
+flowchart TD
+    CSV[CSV exports] --> Parsers[Evidence parsers]
+    JSONL[JSONL exports] --> Parsers
+    Parsers --> Events[Normalized events]
+    Parsers --> Indicators[Normalized indicators]
+    Indicators --> LastSeen[Last seen]
+    Indicators --> Pivots[Top pivots]
+    Indicators --> Entities[Entity hints]
+    Events --> Links[Evidence links]
+    Links --> Outputs[Reports and timelines]
+    Pivots --> Outputs

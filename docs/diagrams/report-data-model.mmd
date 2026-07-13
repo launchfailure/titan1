@@ -1,0 +1,10 @@
+erDiagram
+    REPORT ||--o{ NODE : contains
+    REPORT ||--o{ DETECTION : contains
+    REPORT ||--o| RISK_ASSESSMENT : contains
+    REPORT ||--o| INTELLIGENCE : contains
+    REPORT ||--o| EVIDENCE : contains
+    NODE ||--o{ NODE : parent_of
+    INTELLIGENCE ||--o{ SIGNAL : contains
+    INTELLIGENCE ||--o{ TOP_ARTIFACT : ranks
+    TOP_ARTIFACT }o--|| NODE : references

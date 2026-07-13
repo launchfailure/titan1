@@ -1,0 +1,7 @@
+flowchart LR
+    Report[Completed Titan report] --> Builder[build_case_report]
+    Forensics[Forensics summary] --> Builder
+    IOCs[IOC summary] --> Builder
+    Builder --> Case[Stable case representation]
+    Case --> Markdown[Markdown renderer]
+    Case --> HTML[Escaped HTML renderer]

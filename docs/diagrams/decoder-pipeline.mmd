@@ -1,0 +1,10 @@
+flowchart TD
+    Input[Node bytes] --> Detect[Smart detection]
+    Detect --> Applicable[Applicable decoders]
+    Applicable --> Decode[Bounded decode]
+    Decode --> Hash[SHA-256 deduplication]
+    Hash --> Score[Candidate scoring]
+    Score --> Prune{Policy prune?}
+    Prune -- no --> Child[Child node + provenance]
+    Child --> Recurse[Recursive analysis]
+    Prune -- yes --> Trace[Decision trace]

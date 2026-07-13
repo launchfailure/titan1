@@ -27,12 +27,6 @@ Titan Decoder Engine is a dependency-light Python framework for analyzing encode
 - [Testing and development](#testing-and-development)
 - [Documentation map](#documentation-map)
 
-Maintainers:
-- Release checklist: [docs/RELEASING.md](docs/RELEASING.md)
-- Community post templates: [docs/ANNOUNCEMENT.md](docs/ANNOUNCEMENT.md)
-- Intelligence Layer: [docs/INTELLIGENCE.md](docs/INTELLIGENCE.md)
-- Engine roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
-
 ## Why Titan
 
 Titan is designed for repeatable analysis rather than opaque “best guess” decoding.
@@ -116,23 +110,6 @@ The install provides:
 
 ```bash
 titan-decoder --file suspicious.bin --out report.json
-# With progress and detections
-titan-decoder --file payload.dat --progress --enable-detections --out report.json
-
-# Add deterministic intelligence and a readable explanation
-titan-decoder --file payload.dat --enable-detections --explain \
-    --intelligence-out intelligence.json --out report.json
-
-# Full law enforcement package
-titan-decoder --file evidence.bin --profile full --enable-detections \\
-    --forensics-out forensics.json --ioc-out iocs.json --ioc-format misp \\
-    --report-out case_report.md --timeline-out timeline.csv
-
-# Add IR evidence logs (DNS/Proxy/Firewall/VPN/Auth/DHCP) for correlation + pivots
-titan-decoder --file suspicious.bin --out report.json \\
-    --evidence dns:/path/dns.csv \\
-    --evidence proxy:/path/proxy.csv \\
-    --evidence firewall:/path/flows.csv
 ```
 
 Add detections, risk, a readable explanation, and a separate Intelligence object:
@@ -301,14 +278,18 @@ python -m pytest tests/test_graph_export.py tests/test_graph_intelligence.py
 
 Security-sensitive changes should include malformed-input, bound, and regression tests.
 
-See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+See [docs/TESTING.md](docs/TESTING.md) and [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ## Documentation map
 
 | Document | Purpose |
 |---|---|
+| [Documentation index](docs/DOCUMENTATION_INDEX.md) | Complete operator, developer, and maintainer map |
 | [Architecture](docs/ARCHITECTURE.md) | Components, boundaries, and system diagrams |
-| [Pipelines](docs/PIPELINES.md) | Decoder/analyzer execution and graph construction |
+| [CLI reference](docs/CLI_REFERENCE.md) | Command groups, outputs, and examples |
+| [Pipelines](docs/PIPELINES.md) | End-to-end execution and graph construction |
+| [Decoder engine](docs/DECODER_ENGINE.md) | Decoder lifecycle, bounds, and extension rules |
+| [Analyzer pipeline](docs/ANALYZER_PIPELINE.md) | Structured parsing and artifact emission |
 | [Developer guide](docs/DEVELOPER_GUIDE.md) | Repository layout and implementation workflow |
 | [Intelligence Layer](docs/INTELLIGENCE_LAYER.md) | Signals, classification, ranking, and compatibility |
 | [Detection and risk](docs/DETECTION_AND_RISK.md) | Rule evaluation and operational severity |
@@ -316,7 +297,9 @@ See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 | [Graph exports](docs/GRAPH_EXPORTS.md) | JSON, DOT, Mermaid, and Intelligence annotations |
 | [Plugin API](docs/PLUGIN_API.md) | Extension points and plugin requirements |
 | [Report schema](docs/REPORT_SCHEMA.md) | Report fields and versioning |
+| [Security model](docs/SECURITY_MODEL.md) | Threat model, controls, and operational guidance |
 | [Testing](docs/TESTING.md) | Test strategy, commands, and CI expectations |
+| [Contributing](docs/CONTRIBUTING.md) | Contribution and review requirements |
 
 ## Project status
 

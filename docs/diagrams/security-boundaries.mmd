@@ -1,0 +1,7 @@
+flowchart LR
+    Untrusted[Untrusted bytes, evidence, names] --> Core[Bounded deterministic core]
+    Plugins[Reviewed plugins/rule packs] --> Core
+    Core --> Escapers[Output escaping]
+    Escapers --> Outputs[JSON / HTML / DOT / Mermaid]
+    Core --> Optional[Optional enrichment]
+    Optional --> Network[External services]

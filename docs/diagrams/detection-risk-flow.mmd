@@ -1,0 +1,11 @@
+flowchart LR
+    Report[Completed analysis report] --> Rules[Detection rules]
+    IOCs[IOC summary] --> Rules
+    Evidence[Normalized evidence] --> Rules
+    Rules --> Detections[Detections]
+    Report --> Risk[Risk scoring]
+    IOCs --> Risk
+    Detections --> Risk
+    Risk --> Assessment[Risk assessment]
+    Detections --> Intelligence[Intelligence Layer]
+    Assessment --> Intelligence
