@@ -19,6 +19,8 @@ New here and feeling lost? Start with the practical walkthrough in [docs/USAGE.m
 Maintainers:
 - Release checklist: [docs/RELEASING.md](docs/RELEASING.md)
 - Community post templates: [docs/ANNOUNCEMENT.md](docs/ANNOUNCEMENT.md)
+- Intelligence Layer: [docs/INTELLIGENCE.md](docs/INTELLIGENCE.md)
+- Engine roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ### 1. Install
 
@@ -98,6 +100,10 @@ titan-decoder --file suspicious.bin --out report.json
 # With progress and detections
 titan-decoder --file payload.dat --progress --enable-detections --out report.json
 
+# Add deterministic intelligence and a readable explanation
+titan-decoder --file payload.dat --enable-detections --explain \
+    --intelligence-out intelligence.json --out report.json
+
 # Full law enforcement package
 titan-decoder --file evidence.bin --profile full --enable-detections \\
     --forensics-out forensics.json --ioc-out iocs.json --ioc-format misp \\
@@ -158,6 +164,7 @@ python -c 'import json; r=json.load(open("report.json")); print((r.get("risk_ass
 - **Evidence Links**: Reason codes + confidence for key correlations
 - **7 Detection Rules**: Deep Base64 nesting, Office macro+network IOCs, LOLBin patterns, packed/encrypted payload heuristics, multi-stage infrastructure, XOR+C2, malicious PDF
 - **Risk Scoring**: 0-100 heuristic threat assessment (CLEAN/LOW/MEDIUM/HIGH/CRITICAL)
+- **Deterministic Intelligence Layer**: explainable scoring, classifications, scored signals, and top-artifact prioritization; see [docs/INTELLIGENCE.md](docs/INTELLIGENCE.md)
 - **Enrichment**: Geo/WHOIS/YARA (optional, requires config) with deterministic local cache + refresh control
 
 ### Export & Reporting
