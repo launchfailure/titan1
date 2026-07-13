@@ -1,0 +1,11 @@
+flowchart TD
+    Args[Parse args/config] --> Info{Early command?}
+    Info -- yes --> Exit[Print and exit]
+    Info -- no --> Input[Load input]
+    Input --> Evidence[Parse evidence]
+    Evidence --> Analysis[Run analysis]
+    Analysis --> Attach[Attach evidence]
+    Attach --> Detection[Detections and risk]
+    Detection --> Intelligence[Attach Intelligence]
+    Intelligence --> Enrichment[Optional enrichment]
+    Enrichment --> Export[Write outputs]

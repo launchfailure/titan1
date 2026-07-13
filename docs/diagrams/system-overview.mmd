@@ -1,0 +1,15 @@
+flowchart LR
+    Input[Input bytes] --> Engine[TitanEngine]
+    Engine --> Decoders[Decoders]
+    Engine --> Analyzers[Analyzers]
+    Decoders --> Graph[Artifact graph]
+    Analyzers --> Graph
+    Graph --> IOC[IOC extraction]
+    Graph --> Detection[Detections]
+    IOC --> Detection
+    Detection --> Risk[Risk scoring]
+    Graph --> Intelligence[Intelligence Layer]
+    IOC --> Intelligence
+    Detection --> Intelligence
+    Risk --> Intelligence
+    Intelligence --> Outputs[Reports and graph exports]

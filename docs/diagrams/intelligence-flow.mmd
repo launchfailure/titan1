@@ -1,0 +1,12 @@
+flowchart LR
+    Nodes --> Signals
+    IOCs --> Signals
+    Detections --> Signals
+    Risk --> Signals
+    Signals --> Score
+    Score --> Classification
+    Nodes --> Ranking
+    Score --> Recommendation
+    Classification --> Result[Intelligence v1.0]
+    Ranking --> Result
+    Recommendation --> Result

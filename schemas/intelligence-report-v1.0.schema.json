@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pragmaconflux/titan1/blob/main/schemas/intelligence-report-v1.0.schema.json",
+  "title": "Titan Decoder Intelligence Report v1.0",
+  "description": "Stable compatibility contract for IntelligenceEngine output.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "intelligence_score",
+    "classification",
+    "confidence",
+    "signals",
+    "top_artifacts",
+    "recommendation"
+  ],
+  "properties": {
+    "version": {
+      "const": "1.0"
+    },
+    "intelligence_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "classification": {
+      "type": "string",
+      "enum": [
+        "CLEAN",
+        "LOW_RISK_ARTIFACT",
+        "SUSPICIOUS_OBJECT",
+        "HIGH_RISK_PAYLOAD",
+        "LIKELY_MALICIOUS"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "signals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/signal"
+      }
+    },
+    "top_artifacts": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    },
+    "recommendation": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$defs": {
+    "signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "points",
+        "summary"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "points": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node_id",
+        "artifact_name",
+        "method",
+        "score",
+        "reasons"
+      ],
+      "properties": {
+        "node_id": {},
+        "artifact_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "method": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "reasons": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

@@ -889,10 +889,22 @@ def write_outputs_stage(args, config, report, engine, detections, risk_assessmen
                 file=sys.stderr,
             )
 
-    # Export graph if requested
+    # Export graph if requested. Use the completed report so the exporter can
+    # add Intelligence metadata without coupling interpretation into TitanEngine.
     if args.graph:
         try:
-            engine.save_graph(args.graph, args.graph_format)
+            from .core.graph_export import GraphExporter
+
+            graph_exporter = GraphExporter(
+                report.get("nodes") or [],
+                intelligence=report.get("intelligence") or {},
+            )
+            if args.graph_format == "dot":
+                graph_exporter.save_dot(args.graph)
+            elif args.graph_format == "mermaid":
+                graph_exporter.save_mermaid(args.graph)
+            else:
+                graph_exporter.save_json(args.graph)
             if not args.quiet:
                 print(
                     f"Graph exported to {args.graph} (format: {args.graph_format})",
@@ -1105,6 +1117,7 @@ def main():
     detections, risk_assessment = run_detections_stage(
         args, config, report, evidence_result
     )
+    attach_intelligence_stage(args, report, detections, risk_assessment)
     run_enrichment_stage(args, config, report, evidence_result)
     exit_code = write_outputs_stage(
         args, config, report, engine, detections, risk_assessment, evidence_result
