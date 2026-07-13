@@ -97,6 +97,14 @@ Optional output modes:
 - Include a decision trace in the JSON report (helpful for debugging scoring/pruning):
   - `titan-decoder --file suspicious.bin --trace --out report.json`
 
+- Print the deterministic Intelligence Layer explanation:
+  - `titan-decoder --file suspicious.bin --enable-detections --explain --out report.json`
+
+- Write the Intelligence Layer result separately:
+  - `titan-decoder --file suspicious.bin --enable-detections --intelligence-out intelligence.json --out report.json`
+
+  This is deterministic analysis, not a generative AI model. See [INTELLIGENCE.md](INTELLIGENCE.md).
+
 - Save a shareable HTML case report:
   - `titan-decoder --file evidence.bin --report-out case_report.html --report-format html`
 
