@@ -1,512 +1,304 @@
 # Titan Decoder Engine
 
-**Advanced payload decoding and forensic analysis framework for cybersecurity professionals, malware analysts, and law enforcement.**
+**Deterministic recursive payload decoding, forensic provenance, IOC extraction, detection, and analyst-oriented intelligence.**
 
-[![Tests](https://github.com/pragmaconflux/titan1/actions/workflows/tests.yml/badge.svg)](https://github.com/pragmaconflux/titan1/actions/workflows/tests.yml) [![Python](https://img.shields.io/badge/python-3.10%2B-blue)]()
+[![Tests](https://github.com/pragmaconflux/titan1/actions/workflows/tests.yml/badge.svg)](https://github.com/pragmaconflux/titan1/actions/workflows/tests.yml)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](pyproject.toml)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-## Safety / Privacy
+Titan Decoder Engine is a dependency-light Python framework for analyzing encoded, compressed, archived, and structured payloads. It builds a bounded transformation graph, records provenance for every artifact, extracts indicators, evaluates detections, computes risk, and produces deterministic Intelligence summaries for analysts.
 
-- Don’t upload real incident data (logs, browser history DBs, reports) to public issues.
-- This tool can process untrusted inputs; run in a sandboxed environment when possible.
-- Outputs may contain sensitive artifacts extracted from samples (IOCs, emails, hostnames). Handle accordingly.
-- Built-in hardening (decompression-bomb caps, DoS-resistant decoders, resource limits) and known trust boundaries are documented in [SECURITY.md](SECURITY.md).
-- No warranty: see [LICENSE](LICENSE).
+> Titan processes untrusted content. Run it in a sandbox when possible. Do not upload real incident data to public issues. See [SECURITY.md](SECURITY.md).
 
-## 🚀 Quick Start (5 Minutes)
+## Contents
 
-New here and feeling lost? Start with the practical walkthrough in [docs/USAGE.md](docs/USAGE.md).
+- [Why Titan](#why-titan)
+- [Feature matrix](#feature-matrix)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [CLI workflow](#cli-workflow)
+- [Pipelines](#pipelines)
+- [Intelligence, detections, and risk](#intelligence-detections-and-risk)
+- [Evidence and provenance](#evidence-and-provenance)
+- [Graph exports](#graph-exports)
+- [Plugin API](#plugin-api)
+- [Report contracts](#report-contracts)
+- [Testing and development](#testing-and-development)
+- [Documentation map](#documentation-map)
 
-Maintainers:
-- Release checklist: [docs/RELEASING.md](docs/RELEASING.md)
-- Community post templates: [docs/ANNOUNCEMENT.md](docs/ANNOUNCEMENT.md)
-- Intelligence Layer: [docs/INTELLIGENCE.md](docs/INTELLIGENCE.md)
-- Engine roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
+## Why Titan
 
-### 1. Install
+Titan is designed for repeatable analysis rather than opaque “best guess” decoding.
 
-The core engine has **no external dependencies** and needs **Python 3.10+**.
+- **Deterministic:** stable decoder ordering, bounded recursion, ordered output, and explicit report contracts.
+- **Explainable:** each node records parentage, transformation method, hashes, score, and provenance.
+- **Defensive:** resource limits, decompression caps, timeouts, node caps, and malformed-input recovery.
+- **Extensible:** built-in decoders and analyzers share interfaces with external plugins.
+- **Pipeline-friendly:** JSON, JSONL, IOC, timeline, case-report, and graph exports.
+- **Offline-first:** the core engine uses the Python standard library; enrichment is optional.
 
-**Option A — install directly from GitHub (no clone needed):**
+## Feature matrix
+
+| Area | Capabilities |
+|---|---|
+| Recursive decoding | Base64, recursive Base64, Base64URL, PEM, Hex, ROT13, URL, HTML entities, Unicode escapes, UTF-16, XOR |
+| Compression | Gzip, Bz2, LZMA, Zlib with bounded decompression |
+| Opt-in decoders | Base32, UUEncode, ASN.1, Quoted-Printable |
+| Structural formats | PDF object graph, OLE/CFB streams and VBA extraction |
+| Archive analysis | ZIP and TAR with file-count, size, and compression-ratio limits |
+| Executables | PE and ELF metadata analysis |
+| Indicators | URLs, domains, IPs, emails, hashes, and normalized evidence indicators |
+| Detection | Built-in correlation rules and optional rule packs |
+| Risk | Deterministic 0–100 risk assessment |
+| Intelligence | Classification, scored signals, artifact ranking, confidence, recommendation |
+| Evidence | DNS, proxy, firewall, VPN, auth, DHCP, and generic CSV/JSONL ingestion |
+| Exports | JSON, JSONL, IOC formats, Markdown/HTML case reports, timelines, JSON/DOT/Mermaid graphs |
+| Operations | Interactive UI, batch mode, doctor check, local vault, offline guard |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    Input[Input bytes] --> Engine[TitanEngine]
+    Engine --> Detect[Smart format detection]
+    Detect --> Decoders[Decoder pipeline]
+    Detect --> Analyzers[Analyzer pipeline]
+    Decoders --> Graph[Bounded artifact graph]
+    Analyzers --> Graph
+    Graph --> IOCs[IOC extraction]
+    Graph --> Rules[Detection rules]
+    IOCs --> Rules
+    Rules --> Risk[Risk scoring]
+    Graph --> Intel[Intelligence Layer]
+    IOCs --> Intel
+    Rules --> Intel
+    Risk --> Intel
+    Intel --> Outputs[Reports, timelines, graphs, vault]
+```
+
+The engine separates transformation, analysis, interpretation, and export. More detailed diagrams are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/diagrams/](docs/diagrams/).
+
+## Installation
+
+Titan requires Python 3.10 or newer.
+
+### Install from GitHub
 
 ```bash
 pip install "git+https://github.com/pragmaconflux/titan1.git"
 ```
 
-**Option B — clone, then install:**
+### Editable developer install
 
 ```bash
 git clone https://github.com/pragmaconflux/titan1.git
 cd titan1
-pip install .            # or: pip install -e .   (editable, for development)
+python -m venv .venv
+source .venv/bin/activate
+pip install -e '.[dev]'
 ```
 
-Optional enrichment/advanced-feature dependencies:
+On Debian-derived systems, use a virtual environment rather than installing into the externally managed system Python.
+
+The install provides:
+
+- `titan` — interactive menu-driven interface
+- `titan-decoder` — scriptable CLI
+
+## Quick start
 
 ```bash
-pip install "titan-decoder[enrichment] @ git+https://github.com/pragmaconflux/titan1.git"
-# or, from a clone:  pip install -e '.[enrichment]'
-```
-
-> **Hit `error: externally-managed-environment`?** Modern Debian/Ubuntu block
-> installing into the system Python (PEP 668). Use a virtual environment:
->
-> ```bash
-> python3 -m venv .venv          # needs python3-venv (apt install python3-venv)
-> source .venv/bin/activate      # Windows: .venv\Scripts\activate
-> pip install .                  # now works inside the venv
-> ```
->
-> Re-run `source .venv/bin/activate` in each new terminal; `deactivate` to exit.
-> Prefer a globally-available command? Use [pipx](https://pipx.pypa.io):
-> `pipx install "git+https://github.com/pragmaconflux/titan1.git"`.
-
-Either way you get two commands: **`titan`** (interactive UI) and
-**`titan-decoder`** (scriptable CLI).
-
-### 2. Try the interactive UI (no flags to memorize)
-
-Prefer a menu over command-line flags? Just run:
-
-```bash
-titan
-```
-
-This launches an interactive console where you can:
-
-- **Auto-detect & decode** — paste a payload (or point at a file) and let the
-  full engine recursively decode it and extract IOCs, or
-- **Choose a specific decoder** — pick Base64, Hex, XOR, Gzip, ROT13, URL, and
-  more from a menu, then feed it text, a hex string, or a file.
-
-You can also **save the decoded output** (or the full JSON report) to a file
-when prompted after a decode.
-
-Under **Options** you can switch the analysis profile, toggle offline mode, and
-turn on **aggressive auto-detect** — a session-only mode that enables the opt-in
-decoders (Base32/UUencode/Quoted-Printable/ASN.1), searches deeper, and keeps
-weaker/shorter decodes. It's handy for hands-on testing (noisier for real
-triage), and it never changes the defaults used by `titan-decoder` or your
-analysis runs.
-
-It's the same engine and decoders the `titan-decoder` CLI uses, just menu-driven.
-(You can also reach it via `titan-decoder --interactive` / `-i`.)
-
-### 3. Analyze Your First File (scriptable CLI)
-
-```bash
-# Quick analysis
 titan-decoder --file suspicious.bin --out report.json
-
-# With progress and detections
-titan-decoder --file payload.dat --progress --enable-detections --out report.json
-
-# Add deterministic intelligence and a readable explanation
-titan-decoder --file payload.dat --enable-detections --explain \
-    --intelligence-out intelligence.json --out report.json
-
-# Full law enforcement package
-titan-decoder --file evidence.bin --profile full --enable-detections \\
-    --forensics-out forensics.json --ioc-out iocs.json --ioc-format misp \\
-    --report-out case_report.md --timeline-out timeline.csv
-
-# Add IR evidence logs (DNS/Proxy/Firewall/VPN/Auth/DHCP) for correlation + pivots
-titan-decoder --file suspicious.bin --out report.json \\
-    --evidence dns:/path/dns.csv \\
-    --evidence proxy:/path/proxy.csv \\
-    --evidence firewall:/path/flows.csv
 ```
 
-### 4. View Results
+Add detections, risk, a readable explanation, and a separate Intelligence object:
 
 ```bash
-# Check the report (no jq required)
-python -c 'import json; r=json.load(open("report.json")); print(r["node_count"]); print(r.get("iocs", {}))'
-
-# View risk assessment
-python -c 'import json; r=json.load(open("report.json")); print((r.get("risk_assessment") or {}).get("risk_score")); print(r.get("detections", []))'
+titan-decoder \
+  --file suspicious.bin \
+  --enable-detections \
+  --explain \
+  --intelligence-out intelligence.json \
+  --out report.json
 ```
 
-**That's it!** You're analyzing malware.
-
----
-
-## 📋 Features
-
-### Core Capabilities
-- **Two ways to run** — the interactive **`titan`** menu (auto-detect or pick a
-  decoder; input text/hex/a file; save decoded output or the JSON report; opt-in
-  aggressive mode) and the scriptable **`titan-decoder`** CLI, over the same engine.
-- **21 Built-in Decoders (+ plugins)** — 17 always on, 4 opt-in:
-  - *Always on (17):* Base64, RecursiveBase64, Base64URL, PEM, Gzip, Bz2, LZMA, Zlib, Hex, XOR, ROT13, URL decode, HTML entities, Unicode escape, UTF-16, PDF, OLE
-  - *Opt-in (4):* Base32, UUEncode, ASN.1, QuotedPrintable — see [Opt-in decoders](#opt-in-decoders) below
-- **Real structural parsers, not carvers**:
-  - *OLE/CFB:* walks the Compound File structure (FAT/DIFAT/directory/mini-stream),
-    names artifacts by real stream path (e.g. `Macros/VBA/Module1`), and
-    decompresses VBA source via MS-OVBA.
-  - *PDF:* object-graph aware — resolves indirect references, decompresses object
-    streams (`/Type /ObjStm`), follows `/Filter` chains
-    (Flate/ASCIIHex/ASCII85/LZW), and extracts `/JS`, `/OpenAction`, and
-    `/EmbeddedFile` by reference.
-  - *XOR:* single-byte and repeating-key (2–8) recovery via column frequency
-    analysis with sampled scoring.
-- **Smart Detection**: Auto-enables format-specific decoders
-- **Recursive Analysis**: Handles nested encodings (configurable depth)
-- **Archive Support**: ZIP, TAR with anti-zip-bomb protections
-- **Binary Analysis**: PE, ELF metadata extraction
-- **IOC Extraction**: IPs, URLs, domains, emails, hashes with normalization
-- **Per-node provenance**: every artifact records how it was produced (decoder/
-  analyzer, parent hash, confidence) — retraceable from the root input
-
-### Forensics & Intelligence
-- **Device Forensics**: VM detection, mobile IDs (IMEI/IMSI/ICCID), burner patterns
-- **Normalized IR Evidence**: Ingest common log exports (DNS/Proxy/Firewall/VPN/Auth/DHCP) into a canonical Event/Indicator model
-- **Top Pivots + Last Seen**: Evidence-backed pivots with provenance (multi-source indicators bubble up)
-- **Evidence Links**: Reason codes + confidence for key correlations
-- **7 Detection Rules**: Deep Base64 nesting, Office macro+network IOCs, LOLBin patterns, packed/encrypted payload heuristics, multi-stage infrastructure, XOR+C2, malicious PDF
-- **Risk Scoring**: 0-100 heuristic threat assessment (CLEAN/LOW/MEDIUM/HIGH/CRITICAL)
-- **Deterministic Intelligence Layer**: explainable scoring, classifications, scored signals, and top-artifact prioritization; see [docs/INTELLIGENCE.md](docs/INTELLIGENCE.md)
-- **Enrichment**: Geo/WHOIS/YARA (optional, requires config) with deterministic local cache + refresh control
-
-### Export & Reporting
-- **IOC Formats**: JSON, CSV, STIX 2.1 (minimal bundle), MISP
-- **Case Reports**: Markdown/HTML summaries for investigators
-- **Timeline Export**: CSV/JSON for Timesketch, Excel
-- **Evidence Timeline Export**: CSV/JSON from normalized `--evidence` inputs
-- **Graph Export**: JSON, DOT, Mermaid
-
-### Workflow / Trust (CLI-first)
-- **Doctor Self-Check**: `--doctor` prints a JSON diagnostic report
-- **Quiet Mode**: `--quiet` suppresses non-error status output (clean pipelines)
-- **JSONL Export**: `--jsonl-out events.jsonl` for easy ingestion
-- **Local Vault**: `--vault-store` + `--vault-search <value>` for history/search
-
-### Production Features
-- **Batch Processing**: Analyze entire directories
-- **PII Redaction**: Safe log sharing
-- **Resource Limits**: Memory caps, timeouts, recursion/node/size bounds
-- **DoS Resistance**: Bounded decompression (anti-bomb) and O(n)-by-design
-  decoders that don't blow up on crafted input (see [SECURITY.md](SECURITY.md))
-- **Signal Handling**: Clean shutdown (Ctrl+C)
-- **Error Recovery**: Malformed archives, corrupt SQLite, and bad CSV/JSONL rows
-  are skipped rather than crashing the run
-- **No Required Dependencies**: Core runs on the stdlib; optional extras
-  (`psutil`, enrichment) degrade gracefully when absent
-
-## 📖 Usage Examples
-
-### Command Line
-
-**Basic Analysis**
-```bash
-titan-decoder --file payload.dat --out report.json --verbose
-```
-
-**Fast Triage** (depth=3, 50 max artifacts)
-```bash
-titan-decoder --file suspicious.bin --profile fast --progress --enable-detections
-```
-
-**Deep Analysis** (depth=8, 200 max artifacts)
-```bash
-titan-decoder --file malware.bin --profile full --enable-detections --enable-enrichment
-```
-
-**Law Enforcement Package**
-```bash
-titan-decoder --file evidence.bin --enable-detections \\
-    --forensics-out forensics.json \\
-    --ioc-out iocs.json --ioc-format misp \\
-    --report-out case_report.md \\
-    --timeline-out timeline.csv
-```
-
-**Batch Processing**
-```bash
-titan-decoder --batch ./input_dir --batch-pattern "*.bin" --out ./reports
-```
-
-### Python API
-
-```python
-from titan_decoder.core.engine import TitanEngine
-from titan_decoder.core.detection_rules import CorrelationRulesEngine
-from titan_decoder.core.risk_scoring import RiskScoringEngine
-from titan_decoder.config import Config
-
-# Basic analysis
-engine = TitanEngine()
-report = engine.run_analysis(data_bytes)
-
-# With detections and risk scoring
-rules = CorrelationRulesEngine()
-detections = rules.evaluate_all(report, report['iocs'])
-
-risk_engine = RiskScoringEngine()
-risk = risk_engine.compute_risk_score(report, report['iocs'], detections)
-
-print(f"Risk Level: {risk['risk_level']} ({risk['risk_score']}/100)")
-print(f"Detections: {len(detections)}")
-print(f"IOCs: {sum(len(v) for v in report['iocs'].values())}")
-```
-
----
-
-## ⚙️ Configuration
-
-### Quick Config
-
-Create `~/.titan_decoder/config.json`:
-
-```json
-{
-    "max_recursion_depth": 5,
-    "max_node_count": 100,
-    "enable_logging": true,
-    "log_level": "INFO"
-}
-```
-
-### Full Configuration
-
-```json
-{
-    "max_recursion_depth": 5,
-    "max_node_count": 100,
-    "max_data_size": 52428800,
-    "analysis_timeout_seconds": 300,
-    "max_memory_mb": 1024,
-  
-    "decoders": {
-        "base64": true,
-        "gzip": true,
-        "hex": true,
-        "xor": true,
-        "pdf": true
-    },
-  
-    "analyzers": {
-        "zip": true,
-        "tar": true,
-        "pe": true,
-        "elf": true
-    },
-  
-    "enable_geo_enrichment": false,
-    "enable_whois": false,
-    "enable_yara": false,
-    "yara_rules_path": "/path/to/rules.yar",
-  
-    "enable_logging": true,
-    "log_level": "INFO"
-}
-```
-
-Run `titan-decoder --help` for the full option list.
-
-### Opt-in decoders
-
-Four decoders ship disabled in the always-on set: **Base32**, **UUEncode**,
-**ASN.1**, and **QuotedPrintable**.
-
-**Why they're off by default.** Their format signatures are weak or ambiguous,
-so running them on *every* node produces false-positive "decodes" and noisy
-output on unrelated binary/text. For example, any run of `A–Z2–7` characters is
-technically valid Base32, and ordinary text containing `=XX` sequences (URLs,
-config files) looks like Quoted-Printable. Keeping them out of the default
-chain makes normal runs precise instead of flooding the graph with spurious
-branches.
-
-**You usually don't need to do anything.** Smart detection runs on every node
-and *auto-enables* the right one the moment it confidently identifies the
-format (you'll see e.g. `Enabled Base32 decoder (confidence: 0.95)` in the
-logs). So a real Base32/UU/ASN.1/QP payload is still decoded out of the box —
-the decoder is simply activated on demand rather than tried blindly.
-
-**Force them on** when you want them always active (e.g. triaging a corpus you
-know is UUEncoded, or debugging why a borderline payload wasn't auto-detected).
-Add a `decoders` block to `~/.titan_decoder/config.json`:
-
-```json
-{
-    "decoders": {
-        "base32": true,
-        "uuencode": true,
-        "asn1": true,
-        "quoted_printable": true
-    }
-}
-```
-
-Set only the ones you need to `true`; omit or set `false` to leave a decoder on
-its default (auto-detect) behavior. The effective decoder set for any run is
-recorded in the report under `run_manifest.components.decoders`.
-
----
-
-## 🧪 Testing
+Generate investigator-facing reports and an annotated graph:
 
 ```bash
-# Dev setup (installs pytest + ruff)
-pip install -e ".[dev]"
-
-# Run all tests
-pytest tests/ -v
-
-# Lint/format
-python -m ruff check .
-python -m ruff format --check .
-
-# With coverage
-pytest tests/ --cov=titan_decoder --cov-report=html
-
-# Quick smoke test
-tmpfile="$(mktemp)" && printf 'ZGF0YTogdGVzdA==' > "$tmpfile" && titan-decoder --file "$tmpfile" --out /tmp/titan_report.json && python -c 'import json; print(json.load(open("/tmp/titan_report.json"))["node_count"])'
+titan-decoder \
+  --file suspicious.bin \
+  --enable-detections \
+  --report-out case-report.html \
+  --report-format html \
+  --graph analysis.mmd \
+  --graph-format mermaid \
+  --out report.json
 ```
 
+## CLI workflow
 
-## 📚 Documentation
+The CLI is organized as explicit stages:
 
-- **This README** - Installation, usage, configuration examples
-- **CLI help** - Run `titan-decoder --help` for the full option list
+1. Parse arguments and configuration.
+2. Handle informational commands.
+3. Load the input.
+4. Parse optional external evidence.
+5. Run recursive analysis.
+6. Attach evidence.
+7. Run detections and risk scoring.
+8. Attach deterministic Intelligence.
+9. Run optional enrichment.
+10. Write reports, timelines, graphs, JSONL, and vault records.
 
-### Report schema
+Common commands:
 
-- JSON Schema for the report format: [docs/report.schema.json](docs/report.schema.json)
-
----
-
-## 🔒 Safety Recommendations
-
-**Analyze untrusted files safely:**
-
-1. **Dedicated VM**: Run in a disposable virtual machine
-2. **Snapshots**: Use snapshots and revert after analysis
-3. **Network isolation**: Disconnect network before analysis
-4. **Non-root**: Never run as root user
-5. **Resource limits**: Set max_memory_mb and analysis_timeout_seconds
-
----
-
-## 🏗️ Architecture
-
-```
-titan_decoder/
-├── cli.py                    # Command-line interface
-├── config.py                 # Configuration management
-├── core/
-│   ├── engine.py             # Main analysis engine
-│   ├── detection_rules.py    # 7 starter detection rules
-│   ├── risk_scoring.py       # Heuristic threat assessment
-│   ├── enrichment.py         # Geo/WHOIS/YARA
-│   ├── device_forensics.py   # VM/mobile/burner detection
-│   ├── vault.py              # Local history/search store
-│   ├── ioc_export.py         # JSON/CSV/STIX/MISP export
-│   ├── case_report.py        # Markdown/HTML case reports
-│   ├── timeline.py           # Event timeline export
-│   ├── correlation.py        # IOC correlation cache
-│   ├── resource_manager.py   # Timeouts and limits
-│   ├── secure_logging.py     # PII redaction
-│   ├── smart_detection.py    # Format auto-detection
-│   ├── scoring.py            # Decode scoring
-│   ├── profiling.py          # Performance metrics
-│   ├── graph_export.py       # Graph visualization
-│   └── analyzers/
-│       └── base.py           # ZIP, TAR, PE, ELF
-├── decoders/
-│   ├── base.py               # 21 built-in decoders (17 on, 4 opt-in) (+ plugins)
-│   ├── cfb.py                # OLE/CFB compound-file parser (MS-OVBA)
-│   └── pdf.py                # PDF object-graph parser
-├── plugins/                  # Plugin system
-└── utils/
-    └── helpers.py            # IOC extraction, entropy
+```bash
+titan-decoder --help
+titan-decoder --doctor
+titan-decoder --list-decoders
+titan-decoder --list-analyzers
+titan-decoder --print-schema-version
 ```
 
----
+See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) for stage-level internals and [docs/USAGE.md](docs/USAGE.md) for operational examples.
 
-## 🤝 Contributing
+## Pipelines
 
-Contributions welcome! Please open a PR or issue to discuss changes (avoid
-sensitive incident data in public issues). See [CONTRIBUTING.md](CONTRIBUTING.md)
-for dev setup and PR guidelines, and [SECURITY.md](SECURITY.md) to report
-security issues privately.
+### Decoder pipeline
 
-**Add a custom decoder:**
-```python
-from typing import Tuple
+Decoders answer: “Can these bytes be transformed into another meaningful representation?”
 
-from titan_decoder.plugins import PluginDecoder
+Each candidate transformation is scored, bounded, deduplicated by content hash, and inserted as a child node. The engine recursively explores accepted children until it reaches configured depth, node, time, memory, or size limits.
 
-class MyDecoder(PluginDecoder):
-    @property
-    def name(self) -> str:
-        return "MyFormat"
+### Analyzer pipeline
 
-    def can_decode(self, data: bytes) -> bool:
-        return data.startswith(b"MYMAGIC")
+Analyzers answer: “Does this object contain structured artifacts or metadata?”
 
-    def decode(self, data: bytes) -> Tuple[bytes, bool]:
-        decoded = my_decode_logic(data)
-        return decoded, True
+Archive and structured-file analyzers can emit named child artifacts, such as archive members, OLE streams, embedded files, or executable metadata. Their output enters the same provenance graph as decoder output.
+
+See [docs/PIPELINES.md](docs/PIPELINES.md).
+
+## Intelligence, detections, and risk
+
+These components are related but intentionally separate:
+
+- **Detection rules** identify explicit patterns and correlations.
+- **Risk scoring** combines detections and report characteristics into an operational severity.
+- **Intelligence** creates an analyst-oriented classification, ordered signals, ranked artifacts, confidence, and recommendation.
+
+The Intelligence object is deterministic and versioned. Its `1.0` contract is defined by:
+
+- `schemas/intelligence-report-v1.0.schema.json`
+- `docs/INTELLIGENCE_CONTRACT.md`
+- `tests/fixtures/intelligence/calibration-v1.json`
+
+See [docs/INTELLIGENCE_LAYER.md](docs/INTELLIGENCE_LAYER.md) and [docs/DETECTION_AND_RISK.md](docs/DETECTION_AND_RISK.md).
+
+## Evidence and provenance
+
+Every graph node retains derivation context, including its parent, method, hashes, score, artifact name, and provenance record.
+
+External incident-response evidence can be ingested with repeated `--evidence KIND:PATH` arguments:
+
+```bash
+titan-decoder \
+  --file suspicious.bin \
+  --evidence dns:logs/dns.csv \
+  --evidence proxy:logs/proxy.csv \
+  --evidence firewall:logs/flows.jsonl \
+  --out report.json
 ```
 
-Place in `~/.titan_decoder/plugins/my_decoder.py` and it's auto-loaded!
+Titan normalizes evidence into events and indicators, then derives last-seen information, pivots, entity hints, and evidence links.
 
----
+See [docs/EVIDENCE_AND_PROVENANCE.md](docs/EVIDENCE_AND_PROVENANCE.md).
 
-## 📄 License
+## Graph exports
 
-License: MIT (see LICENSE).
+```bash
+titan-decoder --file sample.bin --graph graph.json --graph-format json
+titan-decoder --file sample.bin --graph graph.dot --graph-format dot
+titan-decoder --file sample.bin --graph graph.mmd --graph-format mermaid
+```
 
----
+When the report contains Intelligence data, exports include:
 
-## 🆘 Support
+- graph-level classification, score, confidence, and signal codes;
+- per-node priority annotations for ranked artifacts;
+- DOT legends and highlighted nodes;
+- Mermaid summary and priority classes.
 
-- **Issues**: [GitHub Issues](https://github.com/pragmaconflux/titan1/issues)
+Consumers that do not use Intelligence retain the previous graph structure.
 
----
+See [docs/GRAPH_EXPORTS.md](docs/GRAPH_EXPORTS.md).
 
-## 🎯 Roadmap
+## Plugin API
 
-- [ ] REST API for integration
-- [ ] Watch mode for directory monitoring
-- [ ] Artifact parsers (prefetch, shimcache)
-- [ ] PyPI package
-- [ ] Single-file executable
-- [ ] Web UI
+Titan loads decoders and analyzers from configured plugin directories, the user plugin directory, and built-in plugins. Plugins should:
 
----
+- implement the matching base interface;
+- provide a stable name;
+- return deterministic results;
+- enforce their own input/output bounds;
+- avoid network activity unless explicitly configured;
+- include focused tests.
 
-## 🙏 Credits
+See [docs/PLUGIN_API.md](docs/PLUGIN_API.md).
 
-Titan Decoder Engine is built for — and with — the cybersecurity community: the
-malware analysts, incident responders, digital forensics examiners, and law
-enforcement teams who reverse-engineer hostile payloads every day. Thank you for
-the bug reports, sample submissions, and field feedback that shape each release.
+## Report contracts
 
-**Maintained by** [PragmaConflux](https://github.com/pragmaconflux) and released
-under the [MIT License](LICENSE). Contributions are welcome — see
-[CONTRIBUTING.md](CONTRIBUTING.md) to get started, and please review our
-[Code of Conduct](CODE_OF_CONDUCT.md) and [Security Policy](SECURITY.md).
+The primary report includes metadata, a run manifest, nodes, IOCs, optional evidence, detections, risk, Intelligence, and enrichment.
 
-**Core stack**
-- Python 3.10+ — the decoding engine and every core module run on the standard
-  library alone, with no external dependencies required.
+Titan maintains multiple contracts:
 
-**Optional integrations** (see [requirements-optional.txt](requirements-optional.txt))
-enable enrichment and advanced analysis features:
+- main report schema version in `titan_decoder.core.engine`;
+- Intelligence JSON Schema `1.0`;
+- deterministic calibration fixtures;
+- compatibility and strict-mode tests.
 
-| Library | Used for |
-| --- | --- |
-| [psutil](https://github.com/giampaolo/psutil) | Runtime resource governor (per-module CPU/memory limits) |
-| [geoip2](https://github.com/maxmind/GeoIP2-python) | Geolocation enrichment of extracted network IOCs |
-| [python-whois](https://github.com/richardpenman/whois) | Domain registration lookups during IOC enrichment |
-| [yara-python](https://github.com/VirusTotal/yara-python) | Signature-based detection over decoded payloads |
-| [requests](https://github.com/psf/requests) | Optional network-backed enrichment lookups |
-| [PyYAML](https://github.com/yaml/pyyaml) | Loading detection rule packs and configuration |
+See [docs/REPORT_SCHEMA.md](docs/REPORT_SCHEMA.md).
 
-Gratitude to the maintainers of these projects and to the broader open-source
-security ecosystem their work makes possible.
+## Testing and development
 
----
+```bash
+pip install -e '.[dev]'
+python -m pytest
+ruff check .
+mypy titan_decoder
+```
 
-**Ready to analyze? Start with:** `titan-decoder --file your_sample.bin --progress --enable-detections`
+Focused suites:
+
+```bash
+python -m pytest tests/test_intelligence.py tests/test_intelligence_contract.py
+python -m pytest tests/test_case_report_intelligence.py
+python -m pytest tests/test_graph_export.py tests/test_graph_intelligence.py
+```
+
+Security-sensitive changes should include malformed-input, bound, and regression tests.
+
+See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Documentation map
+
+| Document | Purpose |
+|---|---|
+| [Architecture](docs/ARCHITECTURE.md) | Components, boundaries, and system diagrams |
+| [Pipelines](docs/PIPELINES.md) | Decoder/analyzer execution and graph construction |
+| [Developer guide](docs/DEVELOPER_GUIDE.md) | Repository layout and implementation workflow |
+| [Intelligence Layer](docs/INTELLIGENCE_LAYER.md) | Signals, classification, ranking, and compatibility |
+| [Detection and risk](docs/DETECTION_AND_RISK.md) | Rule evaluation and operational severity |
+| [Evidence and provenance](docs/EVIDENCE_AND_PROVENANCE.md) | Normalized evidence and derivation records |
+| [Graph exports](docs/GRAPH_EXPORTS.md) | JSON, DOT, Mermaid, and Intelligence annotations |
+| [Plugin API](docs/PLUGIN_API.md) | Extension points and plugin requirements |
+| [Report schema](docs/REPORT_SCHEMA.md) | Report fields and versioning |
+| [Testing](docs/TESTING.md) | Test strategy, commands, and CI expectations |
+
+## Project status
+
+Titan is under active development. The deterministic core, report contracts, and safety bounds take priority over feature breadth. Planned work is tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).

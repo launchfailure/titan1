@@ -1,0 +1,8 @@
+flowchart LR
+    Report[Completed report] --> Nodes[Graph nodes]
+    Report --> Intelligence[Intelligence object]
+    Nodes --> Exporter[GraphExporter]
+    Intelligence --> Exporter
+    Exporter --> JSON[JSON metadata and node annotations]
+    Exporter --> DOT[DOT summary, legend, highlights]
+    Exporter --> Mermaid[Mermaid summary and classes]
