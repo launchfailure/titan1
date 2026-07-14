@@ -1,5 +1,7 @@
 # Decoder and Analyzer Pipelines
 
+Decoders transform one byte representation into another candidate representation. Analyzers identify structure — containers, executables, embedded objects, metadata — and may emit named child artifacts. Neither is responsible for final verdicts, risk, or analyst-facing conclusions. Both feed the same artifact graph.
+
 ## Recursive flow
 
 ```mermaid
@@ -17,14 +19,6 @@ flowchart TD
     J --> B
 ```
 
-## Decoder responsibilities
-
-A decoder should cheaply determine whether it applies, transform bytes, reject malformed input without crashing, and provide a stable name. Expansion-capable decoders must enforce output limits. Heuristic decoders must avoid quadratic searches and return deterministic candidates.
-
-## Analyzer responsibilities
-
-An analyzer identifies structure rather than merely transforming bytes. It can emit metadata and child artifacts with names. Archive paths and structural stream names become provenance labels.
-
 ## Scoring and pruning
 
 Titan separates candidate scoring from hard resource limits. A low score may be pruned by policy; depth, node, memory, timeout, and output-size limits are non-negotiable safety boundaries.
@@ -36,3 +30,84 @@ Content hashes prevent the same decoded bytes from being explored repeatedly. Pa
 ## Error behavior
 
 Malformed content should produce no candidate or a bounded error record—not terminate the run. Unexpected programmer errors may be logged and surfaced in verbose mode.
+
+## Decoder engine
+
+### Lifecycle
+
+1. The engine receives bytes for a node.
+2. Smart detection and decoder applicability checks reduce unnecessary work.
+3. Enabled decoders produce zero or more bounded candidates.
+4. Candidate quality is scored.
+5. Content hashes prevent duplicate exploration.
+6. Accepted candidates become child nodes with explicit parentage.
+7. Recursion continues until a hard or policy limit is reached.
+
+```mermaid
+flowchart TD
+    N[Current node bytes] --> A{Decoder applies?}
+    A -- no --> Next[Next decoder]
+    A -- yes --> D[Decode with output cap]
+    D --> V{Valid candidate?}
+    V -- no --> Next
+    V -- yes --> H[Hash and deduplicate]
+    H --> S[Score candidate]
+    S --> P{Prune by policy?}
+    P -- yes --> Record[Record bounded decision]
+    P -- no --> C[Create child node]
+    C --> R[Recursive analysis]
+```
+
+### Built-in transformations
+
+The default set includes Base64 variants, PEM armor, common compression formats, Hex, ROT13, URL decoding, HTML entities, Unicode escapes, UTF-16, XOR, PDF, and OLE processing. Base32, UUEncode, ASN.1, and Quoted-Printable are opt-in or smart-detected because they can create noisy candidates on arbitrary data.
+
+### Decoder requirements
+
+A decoder should cheaply determine whether it applies, transform bytes, reject malformed input without crashing, and provide a stable name.
+
+**Determinism:** stable names, stable candidate ordering, and deterministic scoring inputs. Random sampling, environment-dependent ordering, and implicit network access are not permitted in the deterministic path.
+
+**Resources:** expansion-capable decoders must cap output before allocating unbounded buffers. Repeated-key searches must constrain key lengths and sampled scoring. Decompression must enforce total output limits and reject expansion bombs. Heuristic decoders must avoid quadratic searches.
+
+### Adding a decoder
+
+- Implement the decoder base interface used by `titan_decoder.decoders.base`.
+- Add configuration wiring in the engine.
+- Add applicability, success, malformed-input, determinism, and resource-bound tests.
+- Document whether the decoder is always enabled, opt-in, or smart-detected.
+- Keep transformation metadata sufficient for provenance and edge labels.
+
+## Analyzer pipeline
+
+### Built-in analyzers
+
+- ZIP and TAR analyzers enumerate bounded members and reject unsafe expansion.
+- PE and ELF analyzers extract executable structure and metadata.
+- PDF and OLE support in the decoding layer performs structural extraction for embedded objects and streams.
+
+### Artifact contract
+
+An emitted artifact should include bounded bytes, a stable artifact name, the producing analyzer identity, and enough metadata for provenance. Archive member paths and OLE stream paths become provenance labels; they must be normalized and must never be used for unsafe filesystem writes.
+
+```mermaid
+flowchart LR
+    B[Node bytes] --> Probe[Analyzer probe]
+    Probe --> Structure[Parse bounded structure]
+    Structure --> Meta[Metadata]
+    Structure --> Children[Named child artifacts]
+    Children --> Graph[Artifact graph]
+    Meta --> Report[Node/analyzer metadata]
+```
+
+### Safety rules
+
+- Cap member count, per-member size, total extracted size, and compression ratio.
+- Do not trust filenames, paths, offsets, lengths, or declared counts.
+- Validate boundaries before slicing or allocating.
+- Skip malformed entries without crashing the whole run.
+- Preserve errors in logs or trace output when useful, but do not leak raw sensitive data.
+
+### Testing analyzers
+
+Use minimal valid fixtures, truncated variants, oversized declarations, duplicate members, path traversal names, nested archives, and deterministic ordering assertions.

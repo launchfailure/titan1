@@ -5,7 +5,7 @@ Titan exposes two console commands after installation:
 - `titan` starts the interactive menu.
 - `titan-decoder` runs the scriptable analysis pipeline.
 
-The command-line interface is intentionally file- and pipeline-oriented. Run `titan-decoder --help` for the authoritative option list for the installed version.
+The command-line interface is intentionally file- and pipeline-oriented. Run `titan-decoder --help` for the authoritative option list for the installed version. For hands-on walkthroughs and report interpretation, see [USAGE.md](USAGE.md).
 
 ## Input modes
 

@@ -11,17 +11,16 @@ This roadmap separates shipped features from planned work.
 - Detection rules and risk scoring
 - Resource limits and offline guard
 - Deterministic Intelligence Layer
+- Intelligence v1.0 schema, compatibility tests, and calibration corpus
+- Intelligence in Markdown/HTML case reports
+- Intelligence annotations in JSON/DOT/Mermaid graph exports
 
 ## Highest-value next work
 
-1. Formalize the `intelligence` report schema and compatibility tests.
-2. Build a deterministic intelligence calibration corpus.
-3. Add intelligence to Markdown/HTML case reports.
-4. Add intelligence annotations to JSON/DOT/Mermaid graphs.
-5. Add evidence-backed MITRE ATT&CK mappings.
-6. Add repeatable performance benchmarks before optimization.
-7. Strengthen rule packs with schema versions, duplicate-ID checks, fixtures, and limits.
-8. Improve cross-source evidence correlation while preserving provenance.
+1. Add evidence-backed MITRE ATT&CK mappings.
+2. Add repeatable performance benchmarks before optimization.
+3. Strengthen rule packs with schema versions, duplicate-ID checks, fixtures, and limits.
+4. Improve cross-source evidence correlation while preserving provenance.
 
 ## Optional local AI assistant
 
@@ -35,6 +34,18 @@ Planned capabilities:
 - Answer questions with node-ID or signal-code references
 - Suggest evidence-backed next steps
 
+Requirements:
+
+- Optional and disabled by default
+- Local/offline first
+- No automatic execution or autonomous network access
+- Clear separation between Titan facts and model inference
+- Bounded input, output, time, and memory
+- Graceful fallback to deterministic output
+- A fully working backend before adding multiple adapters
+
+Potential backends include llama.cpp-compatible local runtimes and OpenAI-compatible local endpoints. ONNX support requires choosing a concrete model and tokenizer contract.
+
 Recommended order:
 
-Documentation/schema → calibration tests → report/graph integration → ATT&CK mapping → benchmarks → stable local-model interface → one tested backend → analyst chat UI.
+ATT&CK mapping → benchmarks → stable local-model interface → one tested backend → analyst chat UI.

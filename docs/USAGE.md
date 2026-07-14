@@ -1,6 +1,6 @@
 # Titan Decoder: Practical Usage Guide
 
-This guide explains how to *use* Titan Decoder day-to-day: what the commands do, what to watch for in the output, and how to interpret the JSON report.
+This guide explains how to *use* Titan Decoder day-to-day: what the commands do, what to watch for in the output, and how to interpret the JSON report. For a grouped reference of every flag, see [CLI_REFERENCE.md](CLI_REFERENCE.md).
 
 ## What Titan Decoder does (mental model)
 
@@ -103,7 +103,7 @@ Optional output modes:
 - Write the Intelligence Layer result separately:
   - `titan-decoder --file suspicious.bin --enable-detections --intelligence-out intelligence.json --out report.json`
 
-  This is deterministic analysis, not a generative AI model. See [INTELLIGENCE.md](INTELLIGENCE.md).
+  This is deterministic analysis, not a generative AI model. See [INTELLIGENCE_LAYER.md](INTELLIGENCE_LAYER.md).
 
 - Save a shareable HTML case report:
   - `titan-decoder --file evidence.bin --report-out case_report.html --report-format html`

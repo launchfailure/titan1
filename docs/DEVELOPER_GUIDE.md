@@ -2,12 +2,7 @@
 
 ## Setup
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e '.[dev]'
-python -m pytest
-```
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for environment setup and contribution requirements.
 
 ## Change workflow
 
