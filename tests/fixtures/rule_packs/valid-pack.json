@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "pack": {"name": "Fixture Valid Pack", "version": "1.0.0"},
+  "rules": [
+    {
+      "id": "FIX-001",
+      "name": "PowerShell download cradle",
+      "description": "PowerShell retrieval verb in decoded content",
+      "severity": "high",
+      "type": "content_regex",
+      "pattern": "powershell.{0,200}downloadstring",
+      "flags": ["IGNORECASE", "DOTALL"],
+      "attack_ids": ["T1059.001", "T1105"]
+    },
+    {
+      "id": "FIX-002",
+      "name": "Multi-channel infrastructure",
+      "description": "URLs and public IPs both present",
+      "severity": "medium",
+      "type": "ioc_present",
+      "ioc_types": ["urls", "ipv4_public"],
+      "min_each": 1
+    }
+  ]
+}

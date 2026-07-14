@@ -28,6 +28,31 @@ Optional per-rule metadata:
   corroborating evidence (IDs must exist in the bundled ATT&CK catalog to be
   reported there).
 
+Validation and limits
+---------------------
+Rule definitions are validated (``validate_rule_def``) both at load time —
+the engine skips invalid or duplicate rules with a logged warning — and by
+``titan-decoder --rules-validate``, which reports every problem per rule and
+exits non-zero. Enforced constraints:
+
+- at most ``MAX_RULES_PER_PACK`` rules per pack (the whole pack is rejected
+  beyond that — each ``content_regex`` costs bounded-but-real evaluation
+  time, so an unbounded pack is a resource-exhaustion vector);
+- rule ``id`` is required, at most ``MAX_ID_LENGTH`` characters, and must not
+  use the reserved ``TITAN-`` prefix (built-in rules own it; a pack rule
+  cannot impersonate one);
+- duplicate ids are rejected — within a pack, across packs, and against
+  built-in rules (first definition wins at load time);
+- ``content_regex`` patterns must be non-empty, compile, and stay within
+  ``MAX_PATTERN_LENGTH``; ``flags`` may only name IGNORECASE, MULTILINE,
+  DOTALL;
+- ``ioc_present`` requires a non-empty ``ioc_types`` list of at most
+  ``MAX_IOC_TYPES_PER_RULE`` strings and an integer ``min_each`` in
+  ``[1, MAX_MIN_EACH]``;
+- ``severity``, when present, must be low/medium/high/critical;
+- ``attack_ids``, when present, must be at most ``MAX_ATTACK_IDS_PER_RULE``
+  well-formed technique IDs (``T1234`` / ``T1234.001``).
+
 Security note
 -------------
 A ``content_regex`` pattern is supplied by whoever authors the rule pack and is
@@ -61,6 +86,24 @@ logger = logging.getLogger(__name__)
 # re's C match loop, so the bound is enforced by running the match in a separate
 # process that can be terminated.
 CONTENT_REGEX_TIMEOUT_SECONDS = 2.0
+
+# Validation limits (see the module docstring). Each content_regex evaluation
+# has a bounded but real cost, so the per-pack rule cap is the primary
+# resource-exhaustion guard; the rest keep individual definitions sane.
+MAX_RULES_PER_PACK = 200
+MAX_ID_LENGTH = 64
+MAX_PATTERN_LENGTH = 2048
+MAX_IOC_TYPES_PER_RULE = 16
+MAX_MIN_EACH = 10_000
+MAX_ATTACK_IDS_PER_RULE = 16
+
+# Built-in rules own this prefix; pack rules must not impersonate them.
+RESERVED_ID_PREFIX = "TITAN-"
+
+_ALLOWED_TYPES = frozenset({"content_regex", "ioc_present"})
+_ALLOWED_FLAGS = frozenset({"IGNORECASE", "MULTILINE", "DOTALL"})
+_ALLOWED_SEVERITIES = frozenset({"low", "medium", "high", "critical"})
+_ATTACK_ID_PATTERN = re.compile(r"^T\d{4}(?:\.\d{3})?$")
 
 
 @dataclass(frozen=True)
@@ -113,10 +156,163 @@ def load_rule_pack(path: Path) -> tuple[RulePackInfo, List[Dict[str, Any]]]:
     rules = raw.get("rules") or []
     if not isinstance(rules, list):
         raise RulePackError("rules must be an array")
+    if len(rules) > MAX_RULES_PER_PACK:
+        raise RulePackError(
+            f"pack declares {len(rules)} rules, exceeding the limit of "
+            f"{MAX_RULES_PER_PACK}"
+        )
 
     return RulePackInfo(
         name=name, version=version, schema_version=schema_version, path=str(path)
     ), rules
+
+
+def validate_rule_def(rule_def: Any) -> List[str]:
+    """Validate a single rule definition; return a list of problems.
+
+    Used both by the engine at load time (invalid rules are skipped with a
+    warning) and by ``--rules-validate`` (problems are reported per rule and
+    the command exits non-zero).
+    """
+    if not isinstance(rule_def, dict):
+        return ["rule must be an object"]
+    problems: List[str] = []
+
+    rid = rule_def.get("id")
+    if not isinstance(rid, str) or not rid.strip():
+        problems.append("missing or empty 'id'")
+    elif len(rid) > MAX_ID_LENGTH:
+        problems.append(f"'id' exceeds {MAX_ID_LENGTH} characters")
+    elif rid.upper().startswith(RESERVED_ID_PREFIX):
+        problems.append(
+            f"'{RESERVED_ID_PREFIX}' id prefix is reserved for built-in rules"
+        )
+
+    rtype = (rule_def.get("type") or "").strip()
+    if rtype not in _ALLOWED_TYPES:
+        problems.append(
+            f"unknown rule type {rtype!r} (expected one of "
+            f"{sorted(_ALLOWED_TYPES)})"
+        )
+
+    flags = rule_def.get("flags")
+    if flags is not None:
+        if not isinstance(flags, list):
+            problems.append("'flags' must be an array")
+            flags = None
+        else:
+            unknown = [
+                f for f in flags
+                if not isinstance(f, str) or f.upper() not in _ALLOWED_FLAGS
+            ]
+            if unknown:
+                problems.append(
+                    f"unknown flags {unknown!r} (expected "
+                    f"{sorted(_ALLOWED_FLAGS)})"
+                )
+
+    if rtype == "content_regex":
+        pattern = rule_def.get("pattern")
+        if not isinstance(pattern, str) or not pattern:
+            problems.append("content_regex requires a non-empty 'pattern'")
+        elif len(pattern) > MAX_PATTERN_LENGTH:
+            problems.append(
+                f"'pattern' exceeds {MAX_PATTERN_LENGTH} characters"
+            )
+        else:
+            try:
+                re.compile(pattern, _resolve_flags(flags))
+            except re.error as e:
+                problems.append(f"invalid regex pattern: {e}")
+
+    if rtype == "ioc_present":
+        ioc_types = rule_def.get("ioc_types")
+        if (
+            not isinstance(ioc_types, list)
+            or not ioc_types
+            or not all(isinstance(t, str) and t for t in ioc_types)
+        ):
+            problems.append(
+                "ioc_present requires a non-empty 'ioc_types' array of strings"
+            )
+        elif len(ioc_types) > MAX_IOC_TYPES_PER_RULE:
+            problems.append(
+                f"'ioc_types' exceeds {MAX_IOC_TYPES_PER_RULE} entries"
+            )
+        min_each = rule_def.get("min_each", 1)
+        if (
+            not isinstance(min_each, int)
+            or isinstance(min_each, bool)
+            or not 1 <= min_each <= MAX_MIN_EACH
+        ):
+            problems.append(
+                f"'min_each' must be an integer in [1, {MAX_MIN_EACH}]"
+            )
+
+    severity = rule_def.get("severity")
+    if severity is not None and (
+        not isinstance(severity, str)
+        or severity.lower() not in _ALLOWED_SEVERITIES
+    ):
+        problems.append(
+            f"unknown severity {severity!r} (expected "
+            f"{sorted(_ALLOWED_SEVERITIES)})"
+        )
+
+    attack_ids = rule_def.get("attack_ids")
+    if attack_ids is not None:
+        if not isinstance(attack_ids, list):
+            problems.append("'attack_ids' must be an array")
+        elif len(attack_ids) > MAX_ATTACK_IDS_PER_RULE:
+            problems.append(
+                f"'attack_ids' exceeds {MAX_ATTACK_IDS_PER_RULE} entries"
+            )
+        else:
+            malformed = [
+                t for t in attack_ids
+                if not isinstance(t, str) or not _ATTACK_ID_PATTERN.match(t)
+            ]
+            if malformed:
+                problems.append(
+                    f"malformed attack_ids {malformed!r} (expected "
+                    "T1234 or T1234.001 form)"
+                )
+
+    return problems
+
+
+def validate_rule_pack(path: Path) -> Dict[str, Any]:
+    """Deep-validate a rule pack; the backing check for --rules-validate.
+
+    Loads the pack (structural errors and the per-pack rule limit surface
+    here), then validates every rule definition and checks for duplicate ids
+    within the pack. Returns ``{"path", "ok", "errors", ...}``; ``ok`` is
+    True only when there are no errors at all.
+    """
+    result: Dict[str, Any] = {"path": str(path), "ok": False, "errors": []}
+    try:
+        info, rules = load_rule_pack(Path(path))
+    except Exception as e:
+        result["errors"].append(str(e))
+        return result
+
+    result["name"] = info.name
+    result["version"] = info.version
+    result["rule_count"] = len(rules)
+
+    seen_ids: set = set()
+    for index, rule_def in enumerate(rules):
+        rid = rule_def.get("id") if isinstance(rule_def, dict) else None
+        label = rid if isinstance(rid, str) and rid else f"rules[{index}]"
+        for problem in validate_rule_def(rule_def):
+            result["errors"].append(f"{label}: {problem}")
+        if isinstance(rid, str) and rid:
+            if rid in seen_ids:
+                result["errors"].append(f"{label}: duplicate rule id")
+            seen_ids.add(rid)
+
+    result["ok"] = not result["errors"]
+    return result
 
 
 def _resolve_flags(flags: Optional[List[str]]) -> int:

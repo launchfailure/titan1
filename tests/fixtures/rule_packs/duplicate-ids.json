@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "pack": {"name": "Fixture Duplicate IDs", "version": "1.0.0"},
+  "rules": [
+    {
+      "id": "DUP-001",
+      "name": "First definition",
+      "severity": "low",
+      "type": "content_regex",
+      "pattern": "first"
+    },
+    {
+      "id": "DUP-001",
+      "name": "Second definition with the same id",
+      "severity": "high",
+      "type": "content_regex",
+      "pattern": "second"
+    }
+  ]
+}

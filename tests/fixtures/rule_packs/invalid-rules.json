@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "pack": {"name": "Fixture Invalid Rules", "version": "1.0.0"},
+  "rules": [
+    {
+      "id": "BAD-REGEX",
+      "name": "Unbalanced parenthesis",
+      "type": "content_regex",
+      "pattern": "(unclosed"
+    },
+    {
+      "id": "BAD-TYPE",
+      "name": "Unknown rule type",
+      "type": "yara"
+    },
+    {
+      "id": "BAD-MISSING-PATTERN",
+      "name": "content_regex without a pattern",
+      "type": "content_regex"
+    },
+    {
+      "id": "TITAN-001",
+      "name": "Impersonates a built-in rule id",
+      "type": "content_regex",
+      "pattern": "anything"
+    },
+    {
+      "id": "BAD-ATTACK-IDS",
+      "name": "Malformed technique ids",
+      "type": "content_regex",
+      "pattern": "fine",
+      "attack_ids": ["1059", "T1059.001"]
+    },
+    {
+      "id": "BAD-MIN-EACH",
+      "name": "min_each out of range",
+      "type": "ioc_present",
+      "ioc_types": ["urls"],
+      "min_each": 0
+    },
+    {
+      "id": "BAD-FLAGS",
+      "name": "Unknown regex flag",
+      "type": "content_regex",
+      "pattern": "fine",
+      "flags": ["VERBOSE"]
+    },
+    {
+      "id": "BAD-SEVERITY",
+      "name": "Unknown severity",
+      "type": "content_regex",
+      "pattern": "fine",
+      "severity": "informational"
+    }
+  ]
+}

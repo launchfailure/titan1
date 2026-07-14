@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+Rule packs:
+
+- Harden rule packs with enforced validation, duplicate-ID checks, and
+  limits (completing the roadmap item). `validate_rule_def` /
+  `validate_rule_pack` (`titan_decoder/core/rule_packs.py`) check ids
+  (required, ≤64 chars, `TITAN-` prefix reserved for built-ins so packs
+  cannot impersonate them), rule types, regex patterns (non-empty, ≤2048
+  chars, must compile), flags (IGNORECASE/MULTILINE/DOTALL only), severity
+  (low/medium/high/critical), `ioc_types` (non-empty, ≤16, `min_each` in
+  [1, 10000]), and `attack_ids` (≤16, `T1234`/`T1234.001` form). Packs are
+  capped at 200 rules; beyond that the whole pack is rejected, since each
+  `content_regex` evaluation has bounded-but-real cost.
+- Enforcement at load: the engine skips invalid rules and duplicate ids
+  (within a pack, across packs, and against built-ins — first definition
+  wins) with a logged warning instead of loading them as silent no-op
+  rules, and records per-pack `rules_loaded`/`rules_skipped` counts in
+  `meta.rule_packs`.
+- `--rules-validate` is now a deep, strict gate: it runs the full per-rule
+  validation and duplicate-ID check, reports every problem per rule in its
+  JSON output, and exits non-zero on any error (previously it only checked
+  that the file parsed).
+- Fixture packs (valid, duplicate-ID, invalid-rules) in
+  `tests/fixtures/rule_packs/` back a new validation test suite
+  (`tests/test_rule_pack_validation.py`), including engine load-time
+  behavior and CLI exit codes.
+
 Threat Intelligence Engine:
 
 - Resolve the six catalog techniques that had no built-in producer. Four gain

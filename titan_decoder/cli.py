@@ -357,27 +357,14 @@ def handle_info_commands(args, config) -> "int | None":
         print(json.dumps({"rule_packs": packs}, indent=2))
         return 0
 
-    # Validate rule packs and exit.
+    # Validate rule packs and exit. Deep validation: structural load errors,
+    # the per-pack rule limit, per-rule definition problems, and duplicate ids
+    # all surface as errors and fail the command.
     if args.rules_validate:
-        results = []
-        ok = True
-        from titan_decoder.core.rule_packs import load_rule_pack
+        from titan_decoder.core.rule_packs import validate_rule_pack
 
-        for p in args.rules_validate:
-            try:
-                info, rules = load_rule_pack(Path(p))
-                results.append(
-                    {
-                        "path": str(p),
-                        "ok": True,
-                        "name": info.name,
-                        "version": info.version,
-                        "rule_count": len(rules),
-                    }
-                )
-            except Exception as e:
-                ok = False
-                results.append({"path": str(p), "ok": False, "error": str(e)})
+        results = [validate_rule_pack(Path(p)) for p in args.rules_validate]
+        ok = all(r["ok"] for r in results)
         print(json.dumps({"ok": ok, "results": results}, indent=2))
         return 0 if ok else 1
 

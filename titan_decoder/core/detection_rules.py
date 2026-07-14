@@ -55,8 +55,21 @@ class CorrelationRulesEngine:
             self.load_rule_packs(rule_pack_paths)
 
     def load_rule_packs(self, paths: List[Path]) -> None:
-        """Load rule packs (JSON/YAML) and append their rules."""
-        from .rule_packs import load_rule_pack, evaluate_pack_rule
+        """Load rule packs (JSON/YAML) and append their rules.
+
+        Every rule definition is validated (see rule_packs.validate_rule_def);
+        invalid rules and duplicate ids — within a pack, across packs, or
+        colliding with a built-in rule — are skipped with a warning rather
+        than loaded as silent no-ops. Per-pack loaded/skipped counts are
+        recorded in ``self.rule_packs`` (and therefore in report meta).
+        """
+        from .rule_packs import (
+            evaluate_pack_rule,
+            load_rule_pack,
+            validate_rule_def,
+        )
+
+        seen_ids = {rule.rule_id for rule in self.rules}
 
         for p in paths:
             try:
@@ -65,26 +78,47 @@ class CorrelationRulesEngine:
                 logger.warning("Failed to load rule pack %s: %s", p, e)
                 continue
 
-            self.rule_packs.append(
-                {
-                    "name": info.name,
-                    "version": info.version,
-                    "schema_version": info.schema_version,
-                    "path": info.path,
-                }
-            )
+            pack_meta: Dict[str, Any] = {
+                "name": info.name,
+                "version": info.version,
+                "schema_version": info.schema_version,
+                "path": info.path,
+                "rules_loaded": 0,
+                "rules_skipped": 0,
+            }
+            self.rule_packs.append(pack_meta)
 
-            for rule_def in rules:
-                if not isinstance(rule_def, dict):
+            for index, rule_def in enumerate(rules):
+                problems = validate_rule_def(rule_def)
+                rid = (
+                    rule_def.get("id") if isinstance(rule_def, dict) else None
+                )
+                label = (
+                    rid if isinstance(rid, str) and rid else f"rules[{index}]"
+                )
+                if problems:
+                    pack_meta["rules_skipped"] += 1
+                    logger.warning(
+                        "Skipping invalid rule %s in pack %s: %s",
+                        label,
+                        info.name,
+                        "; ".join(problems),
+                    )
                     continue
-                rid = str(rule_def.get("id") or "")
-                if not rid:
+                rid = str(rid)
+                if rid in seen_ids:
+                    pack_meta["rules_skipped"] += 1
+                    logger.warning(
+                        "Skipping rule %s in pack %s: duplicate of an "
+                        "already-loaded rule id",
+                        rid,
+                        info.name,
+                    )
                     continue
+                seen_ids.add(rid)
                 name = str(rule_def.get("name") or rid)
                 desc = str(rule_def.get("description") or "")
                 severity = str(rule_def.get("severity") or "low").lower()
-                if severity not in {"low", "medium", "high", "critical"}:
-                    severity = "low"
                 attack_ids = rule_def.get("attack_ids")
                 if not isinstance(attack_ids, list):
                     attack_ids = []
@@ -113,6 +147,7 @@ class CorrelationRulesEngine:
                     },
                 )
                 self.rules.append(rule)
+                pack_meta["rules_loaded"] += 1
 
     def _load_starter_rules(self):
         """Load built-in starter detection rules."""
