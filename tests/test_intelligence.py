@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from titan_decoder.core.intelligence import IntelligenceEngine
 
 
@@ -53,6 +55,39 @@ def test_detection_and_risk_alignment_raise_priority():
     assert result["intelligence_score"] >= 61
     assert result["classification"] in {"HIGH_RISK_PAYLOAD", "LIKELY_MALICIOUS"}
     assert result["recommendation"]
+
+
+def test_intelligence_stage_sees_evidence_merged_iocs():
+    """Evidence-file indicators must reach intelligence network signals.
+
+    The intelligence stage rebuilds IOCs with the same summary+evidence merge
+    as the detection stage, so an indicator that only exists in ingested
+    evidence (not in any decoded node) still produces a network signal.
+    """
+    from titan_decoder.cli import attach_intelligence_stage
+
+    @dataclass
+    class _Indicator:
+        indicator_type: str
+        value: str
+
+    @dataclass
+    class _EvidenceResult:
+        indicators: list
+
+    evidence_result = _EvidenceResult(
+        indicators=[
+            _Indicator("urls", "http://evidence-only.example.test/beacon"),
+            _Indicator("domains", "evidence-only.example.test"),
+        ]
+    )
+    report = {"nodes": [], "iocs": {}}
+
+    attach_intelligence_stage(None, report, [], None, evidence_result)
+
+    codes = {signal["code"] for signal in report["intelligence"]["signals"]}
+    assert "network_urls" in codes
+    assert "network_domains" in codes
 
 
 def test_missing_and_malformed_values_do_not_crash():

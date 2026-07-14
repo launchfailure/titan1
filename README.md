@@ -190,7 +190,7 @@ These components are related but intentionally separate:
 The Intelligence object is deterministic and versioned. Its `1.0` contract is defined by:
 
 - `schemas/intelligence-report-v1.0.schema.json`
-- `docs/INTELLIGENCE_CONTRACT.md`
+- `docs/INTELLIGENCE_LAYER.md`
 - `tests/fixtures/intelligence/calibration-v1.json`
 
 See [docs/INTELLIGENCE_LAYER.md](docs/INTELLIGENCE_LAYER.md) and [docs/DETECTION_AND_RISK.md](docs/DETECTION_AND_RISK.md).
@@ -278,7 +278,7 @@ python -m pytest tests/test_graph_export.py tests/test_graph_intelligence.py
 
 Security-sensitive changes should include malformed-input, bound, and regression tests.
 
-See [docs/TESTING.md](docs/TESTING.md) and [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
+See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Documentation map
 
@@ -287,9 +287,7 @@ See [docs/TESTING.md](docs/TESTING.md) and [docs/CONTRIBUTING.md](docs/CONTRIBUT
 | [Documentation index](docs/DOCUMENTATION_INDEX.md) | Complete operator, developer, and maintainer map |
 | [Architecture](docs/ARCHITECTURE.md) | Components, boundaries, and system diagrams |
 | [CLI reference](docs/CLI_REFERENCE.md) | Command groups, outputs, and examples |
-| [Pipelines](docs/PIPELINES.md) | End-to-end execution and graph construction |
-| [Decoder engine](docs/DECODER_ENGINE.md) | Decoder lifecycle, bounds, and extension rules |
-| [Analyzer pipeline](docs/ANALYZER_PIPELINE.md) | Structured parsing and artifact emission |
+| [Pipelines](docs/PIPELINES.md) | End-to-end execution, decoder engine, and analyzer pipeline |
 | [Developer guide](docs/DEVELOPER_GUIDE.md) | Repository layout and implementation workflow |
 | [Intelligence Layer](docs/INTELLIGENCE_LAYER.md) | Signals, classification, ranking, and compatibility |
 | [Detection and risk](docs/DETECTION_AND_RISK.md) | Rule evaluation and operational severity |
@@ -299,7 +297,7 @@ See [docs/TESTING.md](docs/TESTING.md) and [docs/CONTRIBUTING.md](docs/CONTRIBUT
 | [Report schema](docs/REPORT_SCHEMA.md) | Report fields and versioning |
 | [Security model](docs/SECURITY_MODEL.md) | Threat model, controls, and operational guidance |
 | [Testing](docs/TESTING.md) | Test strategy, commands, and CI expectations |
-| [Contributing](docs/CONTRIBUTING.md) | Contribution and review requirements |
+| [Contributing](CONTRIBUTING.md) | Contribution and review requirements |
 
 ## Project status
 

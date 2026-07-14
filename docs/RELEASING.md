@@ -18,7 +18,7 @@ Examples:
 
 2. (Optional) bump version if you want tags and `__version__` to match
 
-Edit [titan_decoder/__init__.py](titan_decoder/__init__.py):
+Edit [titan_decoder/__init__.py](../titan_decoder/__init__.py):
 
 - `__version__ = "2.0.0"` (or `2.0.0b1` if you prefer)
 
@@ -31,13 +31,13 @@ python -m pytest -q
 Doc sync (recommended when behavior/options changed):
 
 - Update examples and option descriptions in:
-  - [README.md](README.md)
-  - [docs/USAGE.md](docs/USAGE.md)
-  - [docs/ANNOUNCEMENT.md](docs/ANNOUNCEMENT.md)
+  - [README.md](../README.md)
+  - [docs/USAGE.md](USAGE.md)
+  - [docs/ANNOUNCEMENT.md](ANNOUNCEMENT.md)
 
 If the JSON report contract changed (new fields/sections), also update:
 
-- [docs/report.schema.json](docs/report.schema.json)
+- [docs/report.schema.json](report.schema.json)
 
 4. Create and push the tag
 
@@ -149,7 +149,7 @@ Example:
 
 ### 1) Pick the new version
 
-Edit [titan_decoder/__init__.py](titan_decoder/__init__.py) and bump:
+Edit [titan_decoder/__init__.py](../titan_decoder/__init__.py) and bump:
 
 - `__version__ = "X.Y.Z"`
 

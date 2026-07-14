@@ -741,14 +741,25 @@ def run_detections_stage(args, config, report, evidence_result):
     return detections, risk_assessment
 
 
-def attach_intelligence_stage(args, report, detections, risk_assessment) -> None:
-    """Attach deterministic analyst-oriented intelligence to every report."""
+def attach_intelligence_stage(
+    args, report, detections, risk_assessment, evidence_result
+) -> None:
+    """Attach deterministic analyst-oriented intelligence to every report.
+
+    IOCs are rebuilt with the same summary+evidence merge used by the
+    detection stage and case reports, so intelligence network signals stay
+    consistent with the indicators quoted elsewhere in the outputs.
+    """
     from .core.intelligence import IntelligenceEngine
+    from .core.ioc_export import build_ioc_summary
+
+    iocs = build_ioc_summary(report, None)
+    _merge_evidence_iocs(iocs, evidence_result)
 
     engine = IntelligenceEngine()
     report["intelligence"] = engine.analyze(
         report,
-        iocs=report.get("iocs") or {},
+        iocs=iocs,
         detections=detections,
         risk=risk_assessment,
     )
@@ -1117,7 +1128,9 @@ def main():
     detections, risk_assessment = run_detections_stage(
         args, config, report, evidence_result
     )
-    attach_intelligence_stage(args, report, detections, risk_assessment)
+    attach_intelligence_stage(
+        args, report, detections, risk_assessment, evidence_result
+    )
     run_enrichment_stage(args, config, report, evidence_result)
     exit_code = write_outputs_stage(
         args, config, report, engine, detections, risk_assessment, evidence_result
