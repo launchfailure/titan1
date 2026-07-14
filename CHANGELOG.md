@@ -4,6 +4,28 @@
 
 Threat Intelligence Engine:
 
+- Resolve the six catalog techniques that had no built-in producer. Four gain
+  evidence-backed behavior rules: T1003.001 LSASS Memory (`sekurlsa`,
+  `lsass.exe`/`lsass.dmp`, `procdump … lsass`, `comsvcs … MiniDump`),
+  T1059.007 JavaScript (WSH markers only — `jscript`, `new ActiveXObject(`,
+  `.jse` — so web-"JavaScript" prose cannot fire), T1486 Data Encrypted for
+  Impact (ransom-note language only — `ransom`, `decryptor`,
+  "decrypt/restore/recover your files" — never the bare word "encrypted"),
+  and T1566.001 Spearphishing Attachment (decoded MIME attachment header
+  naming an executable/script/container payload extension; `.pdf`/`.docx`
+  do not match). The remaining two — T1071 Application Layer Protocol
+  (not deterministically evidenceable from content) and T1204 User Execution
+  (parent-level form for rule packs; built-ins attribute T1204.002) — are
+  explicitly designated rule-pack-only. New catalog tests enforce both
+  directions: no catalog technique may lack a producer unless deliberately
+  listed rule-pack-only, and listed entries must genuinely lack one.
+- Calibration corpus: one changed case (`credential-theft-lsass` now also
+  yields T1003.001, corroborating the parent; confidence 0.72 → 0.74), plus
+  five new cases — four malicious (LSASS dump, JScript ActiveXObject
+  dropper, ransom note, spearphishing attachment) and one benign guard
+  (encryption-at-rest prose, a `.pdf` attachment header, and web-JavaScript
+  wording must stay completely clean).
+
 - Add a deterministic Threat Intelligence Engine (`titan_decoder/threat_intel/`)
   that maps decoded evidence to a bundled offline MITRE ATT&CK subset,
   identifies suspicious LOLBin usage (13 built-in rules), and emits behavioral

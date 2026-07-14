@@ -89,6 +89,27 @@
       }
     },
     {
+      "id": "benign-security-prose",
+      "kind": "benign",
+      "description": "Encryption-at-rest prose, a benign PDF attachment header, and web-JavaScript wording must not fire the T1486/T1566.001/T1059.007 rules.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "Backup files are encrypted at rest per the security policy. Content-Disposition: attachment; filename=\"quarterly-report.pdf\". Use JavaScript to validate the signup form."
+          }
+        ],
+        "iocs": {}
+      },
+      "expected": {
+        "confidence": 0.0,
+        "technique_ids": [],
+        "tactics": [],
+        "lolbin_executables": [],
+        "malware_tags": []
+      }
+    },
+    {
       "id": "powershell-encoded-downloader",
       "kind": "malicious",
       "description": "Encoded PowerShell downloader: execution, obfuscation, transfer, staging.",
@@ -202,9 +223,10 @@
         "iocs": {}
       },
       "expected": {
-        "confidence": 0.72,
+        "confidence": 0.74,
         "technique_ids": [
-          "T1003"
+          "T1003",
+          "T1003.001"
         ],
         "tactics": [
           "credential-access"
@@ -282,6 +304,112 @@
         "malware_tags": [
           "host-discovery-like"
         ]
+      }
+    },
+    {
+      "id": "lsass-memory-dump",
+      "kind": "malicious",
+      "description": "procdump used to dump LSASS process memory.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "procdump -accepteula -ma lsass.exe c:\\temp\\lsass.dmp"
+          }
+        ],
+        "iocs": {}
+      },
+      "expected": {
+        "confidence": 0.74,
+        "technique_ids": [
+          "T1003",
+          "T1003.001"
+        ],
+        "tactics": [
+          "credential-access"
+        ],
+        "lolbin_executables": [],
+        "malware_tags": [
+          "credential-theft-like"
+        ]
+      }
+    },
+    {
+      "id": "jscript-activexobject-dropper",
+      "kind": "malicious",
+      "description": "WSH JScript dropper instantiating ActiveXObject.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "var sh = new ActiveXObject(\"WScript.Shell\"); sh.Run(payload, 0, false);"
+          }
+        ],
+        "iocs": {}
+      },
+      "expected": {
+        "confidence": 0.54,
+        "technique_ids": [
+          "T1059.005",
+          "T1059.007"
+        ],
+        "tactics": [
+          "execution"
+        ],
+        "lolbin_executables": [
+          "wscript.exe"
+        ],
+        "malware_tags": []
+      }
+    },
+    {
+      "id": "ransom-note-impact",
+      "kind": "malicious",
+      "description": "Ransom-note language evidencing encryption impact.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "ALL YOUR FILES ARE LOCKED. Buy the decryptor to recover your files."
+          }
+        ],
+        "iocs": {}
+      },
+      "expected": {
+        "confidence": 0.47,
+        "technique_ids": [
+          "T1486"
+        ],
+        "tactics": [
+          "impact"
+        ],
+        "lolbin_executables": [],
+        "malware_tags": []
+      }
+    },
+    {
+      "id": "spearphish-macro-attachment",
+      "kind": "malicious",
+      "description": "Decoded email with a macro-enabled document attachment header.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "Content-Type: application/vnd.ms-word.document.macroEnabled.12; Content-Disposition: attachment; filename=\"invoice_2026.docm\""
+          }
+        ],
+        "iocs": {}
+      },
+      "expected": {
+        "confidence": 0.47,
+        "technique_ids": [
+          "T1566.001"
+        ],
+        "tactics": [
+          "initial-access"
+        ],
+        "lolbin_executables": [],
+        "malware_tags": []
       }
     },
     {

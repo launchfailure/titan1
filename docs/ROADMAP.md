@@ -18,6 +18,7 @@ This roadmap separates shipped features from planned work.
 - ATT&CK technique metadata (`attack_ids`) on built-in detection rules and rule packs
 - Expanded 48-technique ATT&CK catalog subset with matching behavior and LOLBin rules
 - Threat-intelligence precision hardening and calibration corpus with CI gate
+- Catalog/producer parity: every ATT&CK catalog entry has a built-in producer or an explicit rule-pack-only designation
 - Repeatable performance benchmarks with a committed baseline and CI regression gate
 
 ## Highest-value next work

