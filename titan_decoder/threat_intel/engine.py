@@ -18,7 +18,9 @@ class ThreatIntelligenceEngine:
     VERSION = "1.0"
 
     BEHAVIOR_RULES = (
-        ("T1105", re.compile(r"(?i)\b(?:downloadstring|invoke-webrequest|curl|wget|urlretrieve)\b|https?://"), "network-transfer"),
+        # Requires a retrieval verb; a bare URL is not evidence of tool
+        # transfer (URL-only indicators stay in the IOC summary).
+        ("T1105", re.compile(r"(?i)\b(?:downloadstring|downloadfile|invoke-webrequest|curl|wget|urlretrieve|start-bitstransfer)\b"), "network-transfer"),
         ("T1027", re.compile(r"(?i)(?:\bfrombase64string\b|-enc(?:odedcommand)?\b|\b(?:base64|xor|gzip|deflate)\b)"), "obfuscation"),
         ("T1140", re.compile(r"(?i)\b(?:frombase64string|convert\.frombase64|certutil\s+-decode|decompress|inflate)\b"), "decode"),
         ("T1053.005", re.compile(r"(?i)\bschtasks(?:\.exe)?\b.*\/(?:create|run)\b"), "scheduled-task"),
@@ -232,13 +234,16 @@ class ThreatIntelligenceEngine:
             + [item.confidence for item in malware_tags],
             default=0.0,
         )
+        # Anchored to the strongest single finding; corroboration and
+        # source diversity add bounded increments so the value cannot
+        # exceed what any individual finding supports by much. A single
+        # weak finding stays below 0.5.
         return round(
             min(
                 0.98,
-                0.25
-                + strongest * 0.45
-                + corroboration * 0.025
-                + diversity * 0.06,
+                strongest * 0.7
+                + min(0.15, corroboration * 0.02)
+                + min(0.09, diversity * 0.03),
             ),
             2,
         )

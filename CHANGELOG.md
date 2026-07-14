@@ -46,6 +46,29 @@ Threat Intelligence Engine:
   gains T1059, T1218, and T1204.002 (catalog version
   `enterprise-2026.1-titan-subset-r2`), and a test asserts every rule-declared
   technique ID exists in the catalog.
+- Precision hardening: indicators alone no longer become behavioral findings.
+  The T1105 network-transfer behavior rule requires a retrieval verb instead
+  of firing on any `http(s)://` URL; the `cmd` LOLBin rule requires the
+  literal `cmd.exe` form or an invocation term (`/c `, `/k `) in the same
+  node, so the everyday word "cmd" in prose cannot fire (new
+  `bare_requires_term` option on `LOLBinRule`); and the `downloader-like`
+  malware tag requires observed retrieval behavior — URL IOCs only
+  corroborate (0.78 → 0.84), they never create the tag on their own. A benign
+  meeting-notes document containing a URL and the word "cmd" previously
+  scored 0.8 overall confidence with T1059.003, T1105, a `cmd.exe` LOLBin,
+  and a `downloader-like` tag; it now produces a completely clean assessment.
+- Recalibrate overall assessment confidence: anchored to the strongest
+  individual finding with bounded corroboration/diversity increments,
+  replacing an additive floor that saturated near the 0.98 cap on modest
+  evidence. The value can no longer substantially exceed what any single
+  finding supports, and a single weak finding stays below 0.5.
+- Add a deterministic calibration corpus
+  (`tests/fixtures/threat_intel/calibration-v1.json`) and CI gate
+  (`tests/test_threat_calibration.py`), mirroring the Intelligence Layer's.
+  Benign cases (prose with URLs, everyday words overlapping rule vocabulary)
+  must produce a completely clean assessment; malicious cases pin exact
+  technique/LOLBin/tag output and confidence, so precision regressions and
+  unreviewed confidence drift fail CI.
 
 Detection quality:
 

@@ -67,10 +67,53 @@ well-formed and that every technique referenced by a behavior rule, LOLBin
 rule, or detection `attack_ids` exists in the catalog, so producers and
 catalog cannot drift apart.
 
+## Precision semantics
+
+Rules are written so that indicators alone never become behavioral findings:
+
+- A bare URL is an IOC, not evidence of T1105 Ingress Tool Transfer; the
+  network-transfer behavior rule requires a retrieval verb
+  (`DownloadString`, `Invoke-WebRequest`, `curl`, `wget`, …).
+- LOLBin names that are also everyday words need context. `hh` and `at`
+  require the literal `.exe` form; `cmd` fires on `cmd.exe`, or on bare
+  `cmd` only when an invocation term (`/c `, `/k `) is present in the same
+  node (`bare_requires_term` on `LOLBinRule`).
+- The `downloader-like` tag requires observed retrieval behavior in node
+  content; URL indicators only corroborate (raising confidence), they never
+  create the tag on their own.
+- Overall assessment confidence is anchored to the strongest individual
+  finding, with bounded increments for corroboration and source diversity —
+  it cannot substantially exceed what any single finding supports, and a
+  single weak finding stays below 0.5.
+
+## Calibration corpus
+
+`tests/fixtures/threat_intel/calibration-v1.json` is the deterministic
+calibration corpus, mirroring the Intelligence Layer's
+(`docs/INTELLIGENCE_LAYER.md`). Each case includes:
+
+- `kind` — `benign` or `malicious`.
+- `report` (and optionally `detections`) — the exact engine input.
+- `expected` — the pinned output: `confidence`, ordered `technique_ids`,
+  `tactics`, `lolbin_executables`, and `malware_tags`.
+
+`tests/test_threat_calibration.py` asserts every case exactly, plus corpus
+invariants: benign cases must expect a completely clean assessment
+(confidence `0.0`, no findings), malicious cases at least one finding.
+Benign cases cover prose containing URLs and everyday words that overlap
+rule vocabulary ("cmd", "at", "hh:mm"), so false-positive regressions fail
+CI.
+
+Changing behavior rules, LOLBin rules, tagging, or confidence formulas will
+usually change corpus expectations. That is deliberate: regenerate the
+expected values, review the diff case by case (especially that benign cases
+stay clean), and commit the corpus change alongside the rule change.
+
 ## Tests
 
 ```bash
 python -m pytest tests/test_threat_intelligence.py \
+  tests/test_threat_calibration.py \
   tests/test_threat_cli_wiring.py \
   tests/test_threat_graphs.py \
   tests/test_threat_case_reports.py

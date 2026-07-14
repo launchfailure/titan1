@@ -18,6 +18,7 @@ mypy titan_decoder
 - IOC and evidence parsing;
 - detections and risk;
 - Intelligence schema and calibration;
+- Threat Intelligence catalog integrity and calibration;
 - report and graph rendering;
 - plugin behavior;
 - packaging and supply-chain checks;
