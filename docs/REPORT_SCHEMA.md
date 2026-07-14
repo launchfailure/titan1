@@ -12,6 +12,7 @@ Titan's primary JSON report is the contract between analysis, interpretation, ex
 - `detections` — triggered rules.
 - `risk_assessment` — score, level, and reasons.
 - `intelligence` — versioned analyst summary.
+- `threat_intelligence` — versioned ATT&CK techniques, LOLBins, behavioral tags, and relationships.
 - `enrichment` — optional provider output.
 
 ## Versioning

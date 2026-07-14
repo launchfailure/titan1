@@ -2,6 +2,51 @@
 
 ## Unreleased
 
+Threat Intelligence Engine:
+
+- Add a deterministic Threat Intelligence Engine (`titan_decoder/threat_intel/`)
+  that maps decoded evidence to a bundled offline MITRE ATT&CK subset,
+  identifies suspicious LOLBin usage (13 built-in rules), and emits behavioral
+  malware tags (downloader-like, script-stager-like, credential-theft-like,
+  ransomware-impact-like, host-discovery-like, living-off-the-land-chain) —
+  explicitly behavior descriptions, not malware-family attribution. Findings
+  carry per-item confidence, supporting evidence with node IDs, and
+  deterministic node → technique/LOLBin/tag relationships; the overall
+  assessment is versioned (`1.0`) with its own catalog version.
+- Wire the threat stage into the CLI pipeline after the Intelligence stage,
+  reusing the same canonical IOC summary (report + ingested evidence) so cited
+  indicators stay consistent across outputs. The result is attached to every
+  report as `threat_intelligence`.
+- Render a Threat Intelligence section (ATT&CK table, LOLBins, behavioral
+  tags) in Markdown and HTML case reports, and annotate graph exports:
+  graph-level threat metadata in JSON, plus per-node ATT&CK/LOLBin/tag labels
+  in JSON, DOT, and Mermaid outputs.
+- Ship the ATT&CK catalog subset as package data (wheel and sdist) and
+  document the subsystem in `docs/THREAT_INTELLIGENCE.md`.
+- Expand the bundled ATT&CK catalog subset from 23 to 48 techniques
+  (catalog version `enterprise-2026.1-titan-subset-r3`), covering discovery,
+  persistence, impact, defense-evasion, credential-access, and initial-access
+  techniques relevant to payload analysis, and pair the new entries with
+  producers: 14 new behavior rules (masquerading double-extensions, Unix
+  shell / Python inline execution, file deletion, registry modification,
+  service install/stop, recovery inhibition, network/user/process/account
+  discovery, credentials-in-files, cron) and 10 new LOLBin rules (MSBuild,
+  CMSTP, Odbcconf, Regsvcs, Regasm, Forfiles, Pcalua, hh.exe, at.exe,
+  crontab — the last three require unambiguous forms so everyday words like
+  "at" and "hh:mm" cannot fire them). Shadow-copy deletion evidence now
+  correctly maps to T1490 Inhibit System Recovery instead of T1486, and
+  `cipher /w:` moved to T1070.004 File Deletion. New catalog-integrity tests
+  assert IDs are unique and well-formed and that every technique referenced
+  by behavior rules, LOLBin rules, or detection `attack_ids` exists in the
+  catalog.
+- Wire `attack_ids` onto every built-in detection rule (TITAN-001…007) and
+  expose them on triggered detections, so fired rules corroborate ATT&CK
+  technique findings in the Threat Intelligence assessment. Rule packs can
+  declare the same optional `attack_ids` field per rule. The bundled catalog
+  gains T1059, T1218, and T1204.002 (catalog version
+  `enterprise-2026.1-titan-subset-r2`), and a test asserts every rule-declared
+  technique ID exists in the catalog.
+
 Detection quality:
 
 - Harden the LOLBin rule (TITAN-003): it now requires a LOLBin name to co-occur

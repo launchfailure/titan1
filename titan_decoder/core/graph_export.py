@@ -37,11 +37,14 @@ class GraphExporter:
         self,
         nodes: List[Dict[str, Any]],
         intelligence: Mapping[str, Any] | None = None,
+        threat_intelligence: Mapping[str, Any] | None = None,
     ):
         self.nodes = nodes
         self.node_map = {node["id"]: node for node in nodes}
         self.intelligence = dict(intelligence or {})
+        self.threat_intelligence = dict(threat_intelligence or {})
         self._artifact_annotations = self._build_artifact_annotations()
+        self._threat_annotations = self._build_threat_annotations()
 
     def to_json(self, include_metadata: bool = True) -> str:
         """Export graph as JSON.
@@ -65,6 +68,9 @@ class GraphExporter:
             summary = self._intelligence_summary()
             if summary:
                 metadata["intelligence"] = summary
+            threat_summary = self._threat_summary()
+            if threat_summary:
+                metadata["threat_intelligence"] = threat_summary
             graph_data["metadata"] = metadata
 
         return json.dumps(graph_data, indent=2, default=str)
@@ -98,6 +104,7 @@ class GraphExporter:
             content_type = node.get("content_type", "Unknown")
             length = node.get("decoded_length", node.get("source_length", 0))
             annotation = self._artifact_annotations.get(node["id"])
+            threat = self._threat_annotations.get(node["id"])
 
             color = self._get_node_color(
                 content_type,
@@ -130,6 +137,21 @@ class GraphExporter:
                 )
                 attrs[0] = f'label="{dot_annotated_label}"' 
                 attrs.append('penwidth="2.5"')
+
+            if threat:
+                extra = []
+                if threat.get("technique_ids"):
+                    extra.append("ATT&CK: " + ", ".join(threat["technique_ids"]))
+                if threat.get("lolbins"):
+                    extra.append("LOLBins: " + ", ".join(threat["lolbins"]))
+                if threat.get("malware_tags"):
+                    extra.append("Tags: " + ", ".join(threat["malware_tags"]))
+                if extra:
+                    extra_label = self._dot_escape("\n".join(extra)).replace(
+                        "\n", r"\n"
+                    )
+                    current = attrs[0][len('label="') : -1]
+                    attrs[0] = f'label="{current}\\n{extra_label}"'
 
             lines.append(f"  {node_id} [{', '.join(attrs)}];")
 
@@ -165,6 +187,7 @@ class GraphExporter:
             content_type = self._mermaid_text(node.get("content_type", "Unknown"))
             score = self._safe_float(node.get("decode_score"))
             annotation = self._artifact_annotations.get(node["id"])
+            threat = self._threat_annotations.get(node["id"])
 
             label = f"{method}<br/>{content_type}<br/>Decode: {score:.3f}"
             if annotation:
@@ -175,6 +198,20 @@ class GraphExporter:
                 )
                 if reasons:
                     label += f"<br/>{self._mermaid_text(reasons)}"
+
+            if threat:
+                if threat.get("technique_ids"):
+                    label += "<br/>ATT&CK: " + self._mermaid_text(
+                        ", ".join(threat["technique_ids"])
+                    )
+                if threat.get("lolbins"):
+                    label += "<br/>LOLBins: " + self._mermaid_text(
+                        ", ".join(threat["lolbins"])
+                    )
+                if threat.get("malware_tags"):
+                    label += "<br/>Tags: " + self._mermaid_text(
+                        ", ".join(threat["malware_tags"])
+                    )
 
             open_b, close_b = self._get_mermaid_brackets(
                 content_type,
@@ -223,6 +260,9 @@ class GraphExporter:
         annotation = self._artifact_annotations.get(node.get("id"))
         if annotation:
             result["intelligence"] = dict(annotation)
+        threat = self._threat_annotations.get(node.get("id"))
+        if threat:
+            result["threat_intelligence"] = dict(threat)
         return result
 
     def _build_artifact_annotations(self) -> Dict[Any, Dict[str, Any]]:
@@ -248,6 +288,89 @@ class GraphExporter:
                 "artifact_name": artifact.get("artifact_name"),
             }
         return annotations
+
+    def _build_threat_annotations(self) -> Dict[Any, Dict[str, Any]]:
+        annotations: Dict[Any, Dict[str, Any]] = {}
+
+        def ensure(node_id):
+            if node_id not in self.node_map:
+                return None
+            return annotations.setdefault(
+                node_id,
+                {"technique_ids": [], "lolbins": [], "malware_tags": []},
+            )
+
+        for technique in self.threat_intelligence.get("techniques") or []:
+            if not isinstance(technique, Mapping):
+                continue
+            technique_id = str(technique.get("technique_id") or "")
+            for evidence in technique.get("evidence") or []:
+                if not isinstance(evidence, Mapping):
+                    continue
+                node_ids = []
+                if evidence.get("node_id") is not None:
+                    node_ids.append(evidence.get("node_id"))
+                node_ids.extend(evidence.get("node_ids") or [])
+                for node_id in node_ids:
+                    target = ensure(node_id)
+                    if target is not None and technique_id:
+                        target["technique_ids"].append(technique_id)
+
+        for lolbin in self.threat_intelligence.get("lolbins") or []:
+            if not isinstance(lolbin, Mapping):
+                continue
+            executable = str(lolbin.get("executable") or "")
+            for node_id in lolbin.get("node_ids") or []:
+                target = ensure(node_id)
+                if target is not None and executable:
+                    target["lolbins"].append(executable)
+
+        for tag in self.threat_intelligence.get("malware_tags") or []:
+            if not isinstance(tag, Mapping):
+                continue
+            name = str(tag.get("tag") or "")
+            for node_id in tag.get("node_ids") or []:
+                target = ensure(node_id)
+                if target is not None and name:
+                    target["malware_tags"].append(name)
+
+        for item in annotations.values():
+            for key in item:
+                item[key] = sorted(set(item[key]))
+        return annotations
+
+    def _threat_summary(self) -> Dict[str, Any]:
+        if not self.threat_intelligence:
+            return {}
+        return {
+            "version": self.threat_intelligence.get("version"),
+            "catalog_version": self.threat_intelligence.get("catalog_version"),
+            "confidence": self._safe_float(
+                self.threat_intelligence.get("confidence")
+            ),
+            "technique_ids": sorted({
+                str(item.get("technique_id"))
+                for item in self.threat_intelligence.get("techniques") or []
+                if isinstance(item, Mapping) and item.get("technique_id")
+            }),
+            "tactics": sorted(
+                str(item)
+                for item in self.threat_intelligence.get("tactics") or []
+            ),
+            "lolbins": sorted({
+                str(item.get("executable"))
+                for item in self.threat_intelligence.get("lolbins") or []
+                if isinstance(item, Mapping) and item.get("executable")
+            }),
+            "malware_tags": sorted({
+                str(item.get("tag"))
+                for item in self.threat_intelligence.get("malware_tags") or []
+                if isinstance(item, Mapping) and item.get("tag")
+            }),
+            "annotated_node_count": len(self._threat_annotations),
+            "summary": self.threat_intelligence.get("summary"),
+        }
+
 
     def _intelligence_summary(self) -> Dict[str, Any]:
         if not self.intelligence:

@@ -62,6 +62,9 @@ version = { attr = "titan_decoder.__version__" }
 [tool.setuptools.packages.find]
 include = ["titan_decoder*"]
 
+[tool.setuptools.package-data]
+"titan_decoder.threat_intel" = ["data/*.json"]
+
 [tool.mypy]
 # Non-strict baseline (roadmap: "start non-strict, ratchet up"). Type errors
 # block merge in CI for every module NOT on the ratchet list below. The intent

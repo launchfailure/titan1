@@ -52,6 +52,7 @@ Titan is designed for repeatable analysis rather than opaque “best guess” de
 | Detection | Built-in correlation rules and optional rule packs |
 | Risk | Deterministic 0–100 risk assessment |
 | Intelligence | Classification, scored signals, artifact ranking, confidence, recommendation |
+| Threat intelligence | MITRE ATT&CK technique mapping, LOLBin identification, behavioral malware tags, node relationships |
 | Evidence | DNS, proxy, firewall, VPN, auth, DHCP, and generic CSV/JSONL ingestion |
 | Exports | JSON, JSONL, IOC formats, Markdown/HTML case reports, timelines, JSON/DOT/Mermaid graphs |
 | Operations | Interactive UI, batch mode, doctor check, local vault, offline guard |
@@ -148,8 +149,9 @@ The CLI is organized as explicit stages:
 6. Attach evidence.
 7. Run detections and risk scoring.
 8. Attach deterministic Intelligence.
-9. Run optional enrichment.
-10. Write reports, timelines, graphs, JSONL, and vault records.
+9. Attach deterministic Threat Intelligence (ATT&CK, LOLBins, behavioral tags).
+10. Run optional enrichment.
+11. Write reports, timelines, graphs, JSONL, and vault records.
 
 Common commands:
 
@@ -186,6 +188,7 @@ These components are related but intentionally separate:
 - **Detection rules** identify explicit patterns and correlations.
 - **Risk scoring** combines detections and report characteristics into an operational severity.
 - **Intelligence** creates an analyst-oriented classification, ordered signals, ranked artifacts, confidence, and recommendation.
+- **Threat Intelligence** maps evidence to a bundled offline MITRE ATT&CK subset, identifies LOLBin usage, and emits behavioral malware tags — see [docs/THREAT_INTELLIGENCE.md](docs/THREAT_INTELLIGENCE.md).
 
 The Intelligence object is deterministic and versioned. Its `1.0` contract is defined by:
 
@@ -228,6 +231,10 @@ When the report contains Intelligence data, exports include:
 - per-node priority annotations for ranked artifacts;
 - DOT legends and highlighted nodes;
 - Mermaid summary and priority classes.
+
+When it contains Threat Intelligence data, exports also include graph-level
+technique/tactic/LOLBin/tag metadata and per-node ATT&CK, LOLBin, and
+behavioral-tag annotations in JSON, DOT, and Mermaid outputs.
 
 Consumers that do not use Intelligence retain the previous graph structure.
 
