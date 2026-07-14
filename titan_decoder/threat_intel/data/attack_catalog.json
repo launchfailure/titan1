@@ -1,0 +1,148 @@
+{
+  "catalog_version": "enterprise-2026.1-titan-subset",
+  "techniques": [
+    {
+      "id": "T1059.001",
+      "name": "PowerShell",
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
+      "id": "T1059.003",
+      "name": "Windows Command Shell",
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
+      "id": "T1059.005",
+      "name": "Visual Basic",
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
+      "id": "T1059.007",
+      "name": "JavaScript/JScript",
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
+      "id": "T1105",
+      "name": "Ingress Tool Transfer",
+      "tactics": [
+        "command-and-control"
+      ]
+    },
+    {
+      "id": "T1027",
+      "name": "Obfuscated Files or Information",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1140",
+      "name": "Deobfuscate/Decode Files or Information",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1218.005",
+      "name": "Mshta",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1218.010",
+      "name": "Regsvr32",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1218.011",
+      "name": "Rundll32",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1218.007",
+      "name": "Msiexec",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1218.004",
+      "name": "InstallUtil",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1053.005",
+      "name": "Scheduled Task/Job: Scheduled Task",
+      "tactics": [
+        "execution",
+        "persistence",
+        "privilege-escalation"
+      ]
+    },
+    {
+      "id": "T1547.001",
+      "name": "Registry Run Keys / Startup Folder",
+      "tactics": [
+        "persistence",
+        "privilege-escalation"
+      ]
+    },
+    {
+      "id": "T1003",
+      "name": "OS Credential Dumping",
+      "tactics": [
+        "credential-access"
+      ]
+    },
+    {
+      "id": "T1082",
+      "name": "System Information Discovery",
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "id": "T1083",
+      "name": "File and Directory Discovery",
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "id": "T1047",
+      "name": "Windows Management Instrumentation",
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
+      "id": "T1562.001",
+      "name": "Impair Defenses: Disable or Modify Tools",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1486",
+      "name": "Data Encrypted for Impact",
+      "tactics": [
+        "impact"
+      ]
+    }
+  ]
+}

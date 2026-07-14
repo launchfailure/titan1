@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+Threat Intelligence Engine:
+
+- Add a deterministic Threat Intelligence Engine (`titan_decoder/threat_intel/`)
+  that maps decoded evidence to a bundled offline MITRE ATT&CK subset,
+  identifies suspicious LOLBin usage (13 built-in rules), and emits behavioral
+  malware tags (downloader-like, script-stager-like, credential-theft-like,
+  ransomware-impact-like, host-discovery-like, living-off-the-land-chain) —
+  explicitly behavior descriptions, not malware-family attribution. Findings
+  carry per-item confidence, supporting evidence with node IDs, and
+  deterministic node → technique/LOLBin/tag relationships; the overall
+  assessment is versioned (`1.0`) with its own catalog version.
+- Wire the threat stage into the CLI pipeline after the Intelligence stage,
+  reusing the same canonical IOC summary (report + ingested evidence) so cited
+  indicators stay consistent across outputs. The result is attached to every
+  report as `threat_intelligence`.
+- Render a Threat Intelligence section (ATT&CK table, LOLBins, behavioral
+  tags) in Markdown and HTML case reports, and annotate graph exports:
+  graph-level threat metadata in JSON, plus per-node ATT&CK/LOLBin/tag labels
+  in JSON, DOT, and Mermaid outputs.
+- Ship the ATT&CK catalog subset as package data (wheel and sdist) and
+  document the subsystem in `docs/THREAT_INTELLIGENCE.md`.
+
 Detection quality:
 
 - Harden the LOLBin rule (TITAN-003): it now requires a LOLBin name to co-occur

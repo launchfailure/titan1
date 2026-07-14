@@ -14,13 +14,14 @@ This roadmap separates shipped features from planned work.
 - Intelligence v1.0 schema, compatibility tests, and calibration corpus
 - Intelligence in Markdown/HTML case reports
 - Intelligence annotations in JSON/DOT/Mermaid graph exports
+- Evidence-backed MITRE ATT&CK mappings, LOLBin identification, and behavioral malware tags (Threat Intelligence Engine)
+- Repeatable performance benchmarks with a committed baseline and CI regression gate
 
 ## Highest-value next work
 
-1. Add evidence-backed MITRE ATT&CK mappings.
-2. Add repeatable performance benchmarks before optimization.
-3. Strengthen rule packs with schema versions, duplicate-ID checks, fixtures, and limits.
-4. Improve cross-source evidence correlation while preserving provenance.
+1. Strengthen rule packs with duplicate-ID checks, fixtures, and limits.
+2. Improve cross-source evidence correlation while preserving provenance.
+3. Expand the bundled ATT&CK catalog subset and per-rule technique metadata on built-in detections.
 
 ## Optional local AI assistant
 
@@ -48,4 +49,4 @@ Potential backends include llama.cpp-compatible local runtimes and OpenAI-compat
 
 Recommended order:
 
-ATT&CK mapping → benchmarks → stable local-model interface → one tested backend → analyst chat UI.
+Stable local-model interface → one tested backend → analyst chat UI.

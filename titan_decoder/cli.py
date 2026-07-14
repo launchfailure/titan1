@@ -765,6 +765,22 @@ def attach_intelligence_stage(
     )
 
 
+def attach_threat_intelligence_stage(
+    args, report, detections, evidence_result
+) -> None:
+    """Attach deterministic ATT&CK, LOLBin, and behavioral mappings."""
+    from .core.ioc_export import build_ioc_summary
+    from .threat_intel import ThreatIntelligenceEngine
+
+    iocs = build_ioc_summary(report, None)
+    _merge_evidence_iocs(iocs, evidence_result)
+    report["threat_intelligence"] = ThreatIntelligenceEngine().analyze(
+        report,
+        iocs=iocs,
+        detections=detections,
+    )
+
+
 def run_enrichment_stage(args, config, report, evidence_result) -> None:
     """Optionally enrich IOCs (explicit opt-in; blocked by --offline)."""
     # Optional enrichment (explicit opt-in; blocked by --offline)
@@ -909,6 +925,7 @@ def write_outputs_stage(args, config, report, engine, detections, risk_assessmen
             graph_exporter = GraphExporter(
                 report.get("nodes") or [],
                 intelligence=report.get("intelligence") or {},
+                threat_intelligence=report.get("threat_intelligence") or {},
             )
             if args.graph_format == "dot":
                 graph_exporter.save_dot(args.graph)
@@ -1130,6 +1147,9 @@ def main():
     )
     attach_intelligence_stage(
         args, report, detections, risk_assessment, evidence_result
+    )
+    attach_threat_intelligence_stage(
+        args, report, detections, evidence_result
     )
     run_enrichment_stage(args, config, report, evidence_result)
     exit_code = write_outputs_stage(
