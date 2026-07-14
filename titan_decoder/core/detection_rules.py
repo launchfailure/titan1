@@ -6,7 +6,7 @@ graph and IOCs to flag suspicious patterns commonly seen in malware.
 
 from __future__ import annotations
 
-from typing import Dict, Any, List, Callable
+from typing import Dict, Any, List, Callable, Sequence
 import logging
 from pathlib import Path
 
@@ -23,12 +23,17 @@ class DetectionRule:
         description: str,
         severity: str,
         detect_fn: Callable,
+        attack_ids: Sequence[str] | None = None,
     ):
         self.rule_id = rule_id
         self.name = name
         self.description = description
         self.severity = severity  # low, medium, high, critical
         self.detect_fn = detect_fn
+        # MITRE ATT&CK technique IDs this rule indicates. Static metadata:
+        # consumed by the Threat Intelligence Engine as corroborating
+        # detection evidence (see docs/THREAT_INTELLIGENCE.md).
+        self.attack_ids = [str(t) for t in (attack_ids or [])]
 
     def evaluate(self, report: Dict[str, Any], iocs: Dict[str, Any]) -> bool:
         """Evaluate the rule against a report."""
@@ -80,6 +85,9 @@ class CorrelationRulesEngine:
                 severity = str(rule_def.get("severity") or "low").lower()
                 if severity not in {"low", "medium", "high", "critical"}:
                     severity = "low"
+                attack_ids = rule_def.get("attack_ids")
+                if not isinstance(attack_ids, list):
+                    attack_ids = []
 
                 # Closure captures rule_def + pack info.
                 def _fn(report, iocs, _rule_def=rule_def):
@@ -91,6 +99,7 @@ class CorrelationRulesEngine:
                     description=desc,
                     severity=severity,
                     detect_fn=_fn,
+                    attack_ids=[str(t) for t in attack_ids if t],
                 )
                 # Attach provenance for reporting.
                 setattr(
@@ -116,6 +125,7 @@ class CorrelationRulesEngine:
                 description="Multiple layers of Base64 encoding detected (3+ levels)",
                 severity="medium",
                 detect_fn=lambda report, iocs: self._detect_deep_base64(report),
+                attack_ids=["T1027"],
             )
         )
 
@@ -129,6 +139,7 @@ class CorrelationRulesEngine:
                 detect_fn=lambda report, iocs: self._detect_office_macro_network(
                     report, iocs
                 ),
+                attack_ids=["T1059.005", "T1204.002"],
             )
         )
 
@@ -140,6 +151,10 @@ class CorrelationRulesEngine:
                 description="Content suggests legitimate binary executing scripts",
                 severity="medium",
                 detect_fn=lambda report, iocs: self._detect_lolbin_pattern(report),
+                # Parent techniques: the rule fires on any LOLBin + abuse
+                # context, so sub-technique attribution is left to the Threat
+                # Intelligence Engine's per-binary LOLBin findings.
+                attack_ids=["T1059", "T1218"],
             )
         )
 
@@ -151,6 +166,7 @@ class CorrelationRulesEngine:
                 description="High entropy data with minimal successful decoding",
                 severity="low",
                 detect_fn=lambda report, iocs: self._detect_encrypted_payload(report),
+                attack_ids=["T1027"],
             )
         )
 
@@ -164,6 +180,7 @@ class CorrelationRulesEngine:
                 detect_fn=lambda report, iocs: self._detect_multistage_infra(
                     report, iocs
                 ),
+                attack_ids=["T1105"],
             )
         )
 
@@ -177,6 +194,7 @@ class CorrelationRulesEngine:
                 detect_fn=lambda report, iocs: self._detect_xor_with_network(
                     report, iocs
                 ),
+                attack_ids=["T1027", "T1105"],
             )
         )
 
@@ -188,6 +206,7 @@ class CorrelationRulesEngine:
                 description="PDF containing PE or executable-like content",
                 severity="critical",
                 detect_fn=lambda report, iocs: self._detect_malicious_pdf(report),
+                attack_ids=["T1204.002"],
             )
         )
 
@@ -376,6 +395,7 @@ class CorrelationRulesEngine:
                         "name": rule.name,
                         "description": rule.description,
                         "severity": rule.severity,
+                        "attack_ids": list(rule.attack_ids),
                         "source": source,
                     }
                 )

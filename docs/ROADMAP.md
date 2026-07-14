@@ -15,13 +15,14 @@ This roadmap separates shipped features from planned work.
 - Intelligence in Markdown/HTML case reports
 - Intelligence annotations in JSON/DOT/Mermaid graph exports
 - Evidence-backed MITRE ATT&CK mappings, LOLBin identification, and behavioral malware tags (Threat Intelligence Engine)
+- ATT&CK technique metadata (`attack_ids`) on built-in detection rules and rule packs
 - Repeatable performance benchmarks with a committed baseline and CI regression gate
 
 ## Highest-value next work
 
 1. Strengthen rule packs with duplicate-ID checks, fixtures, and limits.
 2. Improve cross-source evidence correlation while preserving provenance.
-3. Expand the bundled ATT&CK catalog subset and per-rule technique metadata on built-in detections.
+3. Expand the bundled ATT&CK catalog subset.
 
 ## Optional local AI assistant
 

@@ -23,6 +23,13 @@ Threat Intelligence Engine:
   in JSON, DOT, and Mermaid outputs.
 - Ship the ATT&CK catalog subset as package data (wheel and sdist) and
   document the subsystem in `docs/THREAT_INTELLIGENCE.md`.
+- Wire `attack_ids` onto every built-in detection rule (TITAN-001…007) and
+  expose them on triggered detections, so fired rules corroborate ATT&CK
+  technique findings in the Threat Intelligence assessment. Rule packs can
+  declare the same optional `attack_ids` field per rule. The bundled catalog
+  gains T1059, T1218, and T1204.002 (catalog version
+  `enterprise-2026.1-titan-subset-r2`), and a test asserts every rule-declared
+  technique ID exists in the catalog.
 
 Detection quality:
 

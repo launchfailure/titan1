@@ -1,6 +1,13 @@
 {
-  "catalog_version": "enterprise-2026.1-titan-subset",
+  "catalog_version": "enterprise-2026.1-titan-subset-r2",
   "techniques": [
+    {
+      "id": "T1059",
+      "name": "Command and Scripting Interpreter",
+      "tactics": [
+        "execution"
+      ]
+    },
     {
       "id": "T1059.001",
       "name": "PowerShell",
@@ -46,6 +53,20 @@
     {
       "id": "T1140",
       "name": "Deobfuscate/Decode Files or Information",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1204.002",
+      "name": "User Execution: Malicious File",
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
+      "id": "T1218",
+      "name": "System Binary Proxy Execution",
       "tactics": [
         "defense-evasion"
       ]

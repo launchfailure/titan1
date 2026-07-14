@@ -33,8 +33,10 @@ The report field is `threat_intelligence`:
 
 Technique evidence comes from three sources: LOLBin findings, behavioral
 regex rules over node text, and `attack_ids`/`mitre_attack` metadata on
-triggered detections. Only technique IDs present in the bundled catalog are
-reported.
+triggered detections. Every built-in detection rule carries `attack_ids`,
+and rule packs can declare them per rule (see
+[DETECTION_AND_RISK.md](DETECTION_AND_RISK.md)). Only technique IDs present
+in the bundled catalog are reported.
 
 ## Behavioral tags are not attribution
 

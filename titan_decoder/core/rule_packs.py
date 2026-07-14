@@ -16,10 +16,17 @@ rules:
     type: "content_regex"
     pattern: "powershell"
     flags: ["IGNORECASE"]
+    attack_ids: ["T1059.001"]
 
 Supported rule types:
 - content_regex: regex over concatenated node content_preview
 - ioc_present: requires one or more IOC types to meet minimum counts
+
+Optional per-rule metadata:
+- attack_ids: MITRE ATT&CK technique IDs the rule indicates. Carried on
+  triggered detections and consumed by the Threat Intelligence Engine as
+  corroborating evidence (IDs must exist in the bundled ATT&CK catalog to be
+  reported there).
 
 Security note
 -------------
