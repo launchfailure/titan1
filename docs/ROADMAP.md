@@ -21,10 +21,12 @@ This roadmap separates shipped features from planned work.
 - Catalog/producer parity: every ATT&CK catalog entry has a built-in producer or an explicit rule-pack-only designation
 - Repeatable performance benchmarks with a committed baseline and CI regression gate
 - Rule-pack hardening: enforced validation, duplicate-ID checks (including built-in impersonation), per-pack limits, fixtures, and a strict `--rules-validate` gate
+- Evidence correlation platform (Milestone 5): cross-case IOC database, relationship scoring, campaign clustering, timeline correlation, infrastructure reuse detection, shared payload detection, attribution hints, analyst views, persisted cross-case fingerprints/events, and `--correlation-search`
 
 ## Highest-value next work
 
-1. Improve cross-source evidence correlation while preserving provenance.
+1. Plugin SDK v1: stable public decoder/analyzer/detection/report APIs, plugin manifest and validation, semantic version compatibility, example plugins, and developer documentation.
+2. Analyst Workbench: interactive exploration of reports (timeline explorer, graph viewer, IOC/evidence browsers, decode-tree navigation, search/filter/export, investigation workspace).
 
 ## Optional local AI assistant
 

@@ -67,6 +67,18 @@ class TimelineEvent:
             "metadata": dict(self.metadata),
         }
 
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "TimelineEvent":
+        # event_id is a derived property; it is recomputed, not stored state.
+        return cls(
+            analysis_id=str(data["analysis_id"]),
+            timestamp=str(data["timestamp"]),
+            kind=str(data["kind"]),
+            summary=str(data["summary"]),
+            source_id=data.get("source_id"),
+            metadata=dict(data.get("metadata") or {}),
+        )
+
 
 def sort_timeline(events: Iterable[TimelineEvent]) -> tuple[TimelineEvent, ...]:
     """Return events in deterministic chronological order."""

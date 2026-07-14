@@ -23,7 +23,7 @@ from .payload_similarity import (
     fingerprint_from_report,
 )
 from .relationships import RelationshipScorer, score_relationship
-from .service import analyze_milestone5, correlate_report
+from .service import analyze_milestone5, correlate_report, search_cases
 from .timeline import TimelineEvent, normalize_timestamp, sort_timeline
 from .timeline_correlation import TimelineLink, correlate_timelines
 from .views import analyst_summary, to_html, to_markdown
@@ -55,6 +55,7 @@ __all__ = [
     "fingerprint_from_report",
     "normalize_timestamp",
     "score_relationship",
+    "search_cases",
     "sort_timeline",
     "stable_id",
     "timeline_events_from_report",

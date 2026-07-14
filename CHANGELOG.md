@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+Evidence correlation (Milestone 5 completion):
+
+- Cross-case persistence (correlation database schema v2): payload
+  fingerprints and timeline events are stored alongside indicator records,
+  so shared-payload and timeline correlation now operate across every
+  recorded case without needing in-process `prior_reports`. Timeline
+  events are capped at a deterministic 2,000 per analysis; v1 databases
+  upgrade in place on open.
+- Cross-case search: `--correlation-search [TYPE:]VALUE` (repeatable,
+  standalone mode — no input file) queries the correlation IOC database
+  and returns matching analyses with stored evidence references
+  (`correlation-search-v1.0`). Also available as
+  `titan_decoder.correlation.service.search_cases`.
+- Deprecated the legacy `core/correlation.py` `CorrelationStore`
+  (config key `enable_correlation`) in favor of the Phase 5 correlation
+  database; using it now prints a deprecation warning.
+- Roadmap updated: evidence correlation moved to Shipped; Plugin SDK v1
+  and Analyst Workbench listed as next work.
+
 Evidence correlation (Phase 5 milestone complete):
 
 - Campaign clustering (`titan_decoder/correlation/campaigns.py`): connected

@@ -295,6 +295,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Write the cross-case correlation report (relationships) to a JSON file",
     )
     parser.add_argument(
+        "--correlation-search",
+        action="append",
+        metavar="[TYPE:]VALUE",
+        help=(
+            "Search the correlation database for an indicator across recorded "
+            "cases and exit (repeatable). Prefix with an indicator type to "
+            "restrict, e.g. domains:c2.example"
+        ),
+    )
+    parser.add_argument(
         "--correlation-min-score",
         type=float,
         default=0.0,
@@ -479,6 +489,22 @@ def handle_info_commands(args, config) -> "int | None":
     if args.vault_list_recent is not None:
         recent = _vault_list_recent(config, int(args.vault_list_recent))
         print(json.dumps({"recent": recent}, indent=2))
+        return 0
+
+    # Correlation search mode: query the Phase 5 cross-case IOC database and
+    # exit (no input file required).
+    if args.correlation_search:
+        from .correlation.service import search_cases
+
+        db_path = args.correlation_db or (
+            Path.home() / ".titan_decoder" / "correlation.sqlite3"
+        )
+        try:
+            result = search_cases(db_path, args.correlation_search)
+        except (OSError, RuntimeError, ValueError) as exc:
+            print(f"Error: correlation search failed: {exc}", file=sys.stderr)
+            return 1
+        print(json.dumps(result, indent=2))
         return 0
 
     # Vault search mode: query prior runs and exit (no input file required).
@@ -995,8 +1021,16 @@ def write_outputs_stage(args, config, report, engine, detections, risk_assessmen
         iocs = build_ioc_summary(report, forensics_summary)
         _merge_evidence_iocs(iocs, evidence_result)
 
-        # Correlation (optional, config-driven)
+        # Correlation (optional, config-driven). Deprecated: the Phase 5
+        # correlation database (--correlation-db and friends) supersedes this
+        # store with evidence-backed relationships and cross-case search.
         if config.get("enable_correlation", False):
+            if not args.quiet:
+                print(
+                    "Warning: enable_correlation/CorrelationStore is deprecated; "
+                    "use --correlation-db and --correlation-search instead.",
+                    file=sys.stderr,
+                )
             try:
                 from .core.correlation import CorrelationStore
 

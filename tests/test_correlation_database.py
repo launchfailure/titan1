@@ -1,4 +1,7 @@
-from titan_decoder.correlation.database import CorrelationDatabase
+from titan_decoder.correlation.database import (
+    DATABASE_SCHEMA_VERSION,
+    CorrelationDatabase,
+)
 from titan_decoder.correlation.models import AnalysisRecord, IndicatorRecord
 
 
@@ -18,7 +21,7 @@ def test_database_upsert_and_lookup(tmp_path):
         loaded = database.get_analysis("case-a")
         assert loaded is not None
         assert loaded.indicators[0].value == "changed.test"
-        assert database.schema_version() == 1
+        assert database.schema_version() == DATABASE_SCHEMA_VERSION
 
 
 def test_database_indicator_query_is_deterministic(tmp_path):

@@ -28,6 +28,29 @@ class PayloadFingerprint:
     resource_hashes: tuple[str, ...] = ()
     decode_chain: tuple[str, ...] = ()
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "analysis_id": self.analysis_id,
+            "root_hash": self.root_hash,
+            "payload_hashes": list(self.payload_hashes),
+            "fuzzy_hashes": list(self.fuzzy_hashes),
+            "import_hashes": list(self.import_hashes),
+            "resource_hashes": list(self.resource_hashes),
+            "decode_chain": list(self.decode_chain),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "PayloadFingerprint":
+        return cls(
+            analysis_id=str(data["analysis_id"]),
+            root_hash=str(data.get("root_hash") or ""),
+            payload_hashes=tuple(data.get("payload_hashes") or ()),
+            fuzzy_hashes=tuple(data.get("fuzzy_hashes") or ()),
+            import_hashes=tuple(data.get("import_hashes") or ()),
+            resource_hashes=tuple(data.get("resource_hashes") or ()),
+            decode_chain=tuple(data.get("decode_chain") or ()),
+        )
+
 
 @dataclass(frozen=True)
 class SharedPayload:
