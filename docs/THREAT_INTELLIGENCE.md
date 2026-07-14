@@ -67,6 +67,22 @@ well-formed and that every technique referenced by a behavior rule, LOLBin
 rule, or detection `attack_ids` exists in the catalog, so producers and
 catalog cannot drift apart.
 
+The reverse direction is enforced too: every catalog technique must have a
+built-in producer (behavior rule, LOLBin rule, or built-in detection
+`attack_ids`) unless it is explicitly designated **rule-pack-only** in
+`RULE_PACK_ONLY_TECHNIQUES` (`tests/test_threat_catalog.py`). Two techniques
+carry that designation:
+
+- **T1071 Application Layer Protocol** — C2-over-application-protocol cannot
+  be evidenced deterministically from decoded content alone; rule packs with
+  richer context may attribute it via `attack_ids`.
+- **T1204 User Execution** — the parent-level form for packs that know user
+  execution occurred but not the vector; built-ins attribute the specific
+  T1204.002 Malicious File.
+
+A companion test asserts the designated entries genuinely lack a built-in
+producer, so the list cannot go stale in either direction.
+
 ## Precision semantics
 
 Rules are written so that indicators alone never become behavioral findings:
@@ -85,6 +101,17 @@ Rules are written so that indicators alone never become behavioral findings:
   finding, with bounded increments for corroboration and source diversity —
   it cannot substantially exceed what any single finding supports, and a
   single weak finding stays below 0.5.
+- T1486 Data Encrypted for Impact requires ransom-note language (`ransom`,
+  `decryptor`, "decrypt/restore/recover your files"); the word "encrypted"
+  alone ("files are encrypted at rest") is never evidence of impact, and
+  shadow-copy deletion maps to T1490 Inhibit System Recovery, not T1486.
+- T1059.007 JavaScript requires Windows Script Host markers (`jscript`,
+  `new ActiveXObject(`, `.jse`); prose mentioning web "JavaScript" does not
+  fire.
+- T1566.001 Spearphishing Attachment requires a decoded MIME
+  `Content-Disposition: attachment` header naming an executable, script, or
+  container payload extension; benign attachment types (`.pdf`, `.docx`) do
+  not match.
 
 ## Calibration corpus
 
