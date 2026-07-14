@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "id": "example.strings",
+  "name": "Strings Analyzer",
+  "version": "1.0.0",
+  "api_version": "1.1.0",
+  "entry_point": "plugin:StringsAnalyzer",
+  "capabilities": ["analyzer"],
+  "description": "Example analyzer plugin: extracts printable ASCII strings as an artifact.",
+  "author": "Titan examples",
+  "license": "MIT",
+  "permissions": [],
+  "dependencies": {}
+}

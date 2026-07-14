@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "id": "example.rot47",
+  "name": "ROT47 Decoder",
+  "version": "1.0.0",
+  "api_version": "1.1.0",
+  "entry_point": "plugin:Rot47Decoder",
+  "capabilities": ["decoder"],
+  "description": "Example decoder plugin: reverses ROT47-obfuscated printable ASCII.",
+  "author": "Titan examples",
+  "license": "MIT",
+  "permissions": [],
+  "dependencies": {}
+}

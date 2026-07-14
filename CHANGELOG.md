@@ -2,6 +2,46 @@
 
 ## Unreleased
 
+Plugin SDK v1 (Milestone 6):
+
+- Four plugin SDKs behind the stable `titan_decoder.plugins.api` surface:
+  `DecoderPlugin`, `AnalyzerPlugin`, `DetectionPlugin`, and `ReportPlugin`,
+  with typed results (`DecodeResult`, `AnalysisArtifact`,
+  `DetectionFinding`, `ReportSection`) and an optional `PluginContext`
+  carrying the offline stance and resource bounds. Typed decode/analyze
+  results unpack like the legacy tuples, so the engine consumes both plugin
+  styles identically.
+- Manifest plugins: a directory with `titan-plugin.json` (JSON Schema in
+  `schemas/titan-plugin-manifest-v1.0.schema.json`) declaring identity,
+  SemVer versions, entry point, capabilities, permissions (policy metadata,
+  not a sandbox), and dependencies. Single-file plugins (API 1.0) keep
+  loading exactly as before; `PLUGIN_API_VERSION` bumps to `1.1`
+  (additive).
+- Semantic version engine with correct SemVer 2.0.0 pre-release precedence
+  (`1.0.0-alpha < 1.0.0`) and dependency requirements (`*`, `^`, `~`,
+  comparator lists, exact). Manifest plugins load in deterministic
+  dependency order.
+- Pipeline integration: detection plugins run in the detection stage after
+  rule engines and before risk scoring (findings carry
+  `source: {"type": "plugin"}` and feed the risk assessment); report
+  plugins contribute JSON-serializable sections embedded under
+  `plugin_report_sections` and rendered into Markdown/HTML case reports.
+  Bounded output: 200 findings / 20 sections per plugin; a failing plugin
+  is skipped with a warning and can never abort an analysis.
+- Guardrails: the `TITAN-` rule prefix is reserved (plugins cannot
+  impersonate built-in detections), rule IDs must be declared and unique
+  across plugins, undeclared findings are dropped, and duplicate plugin IDs
+  are rejected.
+- Deep validation (`--plugin-validate`): manifest contract, API
+  compatibility, entry point, capability match, constructor, plus a bounded
+  runtime probe checking return types, output limits, artifact names,
+  declared rule IDs, and execution time. `--plugin-list` prints discovered
+  plugins including per-plugin load errors; `--plugin-dir` adds search
+  directories (repeatable).
+- Example plugins (one per capability) in `examples/plugins/`, a complete
+  developer guide in `docs/PLUGIN_API.md`, and SDK unit plus
+  engine/CLI integration tests.
+
 Evidence correlation (Milestone 5 completion):
 
 - Cross-case persistence (correlation database schema v2): payload

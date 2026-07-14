@@ -51,6 +51,7 @@ def build_case_report(
         }
         if evidence
         else {},
+        "plugin_sections": list(report.get("plugin_report_sections") or []),
         "recommendations": recommendations,
     }
 
@@ -142,6 +143,18 @@ def to_markdown(case: Dict[str, Any]) -> str:
     lines.append(json.dumps(case.get("forensics", {}) or {}, indent=2))
     lines.append("```")
     lines.append("")
+
+    for section in case.get("plugin_sections") or []:
+        if "markdown" not in (section.get("formats") or []):
+            continue
+        lines.append(f"## {_md_cell(section.get('title'))}")
+        lines.append("")
+        lines.append(f"_Contributed by plugin: {_md_cell(section.get('plugin'))}_")
+        lines.append("")
+        lines.append("```json")
+        lines.append(json.dumps(section.get("content"), indent=2, sort_keys=True))
+        lines.append("```")
+        lines.append("")
 
     lines.append("## Recommendations")
     lines.append("")
@@ -254,12 +267,28 @@ def to_html(case: Dict[str, Any]) -> str:
             f"  <pre>{esc(json.dumps(forensics, indent=2))}</pre>",
             "  <h2>Evidence (Normalized)</h2>",
             f"  {evidence_html}",
+            _plugin_sections_html(case, esc),
             "  <h2>Recommendations</h2>",
             f"  <ul>{rec_items}</ul>",
             "</body>",
             "</html>",
         ]
     )
+
+
+def _plugin_sections_html(case: Dict[str, Any], esc) -> str:
+    """Render plugin-contributed sections (html format) as HTML blocks."""
+    blocks: List[str] = []
+    for section in case.get("plugin_sections") or []:
+        if "html" not in (section.get("formats") or []):
+            continue
+        blocks.append(f"  <h2>{esc(section.get('title'))}</h2>")
+        blocks.append(
+            f"  <p><em>Contributed by plugin: {esc(section.get('plugin'))}</em></p>"
+        )
+        content = json.dumps(section.get("content"), indent=2, sort_keys=True)
+        blocks.append(f"  <pre>{esc(content)}</pre>")
+    return "\n".join(blocks)
 
 
 def _normalize_intelligence(value: Any) -> Dict[str, Any]:

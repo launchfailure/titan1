@@ -1,216 +1,84 @@
 """
 Plugin system for Titan Decoder Engine.
 
-This module provides the base classes and loading mechanisms for extending
-the decoder engine with custom decoders and analyzers.
+This package provides the base classes, manifest contract, validation, and
+loading mechanisms for extending the engine with custom decoders, analyzers,
+detections, and report sections. Third-party plugins should import only from
+``titan_decoder.plugins.api`` — the stable, versioned public surface.
+
+Two plugin styles are supported side by side:
+
+- Single-file plugins (API 1.0): a ``.py`` file in a plugin directory.
+- Manifest plugins (API 1.1): a directory with ``titan-plugin.json`` plus
+  its entry-point module, supporting all four SDK capabilities.
+
+See docs/PLUGIN_API.md for the full contract.
 """
 
-from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Tuple
-import importlib.util
-import sys
-from pathlib import Path
-import logging
+from .contracts import (
+    PLUGIN_API_VERSION,
+    AnalysisArtifact,
+    AnalyzerPlugin,
+    DecodeResult,
+    DecoderPlugin,
+    DetectionFinding,
+    DetectionPlugin,
+    PluginAnalyzer,
+    PluginCapability,
+    PluginContext,
+    PluginDecoder,
+    ReportPlugin,
+    ReportSection,
+    is_api_compatible,
+)
+from .manifest import (
+    PLUGIN_MANIFEST_FILENAME,
+    PLUGIN_MANIFEST_SCHEMA_VERSION,
+    PluginManifest,
+    validate_manifest,
+)
+from .registry import (
+    RESERVED_RULE_PREFIX,
+    LoadedPlugin,
+    PluginManager,
+    PluginRegistry,
+)
+from .semver import Version, is_manifest_api_compatible, satisfies
+from .validation import (
+    PluginValidationReport,
+    ValidationIssue,
+    validate_plugin,
+    validate_plugins,
+)
 
-logger = logging.getLogger(__name__)
-
-# Versioned plugin API contract (MAJOR.MINOR). A third party ships a decoder or
-# analyzer against this interface without reading engine internals. Plugins may
-# declare the API version they were built for via a module-level
-# ``PLUGIN_API_VERSION`` or a class attribute; the manager loads a plugin only
-# when its declared MAJOR matches. See docs/PLUGIN_API.md for the full contract.
-#
-# MAJOR bump = breaking change to the base-class method signatures / semantics.
-# MINOR bump = additive, backward-compatible extension.
-PLUGIN_API_VERSION = "1.0"
-
-
-def _api_major(version: str) -> int:
-    try:
-        return int(str(version).split(".", 1)[0])
-    except (ValueError, AttributeError):
-        return -1
-
-
-def is_api_compatible(declared: str) -> bool:
-    """Return True if a plugin declaring ``declared`` is loadable here.
-
-    Compatible when the MAJOR versions match: the engine may add MINOR features
-    without breaking older plugins, but a MAJOR change is breaking.
-    """
-    return _api_major(declared) == _api_major(PLUGIN_API_VERSION)
-
-
-class PluginDecoder(ABC):
-    """Base class for plugin decoders."""
-
-    @abstractmethod
-    def can_decode(self, data: bytes) -> bool:
-        """Check if this decoder can handle the data."""
-        pass
-
-    @abstractmethod
-    def decode(self, data: bytes) -> Tuple[bytes, bool]:
-        """Decode the data. Return (decoded_data, success)."""
-        pass
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Name of the decoder."""
-        pass
-
-    @property
-    def priority(self) -> int:
-        """Priority for decoder ordering (higher = tried first). Default 0."""
-        return 0
-
-
-class PluginAnalyzer(ABC):
-    """Base class for plugin analyzers."""
-
-    @abstractmethod
-    def can_analyze(self, data: bytes) -> bool:
-        """Check if this analyzer can handle the data."""
-        pass
-
-    @abstractmethod
-    def analyze(self, data: bytes) -> List[Tuple[str, bytes]]:
-        """Analyze the data and return list of (name, content) tuples."""
-        pass
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Name of the analyzer."""
-        pass
-
-    @property
-    def priority(self) -> int:
-        """Priority for analyzer ordering (higher = tried first). Default 0."""
-        return 0
-
-
-class PluginManager:
-    """Manages loading and registration of plugins."""
-
-    def __init__(self, plugin_dirs: List[Path] = None):
-        self.plugin_dirs = plugin_dirs or []
-        self.decoders: List[PluginDecoder] = []
-        self.analyzers: List[PluginAnalyzer] = []
-        self.loaded_plugins: Dict[str, Any] = {}
-
-    def add_plugin_dir(self, plugin_dir: Path):
-        """Add a directory to search for plugins."""
-        if plugin_dir not in self.plugin_dirs:
-            self.plugin_dirs.append(plugin_dir)
-
-    def load_plugins(self):
-        """Load all plugins from configured directories."""
-        for plugin_dir in self.plugin_dirs:
-            if plugin_dir.exists() and plugin_dir.is_dir():
-                self._load_plugins_from_dir(plugin_dir)
-
-        # Sort by priority (highest first)
-        self.decoders.sort(key=lambda d: d.priority, reverse=True)
-        self.analyzers.sort(key=lambda a: a.priority, reverse=True)
-
-    # Package-infrastructure modules in the built-in plugin dir that are not
-    # plugins and must not be discovered/loaded as such.
-    _RESERVED_MODULES = frozenset({"api.py"})
-
-    def _load_plugins_from_dir(self, plugin_dir: Path):
-        """Load plugins from a specific directory."""
-        for item in plugin_dir.iterdir():
-            if (
-                item.is_file()
-                and item.suffix == ".py"
-                and not item.name.startswith("_")
-                and item.name not in self._RESERVED_MODULES
-            ):
-                self._load_plugin_file(item)
-
-    def _load_plugin_file(self, plugin_file: Path):
-        """Load a single plugin file."""
-        try:
-            # Create module name
-            module_name = f"titan_decoder_plugins_{plugin_file.stem}"
-
-            # Load the module
-            spec = importlib.util.spec_from_file_location(module_name, plugin_file)
-            if spec and spec.loader:
-                module = importlib.util.module_from_spec(spec)
-                sys.modules[module_name] = module
-                spec.loader.exec_module(module)
-
-                # Enforce the versioned API contract: a plugin may declare the
-                # API version it targets; skip it on a breaking (MAJOR) mismatch
-                # rather than loading an incompatible extension.
-                declared = getattr(module, "PLUGIN_API_VERSION", None)
-                if declared is not None and not is_api_compatible(str(declared)):
-                    logger.warning(
-                        "Skipping plugin %s: declares API %s, engine provides %s "
-                        "(incompatible major version)",
-                        plugin_file.name,
-                        declared,
-                        PLUGIN_API_VERSION,
-                    )
-                    return
-
-                # Find plugin classes in the module
-                self._register_plugin_classes(module, plugin_file.stem)
-
-                self.loaded_plugins[plugin_file.stem] = module
-
-        except Exception as e:
-            logger.warning("Failed to load plugin %s: %s", plugin_file, e)
-
-    def _register_plugin_classes(self, module, plugin_name: str):
-        """Register plugin classes from a loaded module."""
-        for attr_name in dir(module):
-            attr = getattr(module, attr_name)
-            if isinstance(attr, type):
-                # Check if it's a plugin class
-                if issubclass(attr, PluginDecoder) and attr != PluginDecoder:
-                    try:
-                        instance = attr()
-                        self.decoders.append(instance)
-                        logger.info("Loaded decoder plugin: %s", instance.name)
-                    except Exception as e:
-                        logger.warning(
-                            "Failed to instantiate decoder %s from plugin %s: %s",
-                            attr_name,
-                            plugin_name,
-                            e,
-                        )
-
-                elif issubclass(attr, PluginAnalyzer) and attr != PluginAnalyzer:
-                    try:
-                        instance = attr()
-                        self.analyzers.append(instance)
-                        logger.info("Loaded analyzer plugin: %s", instance.name)
-                    except Exception as e:
-                        logger.warning(
-                            "Failed to instantiate analyzer %s from plugin %s: %s",
-                            attr_name,
-                            plugin_name,
-                            e,
-                        )
-
-    def get_decoders(self) -> List[PluginDecoder]:
-        """Get all loaded decoder plugins."""
-        return self.decoders.copy()
-
-    def get_analyzers(self) -> List[PluginAnalyzer]:
-        """Get all loaded analyzer plugins."""
-        return self.analyzers.copy()
-
-    def get_plugin_info(self) -> Dict[str, Any]:
-        """Get information about loaded plugins."""
-        return {
-            "api_version": PLUGIN_API_VERSION,
-            "plugin_dirs": [str(d) for d in self.plugin_dirs],
-            "loaded_plugins": list(self.loaded_plugins.keys()),
-            "decoders": [d.name for d in self.decoders],
-            "analyzers": [a.name for a in self.analyzers],
-        }
+__all__ = [
+    "AnalysisArtifact",
+    "AnalyzerPlugin",
+    "DecodeResult",
+    "DecoderPlugin",
+    "DetectionFinding",
+    "DetectionPlugin",
+    "LoadedPlugin",
+    "PLUGIN_API_VERSION",
+    "PLUGIN_MANIFEST_FILENAME",
+    "PLUGIN_MANIFEST_SCHEMA_VERSION",
+    "PluginAnalyzer",
+    "PluginCapability",
+    "PluginContext",
+    "PluginDecoder",
+    "PluginManager",
+    "PluginManifest",
+    "PluginRegistry",
+    "PluginValidationReport",
+    "RESERVED_RULE_PREFIX",
+    "ReportPlugin",
+    "ReportSection",
+    "ValidationIssue",
+    "Version",
+    "is_api_compatible",
+    "is_manifest_api_compatible",
+    "satisfies",
+    "validate_manifest",
+    "validate_plugin",
+    "validate_plugins",
+]

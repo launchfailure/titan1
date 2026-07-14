@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "id": "example.marker",
+  "name": "Marker Detection",
+  "version": "1.0.0",
+  "api_version": "1.1.0",
+  "entry_point": "plugin:MarkerDetection",
+  "capabilities": ["detection"],
+  "description": "Example detection plugin: flags a synthetic marker string in decoded nodes.",
+  "author": "Titan examples",
+  "license": "MIT",
+  "permissions": [],
+  "dependencies": {}
+}
