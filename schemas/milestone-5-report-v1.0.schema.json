@@ -1,0 +1,373 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pragmaconflux/titan1/schemas/milestone-5-report-v1.0.schema.json",
+  "title": "Titan Milestone 5 Correlation Report v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "correlation",
+    "campaigns",
+    "timeline_correlation",
+    "infrastructure_reuse",
+    "shared_payloads",
+    "attribution_hints",
+    "analyst_view"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "milestone-5-report-v1.0"
+    },
+    "correlation": {
+      "$ref": "https://github.com/pragmaconflux/titan1/schemas/correlation-report-v1.0.schema.json"
+    },
+    "campaigns": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "minimum_score",
+        "campaign_count",
+        "campaigns"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "campaign-clusters-v1.0"
+        },
+        "minimum_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "campaign_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "campaigns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "campaign_id",
+              "member_analysis_ids",
+              "relationship_ids",
+              "relationship_count",
+              "confidence",
+              "maximum_relationship_score"
+            ],
+            "properties": {
+              "campaign_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "member_analysis_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 2
+              },
+              "relationship_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "relationship_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "confidence": {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ]
+              },
+              "maximum_relationship_score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "timeline_correlation": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "event_count",
+        "link_count",
+        "links"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "timeline-correlation-v1.0"
+        },
+        "event_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "link_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "link_id",
+              "left_event_id",
+              "right_event_id",
+              "delta_seconds",
+              "reason",
+              "score"
+            ],
+            "properties": {
+              "link_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "left_event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "right_event_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "delta_seconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "infrastructure_reuse": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "reuse_count",
+        "reused_infrastructure"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "infrastructure-reuse-v1.0"
+        },
+        "reuse_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reused_infrastructure": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "reuse_id",
+              "indicator_type",
+              "normalized_value",
+              "analysis_ids",
+              "reuse_count",
+              "references"
+            ],
+            "properties": {
+              "reuse_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "indicator_type": {
+                "type": "string",
+                "minLength": 1
+              },
+              "normalized_value": {
+                "type": "string",
+                "minLength": 1
+              },
+              "analysis_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 2
+              },
+              "reuse_count": {
+                "type": "integer",
+                "minimum": 2
+              },
+              "references": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "shared_payloads": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "match_count",
+        "matches"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "shared-payload-v1.0"
+        },
+        "match_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "matches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "match_id",
+              "left_analysis_id",
+              "right_analysis_id",
+              "score",
+              "reasons"
+            ],
+            "properties": {
+              "match_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "left_analysis_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "right_analysis_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "reasons": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "attribution_hints": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "hint_count",
+        "hints",
+        "disclaimer"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "attribution-hints-v1.0"
+        },
+        "hint_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "hints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "hint_id",
+              "left_analysis_id",
+              "right_analysis_id",
+              "confidence",
+              "score",
+              "evidence",
+              "statement"
+            ],
+            "properties": {
+              "hint_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "left_analysis_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "right_analysis_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "confidence": {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ]
+              },
+              "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "statement": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "disclaimer": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "analyst_view": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "subject_analysis_id",
+        "relationship_count",
+        "top_relationships"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "analyst-correlation-view-v1.0"
+        },
+        "relationship_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "top_relationships": {
+          "type": "array",
+          "maxItems": 10
+        }
+      }
+    }
+  }
+}

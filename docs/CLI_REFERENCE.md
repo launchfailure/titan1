@@ -82,6 +82,36 @@ titan-decoder --file sample.bin --offline --enable-enrichment
 
 Enrichment is explicit and optional. `--offline` prevents network-backed enrichment and should be used for isolated or evidentiary environments.
 
+## Cross-case correlation (Phase 5)
+
+```bash
+titan-decoder --file sample.bin \
+  --correlation-db cases.sqlite3 \
+  --correlation-out correlation.json \
+  --campaign-out campaigns.json \
+  --timeline-correlation-out timeline-links.json \
+  --infrastructure-reuse-out infra.json \
+  --shared-payload-out payloads.json \
+  --attribution-hints-out hints.json \
+  --analyst-correlation-out view.md --analyst-correlation-format markdown
+```
+
+Passing any of these flags runs the offline Phase 5 suite: the current
+analysis is scored against every analysis recorded in the local SQLite
+database (default `~/.titan_decoder/correlation.sqlite3`), campaigns are
+clustered, infrastructure reuse and shared payloads are detected, and
+evidence-backed attribution hints are derived. The sections are also
+embedded in the main JSON report under `correlation`, `campaigns`,
+`timeline_correlation`, `infrastructure_reuse`, `shared_payloads`, and
+`attribution_hints`.
+
+Tuning and behavior flags: `--correlation-min-score`,
+`--campaign-min-score`, `--shared-payload-min-score`,
+`--timeline-window-seconds`, and `--correlation-no-record` (correlate
+without persisting the current analysis). The analyst view renders as
+`json`, `markdown`, or `html`. See
+[EVIDENCE_CORRELATION.md](EVIDENCE_CORRELATION.md).
+
 ## Graph formats
 
 ```bash
