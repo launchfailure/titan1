@@ -2,6 +2,54 @@
 
 ## Unreleased
 
+Evidence correlation (Phase 5 milestone complete):
+
+- Campaign clustering (`titan_decoder/correlation/campaigns.py`): connected
+  components over the deterministic relationship graph, with stable
+  campaign IDs and per-campaign confidence
+  (`campaign-clusters-v1.0`).
+- Cross-case timeline correlation
+  (`titan_decoder/correlation/timeline_correlation.py`): links events from
+  different analyses within a configurable window; shared observable
+  metadata forms strong links, matching event kinds weaker ones. `None`
+  and nested metadata values are never compared
+  (`timeline-correlation-v1.0`).
+- Infrastructure reuse detection
+  (`titan_decoder/correlation/infrastructure.py`): domains, URLs, public
+  IPs, certificates, JA3/JA4, ASNs, nameservers, and WHOIS emails shared
+  across recorded analyses; private IP ranges excluded by design
+  (`infrastructure-reuse-v1.0`).
+- Shared payload detection
+  (`titan_decoder/correlation/payload_similarity.py`): per-report
+  fingerprints from node content hashes and decode chains, pairwise
+  scoring with an exact-hash-dominant weighting
+  (`shared-payload-v1.0`).
+- Evidence-backed attribution hints
+  (`titan_decoder/correlation/attribution.py`): per-pair hints combining
+  infrastructure, payload, and ATT&CK/tag overlap. Hints are explicitly
+  investigative leads and never actor identity claims
+  (`attribution-hints-v1.0`).
+- Report adapters (`titan_decoder/correlation/adapters.py`) translate
+  engine reports (meta/nodes/iocs/detections/threat_intelligence/evidence)
+  into correlation records: root hash from the root node's sha256, decode
+  chain from `decoder_used`/`method`, ATT&CK IDs from detections and
+  threat-intelligence techniques, timeline events from DFIR evidence
+  events.
+- Service orchestration
+  (`titan_decoder/correlation/service.py::analyze_milestone5`) runs the
+  full suite against the local SQLite database and returns the combined
+  `milestone-5-report-v1.0` result (schema in
+  `schemas/milestone-5-report-v1.0.schema.json`), including the analyst
+  view (`titan_decoder/correlation/views.py`; JSON/Markdown/HTML).
+- CLI integration: `--correlation-db`, `--correlation-out`,
+  `--correlation-min-score`, `--correlation-no-record`, `--campaign-out`,
+  `--campaign-min-score`, `--timeline-correlation-out`,
+  `--timeline-window-seconds`, `--infrastructure-reuse-out`,
+  `--shared-payload-out`, `--shared-payload-min-score`,
+  `--attribution-hints-out`, `--analyst-correlation-out`,
+  `--analyst-correlation-format`. Requesting any of them embeds the
+  correlation sections in the main JSON report.
+
 Rule packs:
 
 - Harden rule packs with enforced validation, duplicate-ID checks, and

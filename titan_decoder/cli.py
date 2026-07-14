@@ -282,6 +282,84 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate a rule pack file and exit (can be repeated)",
     )
     parser.add_argument(
+        "--correlation-db",
+        type=Path,
+        help=(
+            "Local SQLite database for Phase 5 cross-case correlation "
+            "(default: ~/.titan_decoder/correlation.sqlite3)"
+        ),
+    )
+    parser.add_argument(
+        "--correlation-out",
+        type=Path,
+        help="Write the cross-case correlation report (relationships) to a JSON file",
+    )
+    parser.add_argument(
+        "--correlation-min-score",
+        type=float,
+        default=0.0,
+        help="Minimum relationship score to include in the correlation report (0-1)",
+    )
+    parser.add_argument(
+        "--correlation-no-record",
+        action="store_true",
+        help="Correlate against prior analyses without recording this one",
+    )
+    parser.add_argument(
+        "--campaign-out",
+        type=Path,
+        help="Write campaign clusters over recorded analyses to a JSON file",
+    )
+    parser.add_argument(
+        "--campaign-min-score",
+        type=float,
+        default=0.45,
+        help="Minimum relationship score for campaign clustering edges (0-1)",
+    )
+    parser.add_argument(
+        "--timeline-correlation-out",
+        type=Path,
+        help="Write cross-case timeline correlation links to a JSON file",
+    )
+    parser.add_argument(
+        "--timeline-window-seconds",
+        type=float,
+        default=300.0,
+        help="Time window for cross-case timeline correlation (seconds)",
+    )
+    parser.add_argument(
+        "--infrastructure-reuse-out",
+        type=Path,
+        help="Write infrastructure reuse detections to a JSON file",
+    )
+    parser.add_argument(
+        "--shared-payload-out",
+        type=Path,
+        help="Write shared payload detections to a JSON file",
+    )
+    parser.add_argument(
+        "--shared-payload-min-score",
+        type=float,
+        default=0.35,
+        help="Minimum similarity score for shared payload matches (0-1)",
+    )
+    parser.add_argument(
+        "--attribution-hints-out",
+        type=Path,
+        help="Write evidence-backed attribution hints to a JSON file",
+    )
+    parser.add_argument(
+        "--analyst-correlation-out",
+        type=Path,
+        help="Write the analyst correlation view to a file",
+    )
+    parser.add_argument(
+        "--analyst-correlation-format",
+        choices=["json", "markdown", "html"],
+        default="json",
+        help="Format for --analyst-correlation-out (default: json)",
+    )
+    parser.add_argument(
         "--fail-on-risk-level",
         choices=["MEDIUM", "HIGH", "CRITICAL"],
         help="Exit non-zero if risk_assessment risk_level is at/above this level",
@@ -806,6 +884,90 @@ def run_enrichment_stage(args, config, report, evidence_result) -> None:
                 file=sys.stderr,
             )
 
+def run_phase5_correlation_stage(args, report) -> int:
+    """Run Phase 5 cross-case correlation when any of its outputs were requested.
+
+    Embeds the correlation sections into the report and writes any requested
+    per-section JSON files plus the analyst view. Returns 0 on success (or
+    when Phase 5 was not requested) and 1 on failure.
+    """
+    requested = any(
+        (
+            args.correlation_db,
+            args.correlation_out,
+            args.campaign_out,
+            args.timeline_correlation_out,
+            args.infrastructure_reuse_out,
+            args.shared_payload_out,
+            args.attribution_hints_out,
+            args.analyst_correlation_out,
+        )
+    )
+    if not requested:
+        return 0
+
+    try:
+        from .correlation.service import analyze_milestone5
+        from .correlation.views import to_html as phase5_to_html
+        from .correlation.views import to_markdown as phase5_to_markdown
+
+        db_path = args.correlation_db or (
+            Path.home() / ".titan_decoder" / "correlation.sqlite3"
+        )
+        phase5 = analyze_milestone5(
+            report,
+            db_path,
+            minimum_relationship_score=float(args.correlation_min_score),
+            minimum_campaign_score=float(args.campaign_min_score),
+            minimum_payload_score=float(args.shared_payload_min_score),
+            timeline_window_seconds=float(args.timeline_window_seconds),
+            record_subject=not args.correlation_no_record,
+        )
+        for key in (
+            "correlation",
+            "campaigns",
+            "timeline_correlation",
+            "infrastructure_reuse",
+            "shared_payloads",
+            "attribution_hints",
+        ):
+            report[key] = phase5[key]
+
+        section_outputs = (
+            (args.correlation_out, phase5["correlation"]),
+            (args.campaign_out, phase5["campaigns"]),
+            (args.timeline_correlation_out, phase5["timeline_correlation"]),
+            (args.infrastructure_reuse_out, phase5["infrastructure_reuse"]),
+            (args.shared_payload_out, phase5["shared_payloads"]),
+            (args.attribution_hints_out, phase5["attribution_hints"]),
+        )
+        for path, payload in section_outputs:
+            if path:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+        if args.analyst_correlation_out:
+            view = phase5["analyst_view"]
+            if args.analyst_correlation_format == "html":
+                rendered = phase5_to_html(view)
+            elif args.analyst_correlation_format == "markdown":
+                rendered = phase5_to_markdown(view)
+            else:
+                rendered = json.dumps(view, indent=2)
+            args.analyst_correlation_out.parent.mkdir(parents=True, exist_ok=True)
+            args.analyst_correlation_out.write_text(rendered, encoding="utf-8")
+
+        if not args.quiet:
+            print(
+                f"Phase 5 correlation complete (database: {db_path})",
+                file=sys.stderr,
+            )
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"Error: Phase 5 correlation failed: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def write_outputs_stage(args, config, report, engine, detections, risk_assessment, evidence_result) -> int:
     """Run all exports, contract validation, output, and compute the exit code.
 
@@ -813,6 +975,12 @@ def write_outputs_stage(args, config, report, engine, detections, risk_assessmen
     vault, strict validation, the report-size guard, stdout/file output, and the
     ``--fail-on-risk-level`` exit code. Returns the process exit code.
     """
+    # Phase 5 cross-case correlation (runs first so its sections are embedded
+    # in the report before validation and stdout/file output).
+    phase5_exit = run_phase5_correlation_stage(args, report)
+    if phase5_exit != 0:
+        return phase5_exit
+
     # Optional forensic attribution summary
     forensics_summary = None
     if args.forensics_out or args.forensics_print:
