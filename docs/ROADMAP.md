@@ -17,6 +17,7 @@ This roadmap separates shipped features from planned work.
 - Evidence-backed MITRE ATT&CK mappings, LOLBin identification, and behavioral malware tags (Threat Intelligence Engine)
 - ATT&CK technique metadata (`attack_ids`) on built-in detection rules and rule packs
 - Expanded 48-technique ATT&CK catalog subset with matching behavior and LOLBin rules
+- Threat-intelligence precision hardening and calibration corpus with CI gate
 - Repeatable performance benchmarks with a committed baseline and CI regression gate
 
 ## Highest-value next work

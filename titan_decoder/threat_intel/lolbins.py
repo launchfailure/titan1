@@ -16,6 +16,10 @@ class LOLBinRule:
     pattern: Pattern[str]
     technique_ids: Sequence[str]
     suspicious_terms: Sequence[str] = ()
+    # For executables whose bare name is also an everyday word ("cmd"), a
+    # bare-name match alone is not evidence: the node must contain either the
+    # explicit ".exe" form or one of the rule's suspicious terms.
+    bare_requires_term: bool = False
 
     def evaluate(self, nodes: Iterable[Mapping[str, Any]]) -> LOLBinFinding | None:
         node_ids: List[Any] = []
@@ -27,15 +31,26 @@ class LOLBinRule:
                 str(node.get(key) or "")
                 for key in ("content_preview", "preview", "artifact_name", "method")
             )
-            if not self.pattern.search(text):
+            match = self.pattern.search(text)
+            if not match:
+                continue
+            lowered = text.lower()
+            node_terms = [
+                term
+                for term in self.suspicious_terms
+                if term.lower() in lowered
+            ]
+            if (
+                self.bare_requires_term
+                and not match.group(0).lower().endswith(".exe")
+                and not node_terms
+            ):
                 continue
             node_ids.append(node.get("id"))
             confidence = max(confidence, 0.55)
-            lowered = text.lower()
-            for term in self.suspicious_terms:
-                if term.lower() in lowered:
-                    matched_terms.append(term)
-                    confidence = min(0.95, confidence + 0.08)
+            for term in node_terms:
+                matched_terms.append(term)
+                confidence = min(0.95, confidence + 0.08)
 
         if not node_ids:
             return None
@@ -57,7 +72,9 @@ def _exe(name: str) -> Pattern[str]:
 
 DEFAULT_LOLBIN_RULES = (
     LOLBinRule("PowerShell", "powershell.exe", _exe("powershell"), ("T1059.001",), ("-enc", "encodedcommand", "downloadstring", "invoke-expression", "iex")),
-    LOLBinRule("Command Shell", "cmd.exe", _exe("cmd"), ("T1059.003",), ("/c", "/k")),
+    # "/c "/"/k " keep a trailing space so URL paths ("example.com/contact")
+    # cannot satisfy the context requirement for the everyday word "cmd".
+    LOLBinRule("Command Shell", "cmd.exe", _exe("cmd"), ("T1059.003",), ("/c ", "/k "), bare_requires_term=True),
     LOLBinRule("Mshta", "mshta.exe", _exe("mshta"), ("T1218.005",), ("javascript:", "vbscript:", "http://", "https://")),
     LOLBinRule("Rundll32", "rundll32.exe", _exe("rundll32"), ("T1218.011",), ("javascript:", "url.dll", "shell32.dll")),
     LOLBinRule("Regsvr32", "regsvr32.exe", _exe("regsvr32"), ("T1218.010",), ("/s", "/u", "/i:", "scrobj.dll")),
