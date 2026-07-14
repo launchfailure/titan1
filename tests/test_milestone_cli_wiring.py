@@ -5,9 +5,7 @@ def test_cli_wires_intelligence_before_enrichment():
     source = Path("titan_decoder/cli.py").read_text(encoding="utf-8")
 
     detection_call = "detections, risk_assessment = run_detections_stage("
-    intelligence_call = (
-        "attach_intelligence_stage(args, report, detections, risk_assessment)"
-    )
+    intelligence_call = "attach_intelligence_stage("
     enrichment_call = "run_enrichment_stage(args, config, report, evidence_result)"
 
     detection_index = source.index(detection_call)
