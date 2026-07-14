@@ -75,6 +75,22 @@ contributes 0.55; fuzzy/import/resource hashes (when present) and
 decode-chain overlap corroborate. Matches below
 `--shared-payload-min-score` (default 0.35) are dropped.
 
+### Cross-case persistence and search
+
+Payload fingerprints and timeline events are persisted in the correlation
+database (schema v2) alongside indicator records, so shared-payload and
+timeline correlation operate across every recorded case — no in-process
+report set is required. Timeline events are capped at a deterministic
+2,000 per analysis. v1 databases upgrade in place on open; analyses
+recorded before v2 lack stored fingerprints/events until re-analyzed.
+
+`--correlation-search [TYPE:]VALUE` (repeatable) searches recorded
+indicators across cases and exits without running an analysis. Matching is
+exact on the normalized value and case-insensitive; results include each
+match's evidence references (`correlation-search-v1.0`). The same query
+API is available as
+`titan_decoder.correlation.service.search_cases(db_path, queries)`.
+
 ### Attribution hints (`attribution.py`)
 
 Combines infrastructure reuse, shared payloads, and ATT&CK/tag overlap

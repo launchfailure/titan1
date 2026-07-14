@@ -112,6 +112,14 @@ without persisting the current analysis). The analyst view renders as
 `json`, `markdown`, or `html`. See
 [EVIDENCE_CORRELATION.md](EVIDENCE_CORRELATION.md).
 
+Cross-case search runs standalone (no input file) and exits:
+
+```bash
+titan-decoder --correlation-db cases.sqlite3 --correlation-search c2.example
+titan-decoder --correlation-db cases.sqlite3 --correlation-search domains:c2.example \
+  --correlation-search urls:https://c2.example/gate.php
+```
+
 ## Graph formats
 
 ```bash

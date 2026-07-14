@@ -1,5 +1,11 @@
 """Simple SQLite-based correlation cache for IOCs.
 
+Deprecated: superseded by the Phase 5 correlation package
+(``titan_decoder.correlation``), which persists full indicator records with
+evidence references and supports relationship scoring, campaign clustering,
+and cross-case search (``--correlation-db`` / ``--correlation-search``).
+This store remains only for existing ``enable_correlation`` configs.
+
 Stores seen indicators and links new analyses to prior ones. Optional and
 lightweight—if disabled or DB unavailable, it safely no-ops.
 """

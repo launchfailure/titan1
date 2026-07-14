@@ -223,7 +223,9 @@ def test_cli_phase5_stage_writes_outputs(tmp_path, capsys):
     assert correlation["subject_analysis_id"] == "case-b"
     assert json.loads((tmp_path / "campaigns.json").read_text())["campaign_count"] == 1
     assert json.loads((tmp_path / "infra.json").read_text())["reuse_count"] == 1
-    assert json.loads((tmp_path / "payloads.json").read_text())["match_count"] == 0
+    # Fingerprints persist in the database (schema v2), so the shared payload
+    # with recorded case-a is found without passing prior reports in-process.
+    assert json.loads((tmp_path / "payloads.json").read_text())["match_count"] == 1
     hints = json.loads((tmp_path / "hints.json").read_text())
     assert hints["hint_count"] == 1
     assert "# Titan Phase 5 Correlation" in (tmp_path / "view.md").read_text()
