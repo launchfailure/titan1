@@ -119,9 +119,13 @@
       ],
       "plugins": {
         "analyzers": [],
-        "api_version": "1.0",
+        "api_version": "1.1",
         "decoders": [],
-        "loaded_plugins": []
+        "detections": [],
+        "errors": [],
+        "loaded_plugins": [],
+        "manifest_plugins": [],
+        "reports": []
       }
     },
     "effective_config": {

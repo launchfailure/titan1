@@ -264,6 +264,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Write the intelligence summary to a separate JSON file",
     )
     parser.add_argument(
+        "--plugin-dir",
+        action="append",
+        type=Path,
+        help="Additional plugin directory to load (repeatable)",
+    )
+    parser.add_argument(
+        "--plugin-validate",
+        action="append",
+        type=Path,
+        help="Validate a manifest plugin directory and exit (repeatable)",
+    )
+    parser.add_argument(
+        "--plugin-list",
+        action="store_true",
+        help="List discovered plugins (including load errors) and exit",
+    )
+    parser.add_argument(
         "--rules-pack",
         action="append",
         type=Path,
@@ -445,6 +462,31 @@ def handle_info_commands(args, config) -> "int | None":
         print(json.dumps({"rule_packs": packs}, indent=2))
         return 0
 
+    # Validate manifest plugins and exit. Deep validation: manifest contract,
+    # API compatibility, entry point, capabilities, and a bounded runtime
+    # probe. Note the probe executes plugin code in-process.
+    if args.plugin_validate:
+        from .plugins.validation import validate_plugins
+
+        ok, results = validate_plugins(args.plugin_validate)
+        print(json.dumps({"ok": ok, "results": results}, indent=2))
+        return 0 if ok else 1
+
+    # List discovered plugins (same directory set the engine uses) and exit.
+    if args.plugin_list:
+        from .plugins import PluginManager
+
+        manager = PluginManager()
+        for plugin_dir in config.get("plugin_dirs", []) or []:
+            manager.add_plugin_dir(Path(plugin_dir))
+        for plugin_dir in args.plugin_dir or []:
+            manager.add_plugin_dir(Path(plugin_dir))
+        manager.add_plugin_dir(Path.home() / ".titan_decoder" / "plugins")
+        manager.add_plugin_dir(Path(__file__).parent / "plugins")
+        manager.load_plugins()
+        print(json.dumps(manager.get_plugin_info(), indent=2))
+        return 0
+
     # Validate rule packs and exit. Deep validation: structural load errors,
     # the per-pack rule limit, per-rule definition problems, and duplicate ids
     # all surface as errors and fail the command.
@@ -524,6 +566,13 @@ def apply_runtime_config(args, config) -> None:
         config.set("enable_geo_enrichment", False)
         config.set("enable_whois", False)
         config.set("enable_yara", False)
+
+    # Extra plugin directories: merged into config so the engine's plugin
+    # manager discovers them alongside the configured and default dirs.
+    if args.plugin_dir:
+        merged = list(config.get("plugin_dirs", []) or [])
+        merged.extend(str(p) for p in args.plugin_dir if str(p) not in merged)
+        config.set("plugin_dirs", merged)
 
     # Apply profile presets
     if args.analysis_profile == "safe":
@@ -776,10 +825,69 @@ def attach_evidence_stage(args, report, evidence_result) -> None:
             "top_links": top_links(links, limit=10),
         }
 
-def run_detections_stage(args, config, report, evidence_result):
-    """Run detection rules and risk scoring if requested.
+# Bounded plugin output: a plugin may contribute at most this many findings
+# or report sections per run, mirroring the per-pack rule limit.
+MAX_PLUGIN_FINDINGS = 200
+MAX_PLUGIN_SECTIONS = 20
 
-    Returns ``(detections, risk_assessment)`` and persists both into the report.
+
+def _plugin_context(config, args):
+    """Build the PluginContext SDK plugins receive from this run."""
+    from .plugins import PluginContext
+
+    return PluginContext(
+        config=dict(getattr(config, "_config", {}) or {}),
+        offline=bool(getattr(args, "offline", False)),
+    )
+
+
+def _run_detection_plugins(args, config, report, iocs, engine):
+    """Run loaded detection plugins; return their findings as detection dicts.
+
+    A failing plugin is skipped with a warning — plugins must never be able
+    to abort an analysis. Findings under undeclared rule IDs are dropped
+    (the declared set was validated at load time, including the reserved
+    ``TITAN-`` prefix and cross-plugin uniqueness).
+    """
+    manager = getattr(engine, "plugin_manager", None)
+    if manager is None or not getattr(manager, "detections", None):
+        return []
+
+    context = _plugin_context(config, args)
+    results = []
+    for plugin in manager.get_detections():
+        declared = {str(rule_id) for rule_id in plugin.rule_ids}
+        try:
+            findings = list(plugin.detect(report, iocs, context))
+        except Exception as exc:
+            if not args.quiet:
+                print(
+                    f"Warning: detection plugin {plugin.name} failed: {exc}",
+                    file=sys.stderr,
+                )
+            continue
+        for finding in findings[:MAX_PLUGIN_FINDINGS]:
+            data = finding.to_dict() if hasattr(finding, "to_dict") else None
+            if not isinstance(data, dict) or data.get("rule_id") not in declared:
+                if not args.quiet:
+                    print(
+                        f"Warning: detection plugin {plugin.name} emitted an "
+                        "invalid or undeclared finding; dropped",
+                        file=sys.stderr,
+                    )
+                continue
+            data["source"] = {"type": "plugin", "plugin": str(plugin.name)}
+            results.append(data)
+    return results
+
+
+def run_detections_stage(args, config, report, evidence_result, engine=None):
+    """Run detection rules, detection plugins, and risk scoring if requested.
+
+    Returns ``(detections, risk_assessment)`` and persists both into the
+    report. Detection plugins (loaded by the engine's plugin manager) run
+    after the rule engines and before risk scoring, so plugin findings feed
+    the risk assessment exactly like rule matches.
     """
     # Run detections and risk scoring if requested
     detections = []
@@ -810,6 +918,9 @@ def run_detections_stage(args, config, report, evidence_result):
         iocs = build_ioc_summary(report, None)
         _merge_evidence_iocs(iocs, evidence_result)
         detections = rules_engine.evaluate_all(report, iocs)
+        detections.extend(
+            _run_detection_plugins(args, config, report, iocs, engine)
+        )
 
         if getattr(rules_engine, "rule_packs", None) is not None:
             report.setdefault("meta", {})
@@ -994,6 +1105,52 @@ def run_phase5_correlation_stage(args, report) -> int:
     return 0
 
 
+def _run_report_plugins(args, config, report, engine) -> None:
+    """Collect sections from report plugins into ``report["plugin_report_sections"]``.
+
+    Sections must be JSON-serializable and are bounded per plugin. A failing
+    plugin is skipped with a warning; plugins can extend reports but never
+    break them.
+    """
+    manager = getattr(engine, "plugin_manager", None)
+    if manager is None or not getattr(manager, "reports", None):
+        return
+
+    from .plugins import ReportSection
+
+    context = _plugin_context(config, args)
+    sections = []
+    for plugin in manager.get_reports():
+        try:
+            built = list(plugin.build_sections(report, context))
+        except Exception as exc:
+            if not args.quiet:
+                print(
+                    f"Warning: report plugin {plugin.name} failed: {exc}",
+                    file=sys.stderr,
+                )
+            continue
+        for section in built[:MAX_PLUGIN_SECTIONS]:
+            if not isinstance(section, ReportSection):
+                continue
+            data = section.to_dict()
+            data["plugin"] = str(plugin.name)
+            try:
+                json.dumps(data)
+            except (TypeError, ValueError):
+                if not args.quiet:
+                    print(
+                        f"Warning: report plugin {plugin.name} section "
+                        f"{section.section_id} is not JSON-serializable; dropped",
+                        file=sys.stderr,
+                    )
+                continue
+            sections.append(data)
+    if sections:
+        sections.sort(key=lambda item: (item.get("order", 100), item.get("section_id", "")))
+        report["plugin_report_sections"] = sections
+
+
 def write_outputs_stage(args, config, report, engine, detections, risk_assessment, evidence_result) -> int:
     """Run all exports, contract validation, output, and compute the exit code.
 
@@ -1006,6 +1163,10 @@ def write_outputs_stage(args, config, report, engine, detections, risk_assessmen
     phase5_exit = run_phase5_correlation_stage(args, report)
     if phase5_exit != 0:
         return phase5_exit
+
+    # Report plugins contribute analyst sections; embedded in the JSON report
+    # and rendered into Markdown/HTML case reports.
+    _run_report_plugins(args, config, report, engine)
 
     # Optional forensic attribution summary
     forensics_summary = None
@@ -1332,7 +1493,7 @@ def main():
     report, engine = run_analysis_stage(args, config, data)
     attach_evidence_stage(args, report, evidence_result)
     detections, risk_assessment = run_detections_stage(
-        args, config, report, evidence_result
+        args, config, report, evidence_result, engine=engine
     )
     attach_intelligence_stage(
         args, report, detections, risk_assessment, evidence_result

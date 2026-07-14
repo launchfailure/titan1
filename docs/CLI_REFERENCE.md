@@ -130,6 +130,21 @@ titan-decoder --file sample.bin --graph graph.mmd --graph-format mermaid
 
 When Intelligence is present, all formats include graph-level assessment metadata and ranked-artifact annotations. See [GRAPH_EXPORTS.md](GRAPH_EXPORTS.md).
 
+## Plugins
+
+```bash
+titan-decoder --plugin-validate path/to/plugin
+titan-decoder --plugin-list --plugin-dir examples/plugins
+titan-decoder --file sample.bin --plugin-dir ~/my-plugins --enable-detections
+```
+
+`--plugin-validate` deep-validates a manifest plugin (manifest contract, API
+compatibility, entry point, capabilities, and a bounded runtime probe) and
+exits non-zero on failure; the probe executes plugin code in-process.
+`--plugin-list` prints every discovered plugin, including load errors.
+`--plugin-dir` adds plugin search directories (repeatable) for both
+standalone modes and analysis runs. See [PLUGIN_API.md](PLUGIN_API.md).
+
 ## Diagnostics and discovery
 
 ```bash

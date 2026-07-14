@@ -23,10 +23,11 @@ This roadmap separates shipped features from planned work.
 - Rule-pack hardening: enforced validation, duplicate-ID checks (including built-in impersonation), per-pack limits, fixtures, and a strict `--rules-validate` gate
 - Evidence correlation platform (Milestone 5): cross-case IOC database, relationship scoring, campaign clustering, timeline correlation, infrastructure reuse detection, shared payload detection, attribution hints, analyst views, persisted cross-case fingerprints/events, and `--correlation-search`
 
+- Plugin SDK v1 (Milestone 6): stable public decoder/analyzer/detection/report APIs behind `titan_decoder.plugins.api`, plugin manifest with JSON Schema, semantic version compatibility and dependency constraints, deep validation (`--plugin-validate`), example plugins, and a complete developer guide
+
 ## Highest-value next work
 
-1. Plugin SDK v1: stable public decoder/analyzer/detection/report APIs, plugin manifest and validation, semantic version compatibility, example plugins, and developer documentation.
-2. Analyst Workbench: interactive exploration of reports (timeline explorer, graph viewer, IOC/evidence browsers, decode-tree navigation, search/filter/export, investigation workspace).
+1. Analyst Workbench: interactive exploration of reports (timeline explorer, graph viewer, IOC/evidence browsers, decode-tree navigation, search/filter/export, investigation workspace).
 
 ## Optional local AI assistant
 
