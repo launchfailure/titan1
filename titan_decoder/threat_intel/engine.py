@@ -27,7 +27,20 @@ class ThreatIntelligenceEngine:
         ("T1082", re.compile(r"(?i)\b(?:systeminfo|hostname|wmic\s+os)\b"), "system-discovery"),
         ("T1083", re.compile(r"(?i)\b(?:dir\s+\/s|Get-ChildItem|findstr)\b"), "file-discovery"),
         ("T1562.001", re.compile(r"(?i)\b(?:set-mppreference|disableantispyware|stop-service\s+windefend|sc\s+stop)\b"), "impair-defenses"),
-        ("T1486", re.compile(r"(?i)\b(?:vssadmin\s+delete\s+shadows|wbadmin\s+delete\s+catalog|cipher\s+\/w:)\b"), "impact"),
+        ("T1490", re.compile(r"(?i)\b(?:vssadmin\s+delete\s+shadows|wbadmin\s+delete\s+catalog|wmic\s+shadowcopy\s+delete|bcdedit\b.{0,40}recoveryenabled\s+no)\b"), "inhibit-recovery"),
+        ("T1016", re.compile(r"(?i)\b(?:ipconfig|ifconfig|route\s+print|nltest\s+/domain)"), "network-config-discovery"),
+        ("T1033", re.compile(r"(?i)\bwhoami\b"), "user-discovery"),
+        ("T1036", re.compile(r"(?i)\.(?:pdf|docx?|xlsx?|pptx?|jpe?g|png|gif|txt)\.(?:exe|scr|com|pif|bat|cmd|js|vbs|hta)\b"), "double-extension"),
+        ("T1053.003", re.compile(r"(?i)(?:\bcrontab\b|/etc/cron)"), "cron-schedule"),
+        ("T1057", re.compile(r"(?i)(?:\btasklist\b|\bget-process\b|\bps\s+aux\b)"), "process-discovery"),
+        ("T1059.004", re.compile(r"(?i)(?:/bin/(?:ba)?sh\b|\b(?:ba)?sh\s+-c\s)"), "unix-shell"),
+        ("T1059.006", re.compile(r"(?i)\bpython(?:3(?:\.\d+)?)?(?:\.exe)?\s+-c\s"), "python-inline-exec"),
+        ("T1070.004", re.compile(r"(?i)(?:\bdel\s+/[fqs]\b|\brm\s+-(?:rf|fr)\b|\bsdelete\b|\bremove-item\b.{0,60}-recurse|\bcipher\s+/w:)"), "file-deletion"),
+        ("T1087", re.compile(r"(?i)(?:\bnet\s+(?:user|localgroup)\b|\bget-localuser\b)"), "account-discovery"),
+        ("T1112", re.compile(r"(?i)\breg(?:\.exe)?\s+(?:add|delete)\b"), "registry-modification"),
+        ("T1489", re.compile(r"(?i)(?:\bnet\s+stop\b|\btaskkill\s+/f\b|\bstop-service\b)"), "service-stop"),
+        ("T1543.003", re.compile(r"(?i)(?:\bsc(?:\.exe)?\s+create\b|\bnew-service\b)"), "service-install"),
+        ("T1552.001", re.compile(r"(?i)(?:\bfindstr\s+/si\s+password\b|\bgrep\s+-ri?\s+password\b)"), "credentials-in-files"),
     )
 
     def analyze(

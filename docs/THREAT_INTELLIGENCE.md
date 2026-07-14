@@ -58,6 +58,14 @@ malware-family attribution, which Titan cannot support from content alone.
 
 The ATT&CK catalog ships with the package and is loaded from disk; no network
 access is required or attempted, consistent with Titan's offline-first core.
+The catalog is a curated 48-technique subset of MITRE ATT&CK Enterprise
+focused on what payload analysis can actually evidence — execution,
+defense-evasion, persistence, discovery, credential-access, impact, C2, and
+delivery. It is the allow-list for every reported technique: catalog-integrity
+tests (`tests/test_threat_catalog.py`) assert that IDs are unique and
+well-formed and that every technique referenced by a behavior rule, LOLBin
+rule, or detection `attack_ids` exists in the catalog, so producers and
+catalog cannot drift apart.
 
 ## Tests
 

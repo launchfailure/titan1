@@ -1,6 +1,89 @@
 {
-  "catalog_version": "enterprise-2026.1-titan-subset-r2",
+  "catalog_version": "enterprise-2026.1-titan-subset-r3",
   "techniques": [
+    {
+      "id": "T1003",
+      "name": "OS Credential Dumping",
+      "tactics": [
+        "credential-access"
+      ]
+    },
+    {
+      "id": "T1003.001",
+      "name": "OS Credential Dumping: LSASS Memory",
+      "tactics": [
+        "credential-access"
+      ]
+    },
+    {
+      "id": "T1016",
+      "name": "System Network Configuration Discovery",
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "id": "T1027",
+      "name": "Obfuscated Files or Information",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1033",
+      "name": "System Owner/User Discovery",
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "id": "T1036",
+      "name": "Masquerading",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1047",
+      "name": "Windows Management Instrumentation",
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
+      "id": "T1053.002",
+      "name": "Scheduled Task/Job: At",
+      "tactics": [
+        "execution",
+        "persistence",
+        "privilege-escalation"
+      ]
+    },
+    {
+      "id": "T1053.003",
+      "name": "Scheduled Task/Job: Cron",
+      "tactics": [
+        "execution",
+        "persistence",
+        "privilege-escalation"
+      ]
+    },
+    {
+      "id": "T1053.005",
+      "name": "Scheduled Task/Job: Scheduled Task",
+      "tactics": [
+        "execution",
+        "persistence",
+        "privilege-escalation"
+      ]
+    },
+    {
+      "id": "T1057",
+      "name": "Process Discovery",
+      "tactics": [
+        "discovery"
+      ]
+    },
     {
       "id": "T1059",
       "name": "Command and Scripting Interpreter",
@@ -23,8 +106,22 @@
       ]
     },
     {
+      "id": "T1059.004",
+      "name": "Unix Shell",
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
       "id": "T1059.005",
       "name": "Visual Basic",
+      "tactics": [
+        "execution"
+      ]
+    },
+    {
+      "id": "T1059.006",
+      "name": "Python",
       "tactics": [
         "execution"
       ]
@@ -37,6 +134,41 @@
       ]
     },
     {
+      "id": "T1070.004",
+      "name": "Indicator Removal: File Deletion",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1071",
+      "name": "Application Layer Protocol",
+      "tactics": [
+        "command-and-control"
+      ]
+    },
+    {
+      "id": "T1082",
+      "name": "System Information Discovery",
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "id": "T1083",
+      "name": "File and Directory Discovery",
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
+      "id": "T1087",
+      "name": "Account Discovery",
+      "tactics": [
+        "discovery"
+      ]
+    },
+    {
       "id": "T1105",
       "name": "Ingress Tool Transfer",
       "tactics": [
@@ -44,8 +176,15 @@
       ]
     },
     {
-      "id": "T1027",
-      "name": "Obfuscated Files or Information",
+      "id": "T1112",
+      "name": "Modify Registry",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1127.001",
+      "name": "Trusted Developer Utilities: MSBuild",
       "tactics": [
         "defense-evasion"
       ]
@@ -55,6 +194,20 @@
       "name": "Deobfuscate/Decode Files or Information",
       "tactics": [
         "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1202",
+      "name": "Indirect Command Execution",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1204",
+      "name": "User Execution",
+      "tactics": [
+        "execution"
       ]
     },
     {
@@ -72,8 +225,50 @@
       ]
     },
     {
+      "id": "T1218.001",
+      "name": "Compiled HTML File",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1218.003",
+      "name": "CMSTP",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1218.004",
+      "name": "InstallUtil",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
       "id": "T1218.005",
       "name": "Mshta",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1218.007",
+      "name": "Msiexec",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1218.008",
+      "name": "Odbcconf",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1218.009",
+      "name": "Regsvcs/Regasm",
       "tactics": [
         "defense-evasion"
       ]
@@ -93,24 +288,30 @@
       ]
     },
     {
-      "id": "T1218.007",
-      "name": "Msiexec",
+      "id": "T1486",
+      "name": "Data Encrypted for Impact",
       "tactics": [
-        "defense-evasion"
+        "impact"
       ]
     },
     {
-      "id": "T1218.004",
-      "name": "InstallUtil",
+      "id": "T1489",
+      "name": "Service Stop",
       "tactics": [
-        "defense-evasion"
+        "impact"
       ]
     },
     {
-      "id": "T1053.005",
-      "name": "Scheduled Task/Job: Scheduled Task",
+      "id": "T1490",
+      "name": "Inhibit System Recovery",
       "tactics": [
-        "execution",
+        "impact"
+      ]
+    },
+    {
+      "id": "T1543.003",
+      "name": "Create or Modify System Process: Windows Service",
+      "tactics": [
         "persistence",
         "privilege-escalation"
       ]
@@ -124,31 +325,10 @@
       ]
     },
     {
-      "id": "T1003",
-      "name": "OS Credential Dumping",
+      "id": "T1552.001",
+      "name": "Unsecured Credentials: Credentials In Files",
       "tactics": [
         "credential-access"
-      ]
-    },
-    {
-      "id": "T1082",
-      "name": "System Information Discovery",
-      "tactics": [
-        "discovery"
-      ]
-    },
-    {
-      "id": "T1083",
-      "name": "File and Directory Discovery",
-      "tactics": [
-        "discovery"
-      ]
-    },
-    {
-      "id": "T1047",
-      "name": "Windows Management Instrumentation",
-      "tactics": [
-        "execution"
       ]
     },
     {
@@ -159,10 +339,10 @@
       ]
     },
     {
-      "id": "T1486",
-      "name": "Data Encrypted for Impact",
+      "id": "T1566.001",
+      "name": "Phishing: Spearphishing Attachment",
       "tactics": [
-        "impact"
+        "initial-access"
       ]
     }
   ]

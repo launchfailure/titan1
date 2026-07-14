@@ -69,6 +69,19 @@ DEFAULT_LOLBIN_RULES = (
     LOLBinRule("Schtasks", "schtasks.exe", _exe("schtasks"), ("T1053.005",), ("/create", "/run", "/sc")),
     LOLBinRule("Certutil", "certutil.exe", _exe("certutil"), ("T1105", "T1140"), ("-urlcache", "-decode", "-decodehex")),
     LOLBinRule("Bitsadmin", "bitsadmin.exe", _exe("bitsadmin"), ("T1105",), ("/transfer", "/addfile", "/resume")),
+    LOLBinRule("MSBuild", "msbuild.exe", _exe("msbuild"), ("T1127.001",), (".csproj", ".proj", ".xml", "/p:")),
+    LOLBinRule("CMSTP", "cmstp.exe", _exe("cmstp"), ("T1218.003",), ("/s", "/ns", ".inf")),
+    LOLBinRule("Odbcconf", "odbcconf.exe", _exe("odbcconf"), ("T1218.008",), ("regsvr", "/a", ".dll")),
+    LOLBinRule("Regsvcs", "regsvcs.exe", _exe("regsvcs"), ("T1218.009",), (".dll",)),
+    LOLBinRule("Regasm", "regasm.exe", _exe("regasm"), ("T1218.009",), ("/u", ".dll")),
+    LOLBinRule("Forfiles", "forfiles.exe", _exe("forfiles"), ("T1202",), ("/c", "cmd")),
+    LOLBinRule("Pcalua", "pcalua.exe", _exe("pcalua"), ("T1202",), ("-a",)),
+    # "hh" and "at" are everyday words, so unlike the rules above these two
+    # require the literal ".exe" suffix to avoid firing on ordinary prose
+    # ("hh:mm", "look at the file").
+    LOLBinRule("HTML Help", "hh.exe", re.compile(r"(?i)(?<![A-Za-z0-9_])hh\.exe(?![A-Za-z0-9_])"), ("T1218.001",), ("http://", "https://", ".chm")),
+    LOLBinRule("At", "at.exe", re.compile(r"(?i)(?<![A-Za-z0-9_])at\.exe(?![A-Za-z0-9_])"), ("T1053.002",), ()),
+    LOLBinRule("Crontab", "crontab", _exe("crontab"), ("T1053.003",), ("curl", "wget", "| crontab")),
 )
 
 

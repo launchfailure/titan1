@@ -23,6 +23,22 @@ Threat Intelligence Engine:
   in JSON, DOT, and Mermaid outputs.
 - Ship the ATT&CK catalog subset as package data (wheel and sdist) and
   document the subsystem in `docs/THREAT_INTELLIGENCE.md`.
+- Expand the bundled ATT&CK catalog subset from 23 to 48 techniques
+  (catalog version `enterprise-2026.1-titan-subset-r3`), covering discovery,
+  persistence, impact, defense-evasion, credential-access, and initial-access
+  techniques relevant to payload analysis, and pair the new entries with
+  producers: 14 new behavior rules (masquerading double-extensions, Unix
+  shell / Python inline execution, file deletion, registry modification,
+  service install/stop, recovery inhibition, network/user/process/account
+  discovery, credentials-in-files, cron) and 10 new LOLBin rules (MSBuild,
+  CMSTP, Odbcconf, Regsvcs, Regasm, Forfiles, Pcalua, hh.exe, at.exe,
+  crontab — the last three require unambiguous forms so everyday words like
+  "at" and "hh:mm" cannot fire them). Shadow-copy deletion evidence now
+  correctly maps to T1490 Inhibit System Recovery instead of T1486, and
+  `cipher /w:` moved to T1070.004 File Deletion. New catalog-integrity tests
+  assert IDs are unique and well-formed and that every technique referenced
+  by behavior rules, LOLBin rules, or detection `attack_ids` exists in the
+  catalog.
 - Wire `attack_ids` onto every built-in detection rule (TITAN-001…007) and
   expose them on triggered detections, so fired rules corroborate ATT&CK
   technique findings in the Threat Intelligence assessment. Rule packs can
