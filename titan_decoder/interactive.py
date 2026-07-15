@@ -597,7 +597,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     """Console entry point for the ``titan`` command."""
     # No flags today; accept and ignore argv so `python -m` / wrappers work and
     # there's room to grow (e.g. --no-color) without breaking callers.
-    return InteractiveApp().run()
+    # The enhanced console subclasses InteractiveApp; the base app remains the
+    # stable, tested core the upgrade layers presentation on top of.
+    from .ui.console import EnhancedInteractiveApp
+
+    return EnhancedInteractiveApp().run()
 
 
 if __name__ == "__main__":

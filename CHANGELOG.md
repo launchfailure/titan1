@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+Interactive console upgrade:
+
+- The `titan` command now opens a dashboard-style console
+  (`titan_decoder/ui/`): session/system status panels (profile, network
+  mode, decoder and plugin counts, correlation database state), analysis
+  progress presentation, a concise analysis summary box with elapsed time,
+  a default report-save location (`~/.titan_decoder/reports/`), a
+  read-only Plugin SDK manager view (manifest and single-file plugins with
+  load errors, over the same directory set the engine searches), a saved-
+  reports browser, and expanded settings. Still stdlib-only, line-based
+  numeric navigation, and a pure presentation layer over the engine.
+- `EnhancedInteractiveApp` subclasses the existing `InteractiveApp`, which
+  remains unchanged (and remains the tested core); plugin status on the
+  dashboard is cached per session so menu redraws never re-execute plugin
+  modules.
+
 Plugin SDK v1 (Milestone 6):
 
 - Four plugin SDKs behind the stable `titan_decoder.plugins.api` surface:
