@@ -3,6 +3,7 @@
 ## Users and operators
 
 - [USAGE.md](USAGE.md) — practical walkthroughs.
+- [INTERACTIVE_CONSOLE.md](INTERACTIVE_CONSOLE.md) — the `titan` terminal console.
 - [CLI_REFERENCE.md](CLI_REFERENCE.md) — command groups and examples.
 - [GRAPH_EXPORTS.md](GRAPH_EXPORTS.md) — JSON, DOT, and Mermaid output.
 - [EVIDENCE_AND_PROVENANCE.md](EVIDENCE_AND_PROVENANCE.md) — evidence ingestion and lineage.

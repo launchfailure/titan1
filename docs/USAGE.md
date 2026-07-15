@@ -48,23 +48,28 @@ If you’d rather not memorize flags, just run:
 titan          # or: titan-decoder --interactive   (same thing)
 ```
 
-You get a menu:
+You get a dashboard (session and system status panels) and a menu
+(see [INTERACTIVE_CONSOLE.md](INTERACTIVE_CONSOLE.md) for the full tour):
 
-- **[1] Auto-detect & decode** — paste a payload (or point at a file) and let the
-  full engine recursively decode it and extract IOCs. It prints the decode tree
-  and any indicators found.
-- **[2] Choose a specific decoder** — pick one decoder (Base64, Hex, XOR, ROT13,
+- **[1] Analyze input** — paste a payload (or point at a file) and let the
+  full engine recursively decode it and extract IOCs. It prints a summary
+  box, the decode tree, any indicators found, and offers to save the JSON
+  report (default `~/.titan_decoder/reports/latest.json`).
+- **[2] Decode with one decoder** — pick one decoder (Base64, Hex, XOR, ROT13,
   Gzip, URL, UTF-16, …) and feed it typed text, a hex string, or a file. Good for
   short/simple test strings, which single-decoder mode handles directly.
-- **[3] List available decoders**.
-- **[4] Options** — switch the analysis profile (safe/fast/full), toggle
-  offline/online, and turn on **aggressive auto-detect**.
+- **[3] Decoder catalog** — list available decoders.
+- **[4] Plugin manager** — Plugin SDK status: loaded plugins and load errors.
+- **[5] Reports browser** — reopen recently saved JSON reports.
+- **[6] Settings** — switch the analysis profile (safe/fast/full), toggle
+  offline/online, turn on **aggressive auto-detect**, and set the session
+  reports directory.
 
 After a decode you can **save the output**: single-decoder mode offers to write
 the raw decoded bytes to a file, and auto-detect offers to save the full JSON
 report (the same structure documented below).
 
-**Aggressive auto-detect** (Options → [3]) makes an auto-detect run try harder:
+**Aggressive auto-detect** (Settings → [3]) makes an auto-detect run try harder:
 it enables the opt-in decoders (Base32/UUencode/Quoted-Printable/ASN.1), searches
 deeper, and keeps weaker/shorter decodes. It’s handy for hands-on testing but
 noisier for real triage. It is **session-only** — it never changes the defaults
