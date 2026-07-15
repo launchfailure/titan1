@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pragmaconflux/titan1/schemas/local-ai-analyst-response-v1.0.schema.json",
+  "title": "Titan Local AI Analyst Response v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "question",
+    "answer",
+    "intent",
+    "backend",
+    "model",
+    "evidence_ids",
+    "fallback_used",
+    "validation_errors"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "local-ai-analyst-response-v1.0"
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "answer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "intent": {
+      "enum": [
+        "explain_risk",
+        "powershell_stages",
+        "decode_chain",
+        "ioc_detection",
+        "mitre",
+        "summary",
+        "compare",
+        "next_steps",
+        "general"
+      ]
+    },
+    "backend": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "fallback_used": {
+      "type": "boolean"
+    },
+    "validation_errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

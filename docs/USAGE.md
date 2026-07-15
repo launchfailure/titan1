@@ -30,6 +30,7 @@ Installing gives you **two commands**:
 
 - **`titan`** — the interactive, menu-driven UI (see below). Easiest way in.
 - **`titan-workbench`** — explore completed JSON reports: decode trees, graphs, IOCs, timelines, search, investigation workspaces, exports. See [ANALYST_WORKBENCH.md](ANALYST_WORKBENCH.md).
+- **`titan-analyst`** — ask grounded questions about completed reports ("Why is this High Risk?"); deterministic by default, optional local model backend. See [LOCAL_AI_ANALYST.md](LOCAL_AI_ANALYST.md).
 - **`titan-decoder`** — the scriptable CLI used throughout the rest of this guide.
 
 Run the CLI:
