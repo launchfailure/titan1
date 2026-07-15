@@ -7,7 +7,7 @@ name = "titan-decoder"
 dynamic = ["version"]
 description = "Deterministic payload decoding and analysis engine — recursive decoding, forensic provenance, IOC extraction, detections, and analyst-oriented intelligence"
 readme = "README.md"
-license = "MIT"
+license = "GPL-3.0-or-later"
 requires-python = ">=3.10"
 authors = [
     { name = "PragmaConflux", email = "pragmaconflux@users.noreply.github.com" },

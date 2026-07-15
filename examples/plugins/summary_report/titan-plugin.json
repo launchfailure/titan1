@@ -8,7 +8,7 @@
   "capabilities": ["report"],
   "description": "Example report plugin: contributes a summary section to case reports.",
   "author": "Titan examples",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "permissions": [],
   "dependencies": {}
 }

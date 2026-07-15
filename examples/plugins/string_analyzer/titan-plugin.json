@@ -8,7 +8,7 @@
   "capabilities": ["analyzer"],
   "description": "Example analyzer plugin: extracts printable ASCII strings as an artifact.",
   "author": "Titan examples",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "permissions": [],
   "dependencies": {}
 }

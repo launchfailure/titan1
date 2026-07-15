@@ -8,7 +8,7 @@
   "capabilities": ["detection"],
   "description": "Example detection plugin: flags a synthetic marker string in decoded nodes.",
   "author": "Titan examples",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "permissions": [],
   "dependencies": {}
 }
