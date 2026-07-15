@@ -24,10 +24,11 @@ This roadmap separates shipped features from planned work.
 - Evidence correlation platform (Milestone 5): cross-case IOC database, relationship scoring, campaign clustering, timeline correlation, infrastructure reuse detection, shared payload detection, attribution hints, analyst views, persisted cross-case fingerprints/events, and `--correlation-search`
 
 - Plugin SDK v1 (Milestone 6): stable public decoder/analyzer/detection/report APIs behind `titan_decoder.plugins.api`, plugin manifest with JSON Schema, semantic version compatibility and dependency constraints, deep validation (`--plugin-validate`), example plugins, and a complete developer guide
+- Analyst Workbench (Milestone 7): `titan-workbench` terminal application — report library, decode-tree and interactive graph exploration with node navigation, IOC/detection/timeline/evidence browsers, correlation view, ranked cross-report search, investigation workspaces with notes/tags/status, and CSV/graph/ZIP-bundle exports
 
 ## Highest-value next work
 
-1. Analyst Workbench: interactive exploration of reports (timeline explorer, graph viewer, IOC/evidence browsers, decode-tree navigation, search/filter/export, investigation workspace).
+1. Optional local AI assistant (Milestone 8): grounded entirely in Titan's structured reports, explaining what the deterministic engine already found (see below).
 
 ## Optional local AI assistant
 
