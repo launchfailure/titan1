@@ -292,6 +292,7 @@ See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 | Document | Purpose |
 |---|---|
 | [Documentation index](docs/DOCUMENTATION_INDEX.md) | Complete operator, developer, and maintainer map |
+| [Project charter](docs/PROJECT_CHARTER.md) | Mission, core principles, scope, and governance |
 | [Architecture](docs/ARCHITECTURE.md) | Components, boundaries, and system diagrams |
 | [CLI reference](docs/CLI_REFERENCE.md) | Command groups, outputs, and examples |
 | [Pipelines](docs/PIPELINES.md) | End-to-end execution, decoder engine, and analyzer pipeline |
