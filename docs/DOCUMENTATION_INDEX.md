@@ -26,5 +26,6 @@
 
 ## Maintainers
 
+- [PROJECT_CHARTER.md](PROJECT_CHARTER.md) — mission, core principles, scope, and governance.
 - [ROADMAP.md](ROADMAP.md) — shipped and planned work.
 - [RELEASING.md](RELEASING.md) — release process.
