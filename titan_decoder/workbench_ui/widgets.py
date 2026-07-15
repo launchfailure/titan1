@@ -4,7 +4,6 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import (
     Button,
-    DataTable,
     Input,
     Label,
     OptionList,

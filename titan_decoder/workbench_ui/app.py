@@ -13,7 +13,6 @@ try:
         Footer,
         Header,
         Input,
-        Label,
         OptionList,
         Select,
         Static,
