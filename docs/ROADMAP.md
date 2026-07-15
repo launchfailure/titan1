@@ -25,35 +25,22 @@ This roadmap separates shipped features from planned work.
 
 - Plugin SDK v1 (Milestone 6): stable public decoder/analyzer/detection/report APIs behind `titan_decoder.plugins.api`, plugin manifest with JSON Schema, semantic version compatibility and dependency constraints, deep validation (`--plugin-validate`), example plugins, and a complete developer guide
 - Analyst Workbench (Milestone 7): `titan-workbench` terminal application — report library, decode-tree and interactive graph exploration with node navigation, IOC/detection/timeline/evidence browsers, correlation view, ranked cross-report search, investigation workspaces with notes/tags/status, and CSV/graph/ZIP-bundle exports
+- Local AI Analyst (Milestone 8): `titan-analyst` — report-grounded evidence ledger with stable citations, deterministic question planning, citation-enforced validation, a tested local OpenAI-compatible backend (loopback-only by default), and a deterministic no-model default that doubles as the guaranteed fallback
 
 ## Highest-value next work
 
-1. Optional local AI assistant (Milestone 8): grounded entirely in Titan's structured reports, explaining what the deterministic engine already found (see below).
+The original milestone plan is complete. Future work is driven by usage:
+candidates include additional local model backends behind the existing
+backend interface, workbench/analyst integration, and persisted payload
+fingerprints for pre-v2 correlation databases.
 
-## Optional local AI assistant
+## Local AI assistant (shipped as Milestone 8)
 
-Build this after the deterministic report contract is stable.
-
-Planned capabilities:
-
-- Summarize a completed report
-- Explain nodes, signals, and provenance
-- Draft an analyst handoff
-- Answer questions with node-ID or signal-code references
-- Suggest evidence-backed next steps
-
-Requirements:
-
-- Optional and disabled by default
-- Local/offline first
-- No automatic execution or autonomous network access
-- Clear separation between Titan facts and model inference
-- Bounded input, output, time, and memory
-- Graceful fallback to deterministic output
-- A fully working backend before adding multiple adapters
-
-Potential backends include llama.cpp-compatible local runtimes and OpenAI-compatible local endpoints. ONNX support requires choosing a concrete model and tokenizer contract.
-
-Recommended order:
-
-Stable local-model interface → one tested backend → analyst chat UI.
+The requirements that guided the design — optional and disabled by
+default, local/offline first, no autonomous network access, facts
+separated from model inference, bounded input/output/time, graceful
+deterministic fallback, and one fully working backend before multiple
+adapters — are all implemented; see
+[LOCAL_AI_ANALYST.md](LOCAL_AI_ANALYST.md). Additional backends (e.g.
+ONNX with a concrete model and tokenizer contract) can be added behind
+the existing `AnalystBackend` interface.

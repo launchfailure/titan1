@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+Local AI Analyst (Milestone 8):
+
+- New `titan-analyst` command (`titan_decoder/analyst/`): grounded Q&A
+  over completed Titan reports. An immutable evidence ledger assigns
+  stable, citable IDs to nodes, signals, detections, IOCs, ATT&CK
+  techniques, risk facts, and Phase 5 correlation results (report-ordinal
+  scoping prevents ID collisions across multiple loaded reports;
+  content-hashed IOC IDs stay shared).
+- Deterministic question planner routes the milestone example questions
+  (risk explanation, PowerShell stages, decode chain, IOC→detection,
+  MITRE techniques, summary, cross-case comparison, next steps) and
+  selects a bounded evidence subset — the model never chooses its own
+  evidence.
+- Citation enforcement: every factual bullet must cite real ledger
+  entries; invalid citations or uncited bullets reject the model answer.
+  Backend errors and rejections fall back to the deterministic answer, so
+  model failure never removes analyst output. Versioned response contract
+  (`local-ai-analyst-response-v1.0`) with `fallback_used` and
+  `validation_errors`.
+- One tested backend: OpenAI-compatible local HTTP endpoints (llama.cpp
+  server et al.), loopback-only by default (`--allow-remote-endpoint` is
+  an explicit, warned opt-in), bounded timeout/tokens/response size,
+  temperature 0. The deterministic no-model backend is the default — the
+  AI is optional and off unless explicitly enabled.
+- Prompt-injection containment for untrusted report content is structural
+  (no tools, no network, citation-validated text output) and covered by a
+  regression test.
+
 Analyst Workbench (Milestone 7):
 
 - New `titan-workbench` terminal application
