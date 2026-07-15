@@ -70,7 +70,7 @@ def build_sbom(deterministic: bool = True) -> dict:
             "name": "titan-decoder",
             "version": __version__,
             "description": "Advanced payload decoding and analysis engine",
-            "licenses": [{"license": {"id": "GPL-3.0-or-later"}}],
+            "licenses": [{"license": {"id": "AGPL-3.0-or-later"}}],
             "purl": _purl("titan-decoder", __version__),
         },
         "tools": [{"name": "gen_sbom.py", "vendor": "PragmaConflux"}],

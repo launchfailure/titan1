@@ -89,7 +89,7 @@ structured decoded evidence.
 
 ## Licensing Philosophy
 
-Titan uses the GNU General Public License v3 (GPLv3) — see
+Titan uses the GNU Affero General Public License v3 (AGPLv3) — see
 [LICENSE](../LICENSE).
 
 The choice reflects the project's commitment to:
@@ -98,7 +98,8 @@ The choice reflects the project's commitment to:
 - Community collaboration
 - Auditable software
 - Long-term openness
-- Ensuring distributed improvements remain available under GPL
+- Ensuring distributed improvements remain available under the same
+  license, including when Titan is offered as a network service
 
 ## Governance
 
