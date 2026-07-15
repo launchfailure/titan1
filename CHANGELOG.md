@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+Analyst Workbench (Milestone 7):
+
+- New `titan-workbench` terminal application
+  (`titan_decoder/workbench/`) for exploring completed Titan JSON reports
+  — read-only over the deterministic engine's output, stdlib-only,
+  offline-first. The interface decision (terminal app over local web or
+  desktop) is documented in `docs/ANALYST_WORKBENCH.md`.
+- Report library (single file or directory, bad files skipped non-fatally),
+  report overview, filterable decode-tree explorer, and an interactive
+  graph viewer with per-node drill-down (parent/children lineage, hashes,
+  entropy, scores) and JSON/DOT/Mermaid export via the core graph
+  exporter.
+- IOC, detection (with ATT&CK IDs), timeline, and DFIR evidence browsers,
+  a correlation view (relationships, attribution hints, campaigns), and
+  ranked cross-report search over every scalar field with JSON-path
+  locations.
+- Persistent investigation workspaces (`analyst-workspace-v1.0`, JSON
+  Schema in `schemas/`): per-report tags, notes, and case status plus
+  workspace notes; tolerant loading of newer schema fields; workspaces
+  store report paths and annotations only.
+- Exports: IOC CSV and timeline CSV across loaded reports, active-report
+  graph, and a portable investigation ZIP bundle
+  (`analyst-bundle-v1.0`: workspace + manifest + report copies).
+
 Interactive console upgrade:
 
 - The `titan` command now opens a dashboard-style console
