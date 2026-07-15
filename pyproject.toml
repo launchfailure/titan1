@@ -35,10 +35,14 @@ Issues = "https://github.com/pragmaconflux/titan1/issues"
 titan = "titan_decoder.interactive:main"
 titan-decoder = "titan_decoder.cli:main"
 titan-workbench = "titan_decoder.workbench.app:main"
+titan-workbench-ui = "titan_decoder.workbench_ui.app:main"
 titan-analyst = "titan_decoder.analyst.cli:main"
 
 # Keep these lists in sync with requirements-dev.txt / requirements-optional.txt.
 [project.optional-dependencies]
+workbench-ui = [
+    "textual>=0.89,<2",
+]
 dev = [
     "pytest>=9.1.1",
     "ruff>=0.15.20",
