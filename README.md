@@ -4,7 +4,7 @@
 
 [![Tests](https://github.com/pragmaconflux/titan1/actions/workflows/tests.yml/badge.svg)](https://github.com/pragmaconflux/titan1/actions/workflows/tests.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](pyproject.toml)
-[![License](https://img.shields.io/badge/License-GPLv3-green)](LICENSE)
+[![License](https://img.shields.io/badge/License-AGPLv3-green)](LICENSE)
 
 Titan Decoder Engine is a dependency-light Python framework for analyzing encoded, compressed, archived, and structured payloads. It builds a bounded transformation graph, records provenance for every artifact, extracts indicators, evaluates detections, computes risk, and produces deterministic Intelligence summaries for analysts.
 
@@ -313,4 +313,4 @@ Titan is under active development. The deterministic core, report contracts, and
 
 ## License
 
-GNU General Public License v3.0 or later (GPL-3.0-or-later). See [LICENSE](LICENSE).
+GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later). See [LICENSE](LICENSE).
