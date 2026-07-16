@@ -10,6 +10,9 @@ ruff check .
 mypy titan_decoder
 ```
 
+CI installs `.[workbench-ui]` across the supported Python matrix so the Textual
+application tests are mandatory rather than silently skipped.
+
 ## Test categories
 
 - decoder and analyzer behavior;

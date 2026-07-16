@@ -8,7 +8,7 @@
   "capabilities": ["decoder"],
   "description": "Example decoder plugin: reverses ROT47-obfuscated printable ASCII.",
   "author": "Titan examples",
-  "license": "GPL-3.0-or-later",
+  "license": "AGPL-3.0-or-later",
   "permissions": [],
   "dependencies": {}
 }

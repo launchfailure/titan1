@@ -50,12 +50,12 @@
       "version": "6.0.3"
     },
     {
-      "bom-ref": "component:google-re2",
-      "name": "google-re2",
-      "purl": "pkg:pypi/google-re2@optional",
+      "bom-ref": "component:textual",
+      "name": "textual",
+      "purl": "pkg:pypi/textual@0.89",
       "scope": "optional",
       "type": "library",
-      "version": "optional"
+      "version": "0.89"
     }
   ],
   "metadata": {
@@ -65,7 +65,7 @@
       "licenses": [
         {
           "license": {
-            "id": "GPL-3.0-or-later"
+            "id": "AGPL-3.0-or-later"
           }
         }
       ],

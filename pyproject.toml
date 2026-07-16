@@ -7,7 +7,7 @@ name = "titan-decoder"
 dynamic = ["version"]
 description = "Deterministic payload decoding and analysis engine — recursive decoding, forensic provenance, IOC extraction, detections, and analyst-oriented intelligence"
 readme = "README.md"
-license = "GPL-3.0-or-later"
+license = "AGPL-3.0-or-later"
 requires-python = ">=3.10"
 authors = [
     { name = "PragmaConflux", email = "pragmaconflux@users.noreply.github.com" },
@@ -36,6 +36,7 @@ titan = "titan_decoder.interactive:main"
 titan-decoder = "titan_decoder.cli:main"
 titan-workbench = "titan_decoder.workbench.app:main"
 titan-workbench-ui = "titan_decoder.workbench_ui.app:main"
+titan-ui = "titan_decoder.workbench_ui.app:main"
 titan-analyst = "titan_decoder.analyst.cli:main"
 
 # Keep these lists in sync with requirements-dev.txt / requirements-optional.txt.

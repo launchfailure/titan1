@@ -6,8 +6,8 @@ integrity of the tool itself is part of the product. This emits a minimal but
 valid CycloneDX 1.5 SBOM describing the package and its declared dependencies.
 
 Titan's runtime core is intentionally dependency-free, so the SBOM is small by
-design; optional extras (enrichment) are listed as optional components. The
-committed SBOM (docs/sbom.cdx.json) is regenerated on release.
+design; declared runtime extras are listed as optional components. The committed
+SBOM (docs/sbom.cdx.json) is regenerated on release.
 
 Usage:
     python tools/gen_sbom.py [--out docs/sbom.cdx.json]
@@ -28,7 +28,7 @@ if _ROOT not in sys.path:
 from titan_decoder import __version__  # noqa: E402
 
 # Optional dependencies (extras), declared for transparency. The runtime core
-# has an empty install_requires; these are only needed for enrichment.
+# has an empty install_requires; these are only needed for optional features.
 OPTIONAL_DEPS = [
     ("psutil", ">=7.2.2"),
     ("geoip2", ">=5.2.0"),
@@ -36,7 +36,7 @@ OPTIONAL_DEPS = [
     ("yara-python", ">=4.5.4"),
     ("requests", ">=2.34.2"),
     ("PyYAML", ">=6.0.3"),
-    ("google-re2", "optional"),  # optional linear-time regex for rule packs
+    ("textual", ">=0.89"),
 ]
 
 
@@ -70,7 +70,7 @@ def build_sbom(deterministic: bool = True) -> dict:
             "name": "titan-decoder",
             "version": __version__,
             "description": "Advanced payload decoding and analysis engine",
-            "licenses": [{"license": {"id": "GPL-3.0-or-later"}}],
+            "licenses": [{"license": {"id": "AGPL-3.0-or-later"}}],
             "purl": _purl("titan-decoder", __version__),
         },
         "tools": [{"name": "gen_sbom.py", "vendor": "PragmaConflux"}],

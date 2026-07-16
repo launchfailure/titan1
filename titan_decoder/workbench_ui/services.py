@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 import json
 import os
-import resource
+import re
+import sys
+import tempfile
 import time
 
 from titan_decoder import __version__ as TITAN_VERSION
@@ -14,6 +17,12 @@ from titan_decoder.core.engine import TitanEngine
 from titan_decoder.interactive import build_decoder_registry
 
 from .models import AnalysisSnapshot, WorkbenchState
+
+_resource: Any
+try:  # ``resource`` is unavailable on Windows.
+    import resource as _resource
+except ImportError:  # pragma: no cover - exercised on Windows
+    _resource = None
 
 
 class WorkbenchServices:
@@ -85,6 +94,27 @@ class WorkbenchServices:
             report=report,
         )
 
+    def read_file(self, path: Path) -> bytes:
+        """Read an input file without allocating beyond Titan's configured cap."""
+        limit = int(self.config.get("max_data_size", 50 * 1024 * 1024))
+        with path.open("rb") as handle:
+            data = handle.read(limit + 1)
+        if len(data) > limit:
+            raise ValueError(f"{path} exceeds the {limit}-byte input limit")
+        return data
+
+    @staticmethod
+    def _report_filename(candidate: Path, root: Path, data: bytes) -> str:
+        """Return a bounded, deterministic filename unique to path and content."""
+        relative = candidate.relative_to(root).as_posix()
+        label = re.sub(r"[^A-Za-z0-9._-]+", "_", relative).strip("._")
+        label = (label or "artifact")[:120]
+        identity = sha256(
+            relative.encode("utf-8", errors="surrogateescape")
+            + b"\0"
+            + sha256(data).digest()
+        ).hexdigest()[:16]
+        return f"{label}.{identity}.json"
 
     def analyze_path(self, path: Path) -> AnalysisSnapshot:
         """Analyze one file or a directory queue, saving one report per file.
@@ -93,7 +123,13 @@ class WorkbenchServices:
         and records non-fatal failures in the returned snapshot.
         """
         path = path.expanduser()
-        candidates = [path] if path.is_file() else sorted(p for p in path.rglob("*") if p.is_file())
+        is_single_file = path.is_file()
+        root = path.parent if is_single_file else path
+        candidates = (
+            [path]
+            if is_single_file
+            else sorted(p for p in path.rglob("*") if p.is_file())
+        )
         if not candidates:
             raise ValueError(f"No files found at {path}")
         latest: AnalysisSnapshot | None = None
@@ -101,8 +137,10 @@ class WorkbenchServices:
         succeeded = 0
         for candidate in candidates:
             try:
-                latest = self.analyze(candidate.read_bytes(), candidate.name)
-                safe_name = candidate.name.replace("/", "_") + ".json"
+                data = self.read_file(candidate)
+                source_name = candidate.relative_to(root).as_posix()
+                latest = self.analyze(data, source_name)
+                safe_name = self._report_filename(candidate, root, data)
                 self.save_report(latest, self.state.reports_dir / safe_name)
                 succeeded += 1
             except Exception as exc:
@@ -157,11 +195,31 @@ class WorkbenchServices:
     def save_report(self, snapshot: AnalysisSnapshot, destination: Path | None = None) -> Path:
         path = destination or self.state.reports_dir / "latest.json"
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(snapshot.report, indent=2), encoding="utf-8")
+        payload = json.dumps(snapshot.report, indent=2)
+        temporary: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                "w",
+                encoding="utf-8",
+                dir=path.parent,
+                prefix=f".{path.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as handle:
+                temporary = Path(handle.name)
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, path)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
         return path
 
     def load_report(self, path: Path) -> AnalysisSnapshot:
         report = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(report, dict):
+            raise ValueError("Titan report must be a JSON object")
         return AnalysisSnapshot(
             source_name=path.name,
             source_size=path.stat().st_size,
@@ -194,12 +252,13 @@ class WorkbenchServices:
             cpu = f"{load:.2f} load"
         except (AttributeError, OSError):
             pass
-        try:
-            usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-            memory_mb = usage / 1024
-            memory = f"{memory_mb:.0f} MB"
-        except Exception:
-            pass
+        if _resource is not None:
+            try:
+                usage = _resource.getrusage(_resource.RUSAGE_SELF).ru_maxrss
+                divisor = 1024 * 1024 if sys.platform == "darwin" else 1024
+                memory = f"{usage / divisor:.0f} MB"
+            except Exception:
+                pass
         return {
             "cpu": cpu,
             "memory": memory,

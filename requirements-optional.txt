@@ -1,7 +1,8 @@
-# Optional dependencies for enrichment and advanced features
+# Optional dependencies for enrichment and advanced interfaces
 psutil>=7.2.2
 geoip2>=5.2.0
 python-whois>=0.9.6
 yara-python>=4.5.4
 requests>=2.34.2
 PyYAML>=6.0.3
+textual>=0.89,<2
