@@ -28,6 +28,9 @@ def test_sbom_is_valid_cyclonedx():
     for comp in sbom["components"]:
         assert comp["type"] == "library"
         assert comp["name"] and comp["purl"].startswith("pkg:pypi/")
+    component_names = {component["name"].lower() for component in sbom["components"]}
+    assert "textual" in component_names
+    assert "google-re2" not in component_names
 
 
 def test_sbom_is_deterministic():

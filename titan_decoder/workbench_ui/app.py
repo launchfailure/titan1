@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from pathlib import Path
 import binascii
+from hashlib import sha256
+from pathlib import Path
 
 try:
     from textual import on, work
     from textual.app import App, ComposeResult
     from textual.binding import Binding
-    from textual.containers import Horizontal, Vertical
+    from textual.containers import Horizontal, Vertical, VerticalScroll
+    from textual.events import Resize
     from textual.widgets import (
         Button,
-        Footer,
-        Header,
         Input,
         OptionList,
         Select,
@@ -26,6 +26,7 @@ except ImportError as exc:  # pragma: no cover
     ) from exc
 
 from .models import AnalysisSnapshot
+from .presenters import markup_escape
 from .services import WorkbenchServices
 from .widgets import (
     DecoderDetailsPanel,
@@ -36,6 +37,8 @@ from .widgets import (
     SettingsPanel,
     AnalystPanel,
     StatusCards,
+    WorkbenchHeader,
+    WorkbenchStatusBar,
 )
 
 
@@ -53,24 +56,88 @@ class TitanWorkbenchApp(App):
         "correlation",
         "timeline",
         "analyst",
+        "help",
     )
 
     CSS = """
     Screen {
-        background: #050b12;
-        color: #d9e5ee;
+        background: #030912;
+        color: #d7e3ed;
     }
 
-    Header {
-        background: #08121c;
-        color: #d9e5ee;
+    #workbench-header {
+        height: 4;
+        background: #06101a;
         border-bottom: solid #173346;
+        padding: 0 1;
     }
 
-    Footer {
-        background: #08121c;
-        color: #a9beca;
+    #workbench-title {
+        width: 1fr;
+        height: 3;
+        content-align: left middle;
+        color: #e7f1f7;
+    }
+
+    #header-status {
+        width: auto;
+        height: 3;
+        align: center middle;
+    }
+
+    .status-chip {
+        width: auto;
+        height: 3;
+        padding: 0 1;
+        margin-right: 1;
+        content-align: center middle;
+        background: #08131f;
+    }
+
+    .profile-chip {
+        color: #77df92;
+        border: solid #214b34;
+    }
+
+    .network-chip {
+        color: #7ecfff;
+        border: solid #1b4059;
+    }
+
+    .aggressive-chip {
+        color: #f0ca70;
+        border: solid #4f421d;
+    }
+
+    #session-clock {
+        width: 30;
+        height: 3;
+        content-align: right middle;
+        color: #9cb1bf;
+    }
+
+    #workbench-status-bar {
+        height: 2;
+        padding: 0 1;
+        background: #06101a;
+        color: #9fb3c0;
         border-top: solid #173346;
+    }
+
+    #footer-state {
+        width: 16;
+        height: 1;
+    }
+
+    #footer-working-directory {
+        width: 1fr;
+        height: 1;
+    }
+
+    #footer-mode {
+        width: auto;
+        height: 1;
+        text-align: right;
     }
 
     #application-body {
@@ -78,34 +145,63 @@ class TitanWorkbenchApp(App):
     }
 
     #left-column {
-        width: 30;
-        min-width: 26;
+        width: 27;
+        min-width: 24;
         height: 1fr;
-        padding: 1;
-        background: #07111a;
+        padding: 0 1;
+        background: #050e17;
         border-right: solid #173346;
     }
 
     #center-column {
         width: 1fr;
         height: 1fr;
-        padding: 1;
-        background: #050b12;
+        padding: 0 1;
+        background: #030912;
     }
 
     #right-column {
         width: 42;
-        min-width: 34;
+        min-width: 36;
         height: 1fr;
-        padding: 1;
-        background: #07111a;
+        padding: 0 1;
+        background: #050e17;
         border-left: solid #173346;
+    }
+
+    Screen.compact-layout #left-column {
+        width: 23;
+        min-width: 23;
+    }
+
+    Screen.compact-layout #right-column {
+        width: 34;
+        min-width: 34;
+    }
+
+    Screen.compact-layout #quick-start {
+        width: 28;
+    }
+
+    Screen.compact-layout #session-clock {
+        display: none;
     }
 
     .panel-heading {
         color: #30bfff;
         text-style: bold;
-        margin-bottom: 1;
+        height: 1;
+    }
+
+    .subsection-heading {
+        height: 1;
+        padding: 0 1;
+        color: #d7e3ed;
+        text-style: bold;
+    }
+
+    #navigation-panel {
+        height: 1fr;
     }
 
     .shortcuts-heading {
@@ -113,35 +209,56 @@ class TitanWorkbenchApp(App):
     }
 
     #navigation-list {
-        height: 20;
+        height: 18;
+        min-height: 12;
         border: round #173346;
-        background: #08121c;
+        background: #07121e;
     }
 
     OptionList > .option-list--option-highlighted {
-        background: #0e3a58;
+        background: #0b3a5a;
         color: #ffffff;
+        text-style: bold;
     }
 
     .shortcut-list {
-        height: auto;
+        height: 8;
         border: round #173346;
-        background: #08121c;
-        padding: 1 2;
+        background: #07121e;
+        padding: 0 1;
         color: #a9beca;
     }
 
+    #navigation-spacer {
+        height: 1fr;
+    }
+
     .brand-card {
-        height: auto;
+        height: 5;
         border: round #173346;
-        background: #08121c;
-        padding: 1 2;
+        background: #07121e;
+        padding: 0 1;
         margin-top: 1;
         color: #79d4ff;
     }
 
+    InvestigationPanel,
+    ResultsPanel,
+    DecoderPanel,
+    DecoderDetailsPanel {
+        border: round #173346;
+        background: #06101a;
+        padding: 0 1;
+    }
+
+    InvestigationPanel {
+        height: 15;
+        min-height: 15;
+        margin-bottom: 1;
+    }
+
     #input-row {
-        height: auto;
+        height: 3;
     }
 
     #evidence-input {
@@ -149,42 +266,52 @@ class TitanWorkbenchApp(App):
     }
 
     #analyze-button {
-        width: 16;
+        width: 12;
         margin-left: 1;
     }
 
+    #investigation-body {
+        height: 9;
+    }
+
     #drop-zone {
-        height: 12;
+        width: 1fr;
+        height: 9;
         content-align: center middle;
         text-align: center;
         border: dashed #36586d;
-        background: #08121c;
+        background: #07121e;
         color: #dce9f1;
-        margin-top: 1;
         padding: 1;
     }
 
     #quick-start {
-        height: auto;
-        margin-top: 1;
+        width: 32;
+        height: 9;
+        margin-left: 1;
+        border: solid #173346;
+        background: #07121e;
     }
 
-    #quick-start Button {
-        width: 1fr;
-        margin-right: 1;
+    #quick-start-list {
+        height: 1fr;
+        background: #07121e;
+        border-top: solid #173346;
     }
 
-    #status-cards {
-        height: 11;
-        margin-top: 1;
+    StatusCards {
+        height: 7;
+        min-height: 7;
+        margin-bottom: 1;
     }
 
     .metric-card {
-        width: 1fr;
-        height: 10;
-        padding: 1 2;
+        width: 24%;
+        min-width: 22;
+        height: 7;
+        padding: 0 1;
         margin-right: 1;
-        background: #08121c;
+        background: #07121e;
     }
 
     .violet-card { border: round #8b5cf6; color: #d6c5ff; }
@@ -192,17 +319,22 @@ class TitanWorkbenchApp(App):
     .green-card { border: round #24a65a; color: #bdf7cb; }
     .yellow-card { border: round #d39d12; color: #ffeca7; }
 
+    ResultsPanel {
+        height: 1fr;
+        min-height: 22;
+    }
+
     #results-body {
         height: 1fr;
     }
 
     #artifact-card {
-        width: 28;
-        min-width: 22;
+        width: 24;
+        min-width: 19;
         height: 1fr;
         border: round #173346;
-        background: #08121c;
-        padding: 1 2;
+        background: #07121e;
+        padding: 1;
         margin-right: 1;
     }
 
@@ -210,11 +342,11 @@ class TitanWorkbenchApp(App):
         width: 1fr;
         height: 1fr;
         border: round #173346;
-        background: #08121c;
+        background: #07121e;
     }
 
     Tabs {
-        background: #08121c;
+        background: #07121e;
         color: #9db6c5;
     }
 
@@ -225,83 +357,105 @@ class TitanWorkbenchApp(App):
 
     .tab-columns {
         height: 1fr;
-        padding: 1;
+        padding: 0;
     }
 
     .result-card {
         width: 1fr;
         border: round #173346;
-        padding: 1 2;
+        padding: 1;
         margin-right: 1;
-        background: #091722;
+        background: #081722;
     }
 
     .scroll-result {
         height: 1fr;
         overflow-y: auto;
-        padding: 1 2;
+        padding: 1;
+    }
+
+    DecoderPanel {
+        height: 1fr;
+        min-height: 22;
+        margin-bottom: 1;
+    }
+
+    #decoder-toolbar {
+        height: 3;
     }
 
     #decoder-search {
-        margin-bottom: 1;
+        width: 1fr;
     }
 
     .count-label {
+        width: 13;
+        height: 3;
         color: #42c8ff;
         text-align: right;
-        margin-bottom: 1;
+        content-align: right middle;
     }
 
     #decoder-list {
-        height: 24;
+        height: 1fr;
         border: round #173346;
-        background: #08121c;
+        background: #07121e;
+    }
+
+    DecoderDetailsPanel {
+        height: 23;
+        min-height: 23;
     }
 
     #decoder-description {
-        border: round #173346;
-        background: #08121c;
-        padding: 1 2;
+        height: auto;
+        min-height: 3;
+        border-bottom: solid #173346;
+        padding: 0 1;
     }
 
     .detail-heading {
         color: #42c8ff;
         text-style: bold;
-        margin-top: 1;
+        height: 1;
     }
 
     .detail-box {
+        height: 2;
         border-bottom: solid #173346;
-        padding: 1 0;
+        padding: 0 1;
         color: #b8cad5;
     }
 
     #decoder-output {
-        height: 10;
+        height: 5;
         overflow-y: auto;
         border-bottom: solid #173346;
-        padding: 1 0;
+        padding: 0 1;
     }
 
     #decoder-status {
         color: #73e28a;
-        padding: 1 0;
+        height: 1;
+        padding: 0 1;
     }
 
     #decoder-actions {
-        height: auto;
-        margin-top: 1;
+        height: 3;
     }
 
     #decoder-actions Button {
         width: 1fr;
+    }
+
+    #save-output {
         margin-right: 1;
     }
 
     #settings-view {
         border: round #173346;
-        background: #08121c;
-        padding: 1 2;
+        background: #07121e;
+        padding: 1;
     }
 
     .settings-note {
@@ -311,9 +465,10 @@ class TitanWorkbenchApp(App):
 
     .placeholder-view {
         border: round #173346;
-        background: #08121c;
-        padding: 2;
+        background: #06101a;
+        padding: 1;
         height: 1fr;
+        min-height: 22;
     }
     """
 
@@ -327,6 +482,7 @@ class TitanWorkbenchApp(App):
         Binding("i", "show_analyst", "AI Analyst"),
         Binding("p", "show_plugins", "Plugins"),
         Binding("s", "show_settings", "Settings"),
+        Binding("question_mark", "show_help", "Help"),
         Binding("q", "quit", "Quit"),
     ]
 
@@ -336,13 +492,19 @@ class TitanWorkbenchApp(App):
         self.snapshot = AnalysisSnapshot()
         self.selected_decoder = 0
         self.input_mode = "auto"
+        session_seed = f"{Path.cwd()}:{id(self)}".encode("utf-8")
+        self.session_id = sha256(session_seed).hexdigest()[:8]
 
     def compose(self) -> ComposeResult:
-        yield Header(show_clock=True)
+        yield WorkbenchHeader(
+            self.services.state,
+            version=self.services.engine_version(),
+            session_id=self.session_id,
+        )
         with Horizontal(id="application-body"):
             with Vertical(id="left-column"):
                 yield NavigationPanel()
-            with Vertical(id="center-column"):
+            with VerticalScroll(id="center-column"):
                 yield InvestigationPanel()
                 plugins, errors = self.services.plugin_status()
                 yield StatusCards(
@@ -355,40 +517,56 @@ class TitanWorkbenchApp(App):
                     metrics=self.services.system_metrics(),
                 )
                 yield ResultsPanel(self.snapshot)
-            with Vertical(id="right-column"):
+            with VerticalScroll(id="right-column"):
                 yield DecoderPanel(self.services.decoder_rows())
                 label, description = self.services.decoder_details(self.selected_decoder)
                 yield DecoderDetailsPanel(label, description, self.snapshot)
-        yield Footer()
+        yield WorkbenchStatusBar(self.services.state)
 
-    def _replace_widget(self, selector: str, widget) -> None:
-        current = self.query_one(selector)
-        current.remove()
-        if selector == "ResultsPanel":
-            self.query_one("#center-column").mount(widget)
-        elif selector == "DecoderDetailsPanel":
-            self.query_one("#right-column").mount(widget)
+    def on_resize(self, event: Resize) -> None:
+        self.screen.set_class(event.size.width < 145, "compact-layout")
 
-    def refresh_results(self) -> None:
-        self.query_one("#dynamic-view").remove()
-        self.query_one("#center-column").mount(ResultsPanel(self.snapshot))
+    async def _replace_dynamic_view(self, widget) -> None:
+        current = self.query_one("#dynamic-view")
+        await current.remove()
+        await self.query_one("#center-column").mount(widget)
 
-    def refresh_decoder_details(self) -> None:
-        self.query_one(DecoderDetailsPanel).remove()
+    async def refresh_results(self) -> None:
+        await self._replace_dynamic_view(ResultsPanel(self.snapshot))
+
+    async def refresh_decoder_details(self) -> None:
+        current = self.query_one(DecoderDetailsPanel)
+        await current.remove()
         label, description = self.services.decoder_details(self.selected_decoder)
-        self.query_one("#right-column").mount(
+        await self.query_one("#right-column").mount(
             DecoderDetailsPanel(label, description, self.snapshot)
         )
 
-    def _read_input(self) -> tuple[bytes, str]:
-        raw = self.query_one("#evidence-input", Input).value.strip()
+    @staticmethod
+    def _existing_input_path(raw: str) -> tuple[Path, bool] | None:
+        """Resolve real file/folder inputs without rejecting long pasted payloads."""
+        candidate = Path(raw.strip("'\"")).expanduser()
+        try:
+            if candidate.is_file():
+                return candidate, False
+            if candidate.is_dir():
+                return candidate, True
+        except (OSError, ValueError):
+            return None
+        return None
+
+    def _read_input(self, raw: str | None = None) -> tuple[bytes, str]:
+        if raw is None:
+            raw = self.query_one("#evidence-input", Input).value
+        raw = raw.strip()
         if not raw:
             raise ValueError("Enter text, hex, or a file path first.")
-        path = Path(raw.strip("'\"")).expanduser()
-        if path.exists() and path.is_file():
-            return path.read_bytes(), path.name
-        if path.exists() and path.is_dir():
-            raise IsADirectoryError(str(path))
+        resolved = self._existing_input_path(raw)
+        if resolved is not None:
+            path, is_directory = resolved
+            if is_directory:
+                raise IsADirectoryError(str(path))
+            return self.services.read_file(path), path.name
         if self.input_mode == "hex":
             cleaned = raw.replace(" ", "").replace("\n", "")
             return binascii.unhexlify(cleaned), "hex input"
@@ -405,28 +583,38 @@ class TitanWorkbenchApp(App):
     @work(thread=True, exclusive=True)
     def start_analysis(self) -> None:
         try:
-            raw = self.call_from_thread(lambda: self.query_one("#evidence-input", Input).value.strip())
-            candidate = Path(raw.strip("'\"")).expanduser() if raw else Path("__missing__")
-            if raw and candidate.exists() and candidate.is_dir():
-                snapshot = self.services.analyze_path(candidate)
+            raw = self.call_from_thread(
+                lambda: self.query_one("#evidence-input", Input).value.strip()
+            )
+            resolved = self._existing_input_path(raw) if raw else None
+            if resolved is not None and resolved[1]:
+                snapshot = self.services.analyze_path(resolved[0])
             else:
-                data, source_name = self.call_from_thread(self._read_input)
+                data, source_name = self._read_input(raw)
                 snapshot = self.services.analyze(data, source_name)
         except Exception as exc:
-            self.call_from_thread(self.notify, str(exc), severity="error")
+            self.call_from_thread(
+                self.notify, markup_escape(exc), severity="error"
+            )
             return
         self.snapshot = snapshot
-        self.call_from_thread(self.refresh_results)
-        self.call_from_thread(self.refresh_decoder_details)
-        message = f"Analysis complete ({snapshot.batch_succeeded}/{snapshot.batch_total} files)" if snapshot.batch_total > 1 else "Analysis complete"
+        # Textual 1.0 types an unused async callback as Awaitable[Never], even
+        # though call_from_thread awaits it and returns None at runtime.
+        self.call_from_thread(self.refresh_results)  # type: ignore[arg-type]
+        self.call_from_thread(self.refresh_decoder_details)  # type: ignore[arg-type]
+        message = (
+            f"Analysis complete ({snapshot.batch_succeeded}/{snapshot.batch_total} files)"
+            if snapshot.batch_total > 1
+            else "Analysis complete"
+        )
         if snapshot.batch_errors:
             message += f"; {len(snapshot.batch_errors)} failed"
         self.call_from_thread(self.notify, message, severity="information")
 
     @on(OptionList.OptionSelected, "#decoder-list")
-    def decoder_selected(self, event: OptionList.OptionSelected) -> None:
+    async def decoder_selected(self, event: OptionList.OptionSelected) -> None:
         self.selected_decoder = int(event.option.id or "0")
-        self.refresh_decoder_details()
+        await self.refresh_decoder_details()
 
     @on(Input.Changed, "#decoder-search")
     def decoder_search_changed(self, event: Input.Changed) -> None:
@@ -436,7 +624,13 @@ class TitanWorkbenchApp(App):
         rows = self.services.decoder_rows()
         for index, label, description in rows:
             if not needle or needle in label.lower() or needle in description.lower():
-                option_list.add_option(Option(f"{index + 1:02d}  {label}", id=str(index)))
+                option_list.add_option(
+                    Option(
+                        f"{index + 1:02d}  {markup_escape(label)}  "
+                        "[#36d277]●[/#36d277]",
+                        id=str(index),
+                    )
+                )
 
     @on(Button.Pressed, "#run-decoder")
     def run_decoder_pressed(self) -> None:
@@ -445,14 +639,19 @@ class TitanWorkbenchApp(App):
     @work(thread=True, exclusive=True)
     def start_decoder(self) -> None:
         try:
-            data, source_name = self.call_from_thread(self._read_input)
+            raw = self.call_from_thread(
+                lambda: self.query_one("#evidence-input", Input).value.strip()
+            )
+            data, source_name = self._read_input(raw)
             snapshot = self.services.run_decoder(self.selected_decoder, data, source_name)
         except Exception as exc:
-            self.call_from_thread(self.notify, str(exc), severity="error")
+            self.call_from_thread(
+                self.notify, markup_escape(exc), severity="error"
+            )
             return
         self.snapshot = snapshot
-        self.call_from_thread(self.refresh_results)
-        self.call_from_thread(self.refresh_decoder_details)
+        self.call_from_thread(self.refresh_results)  # type: ignore[arg-type]
+        self.call_from_thread(self.refresh_decoder_details)  # type: ignore[arg-type]
         self.call_from_thread(self.notify, "Decoder finished", severity="information")
 
     @on(Button.Pressed, "#save-output")
@@ -460,30 +659,38 @@ class TitanWorkbenchApp(App):
         if not self.snapshot.decoded_output:
             self.notify("No decoded output to save.", severity="warning")
             return
-        destination = Path.cwd() / "titan-decoded-output.bin"
-        destination.write_bytes(self.snapshot.decoded_output)
-        self.notify(f"Saved {destination}", severity="information")
+        digest = sha256(self.snapshot.decoded_output).hexdigest()[:12]
+        destination = Path.cwd() / f"titan-decoded-output-{digest}.bin"
+        try:
+            with destination.open("xb") as handle:
+                handle.write(self.snapshot.decoded_output)
+        except FileExistsError:
+            self.notify(
+                f"Output already exists: {markup_escape(destination)}",
+                severity="information",
+            )
+            return
+        except OSError as exc:
+            self.notify(markup_escape(exc), severity="error")
+            return
+        self.notify(f"Saved {markup_escape(destination)}", severity="information")
 
-    @on(Button.Pressed, "#paste-action")
     def paste_mode(self) -> None:
         self.input_mode = "auto"
         self.query_one("#evidence-input", Input).focus()
 
-    @on(Button.Pressed, "#hex-action")
     def hex_mode(self) -> None:
         self.input_mode = "hex"
         self.query_one("#evidence-input", Input).focus()
         self.notify("Hex input mode enabled.", severity="information")
 
-    @on(Button.Pressed, "#file-action")
     def file_mode(self) -> None:
         self.input_mode = "auto"
         field = self.query_one("#evidence-input", Input)
         field.placeholder = "/path/to/evidence.bin"
         field.focus()
 
-    @on(Button.Pressed, "#report-action")
-    def load_report_pressed(self) -> None:
+    async def load_latest_report(self) -> None:
         reports = self.services.reports()
         if not reports:
             self.notify("No reports found.", severity="warning")
@@ -491,19 +698,33 @@ class TitanWorkbenchApp(App):
         try:
             self.snapshot = self.services.load_report(reports[0])
         except Exception as exc:
-            self.notify(str(exc), severity="error")
+            self.notify(markup_escape(exc), severity="error")
             return
-        self.refresh_results()
-        self.refresh_decoder_details()
-        self.notify(f"Loaded {reports[0].name}", severity="information")
+        await self.refresh_results()
+        await self.refresh_decoder_details()
+        self.notify(
+            f"Loaded {markup_escape(reports[0].name)}", severity="information"
+        )
+
+    @on(OptionList.OptionSelected, "#quick-start-list")
+    async def quick_start_selected(self, event: OptionList.OptionSelected) -> None:
+        action = event.option.id or "paste"
+        if action == "paste":
+            self.paste_mode()
+        elif action == "hex":
+            self.hex_mode()
+        elif action == "file":
+            self.file_mode()
+        elif action == "report":
+            await self.load_latest_report()
 
     @on(OptionList.OptionSelected, "#navigation-list")
     async def navigation_selected(self, event: OptionList.OptionSelected) -> None:
         route = event.option.id or "dashboard"
         if route == "dashboard":
-            self.action_show_dashboard()
+            await self.action_show_dashboard()
         elif route == "investigation":
-            self.action_focus_evidence()
+            await self.action_focus_evidence()
         elif route == "decoders":
             self.action_focus_decoders()
         elif route == "reports":
@@ -518,11 +739,17 @@ class TitanWorkbenchApp(App):
             await self.action_show_timeline()
         elif route == "analyst":
             await self.action_show_analyst()
+        elif route == "help":
+            await self.action_show_help()
 
-    def action_show_dashboard(self) -> None:
+    async def action_show_dashboard(self) -> None:
+        if not isinstance(self.query_one("#dynamic-view"), ResultsPanel):
+            await self.refresh_results()
         self.query_one("#evidence-input", Input).focus()
 
-    def action_focus_evidence(self) -> None:
+    async def action_focus_evidence(self) -> None:
+        if not isinstance(self.query_one("#dynamic-view"), ResultsPanel):
+            await self.refresh_results()
         self.query_one("#evidence-input", Input).focus()
 
     def action_focus_decoders(self) -> None:
@@ -531,7 +758,7 @@ class TitanWorkbenchApp(App):
     async def action_show_reports(self) -> None:
         reports = self.services.reports()
         lines = ["[b]REPORTS & EVIDENCE[/b]", ""]
-        lines.extend(f"• {path.name}" for path in reports[:50])
+        lines.extend(f"• {markup_escape(path.name)}" for path in reports[:50])
         if not reports:
             lines.append("No reports found.")
         await self._show_center_overlay("\n".join(lines))
@@ -563,15 +790,25 @@ class TitanWorkbenchApp(App):
     async def action_show_analyst(self) -> None:
         await self._show_center_overlay_widget(AnalystPanel())
 
+    async def action_show_help(self) -> None:
+        await self._show_center_overlay(
+            "[b]HELP & KEYBOARD COMMANDS[/b]\n\n"
+            "H  Dashboard          A  Focus evidence input\n"
+            "D  Decoder list       R  Reports browser\n"
+            "C  Correlation        T  Timeline\n"
+            "I  Local analyst      P  Plugins\n"
+            "S  Settings           Q  Quit\n\n"
+            "Every long list and result view can be scrolled with the mouse wheel, "
+            "arrow keys, Page Up, and Page Down. Press Tab to move between controls."
+        )
+
     async def _show_center_overlay(self, text: str) -> None:
         await self._show_center_overlay_widget(
             Static(text, id="dynamic-view", classes="placeholder-view")
         )
 
     async def _show_center_overlay_widget(self, widget) -> None:
-        current = self.query_one("#dynamic-view")
-        await current.remove()
-        await self.query_one("#center-column").mount(widget)
+        await self._replace_dynamic_view(widget)
 
     @on(Button.Pressed, "#ask-analyst")
     def ask_analyst_pressed(self) -> None:
@@ -582,12 +819,13 @@ class TitanWorkbenchApp(App):
         try:
             response = self.services.analyst_answer(self.snapshot, question)
         except Exception as exc:
-            self.notify(str(exc), severity="error")
+            self.notify(markup_escape(exc), severity="error")
             return
-        answer = response.get("answer", "")
+        answer = markup_escape(response.get("answer", ""))
         meta = (
-            f"\n\nbackend={response.get('backend')} · intent={response.get('intent')} "
-            f"· fallback={response.get('fallback_used')}"
+            f"\n\nbackend={markup_escape(response.get('backend'))} "
+            f"· intent={markup_escape(response.get('intent'))} "
+            f"· fallback={markup_escape(response.get('fallback_used'))}"
         )
         self.query_one("#analyst-answer", Static).update(answer + meta)
 
@@ -595,15 +833,24 @@ class TitanWorkbenchApp(App):
     def profile_changed(self, event: Select.Changed) -> None:
         if event.value:
             self.services.update_state(profile=str(event.value))
+            self.refresh_shell_status()
             self.notify(f"Profile: {event.value}", severity="information")
 
     @on(Switch.Changed, "#offline-switch")
     def offline_changed(self, event: Switch.Changed) -> None:
         self.services.update_state(offline=event.value)
+        self.refresh_shell_status()
 
     @on(Switch.Changed, "#aggressive-switch")
     def aggressive_changed(self, event: Switch.Changed) -> None:
         self.services.update_state(aggressive=event.value)
+        self.refresh_shell_status()
+
+    def refresh_shell_status(self) -> None:
+        state = self.services.state
+        self.query_one(WorkbenchHeader).refresh_state(state)
+        self.query_one(WorkbenchStatusBar).refresh_state(state)
+        self.query_one(StatusCards).refresh_state(state)
 
 
 def main() -> int:

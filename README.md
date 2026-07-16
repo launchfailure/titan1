@@ -90,6 +90,12 @@ Titan requires Python 3.10 or newer.
 pip install "git+https://github.com/pragmaconflux/titan1.git"
 ```
 
+Install the integrated Textual workbench and its optional dependency with:
+
+```bash
+pip install "titan-decoder[workbench-ui] @ git+https://github.com/pragmaconflux/titan1.git"
+```
+
 ### Editable developer install
 
 ```bash
@@ -97,7 +103,7 @@ git clone https://github.com/pragmaconflux/titan1.git
 cd titan1
 python -m venv .venv
 source .venv/bin/activate
-pip install -e '.[dev]'
+pip install -e '.[dev,workbench-ui]'
 ```
 
 On Debian-derived systems, use a virtual environment rather than installing into the externally managed system Python.
@@ -106,12 +112,24 @@ The install provides:
 
 - `titan` — interactive menu-driven interface
 - `titan-decoder` — scriptable CLI
+- `titan-workbench` — dependency-free report explorer
+- `titan-workbench-ui` — integrated Textual forensic workbench (optional extra)
+- `titan-ui` — short alias for the integrated Textual forensic workbench
+- `titan-analyst` — grounded local analyst
 
 ## Quick start
 
 ```bash
 titan-decoder --file suspicious.bin --out report.json
 ```
+
+Launch the integrated forensic workbench after installing its extra:
+
+```bash
+titan-ui
+```
+
+`titan-workbench-ui` remains available as the longer, backwards-compatible name.
 
 Add detections, risk, a readable explanation, and a separate Intelligence object:
 
@@ -295,6 +313,7 @@ See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 | [Project charter](docs/PROJECT_CHARTER.md) | Mission, core principles, scope, and governance |
 | [Architecture](docs/ARCHITECTURE.md) | Components, boundaries, and system diagrams |
 | [CLI reference](docs/CLI_REFERENCE.md) | Command groups, outputs, and examples |
+| [Integrated workbench](docs/WORKBENCH_INTEGRATED_BUILD.md) | Textual UI installation, operation, and safety behavior |
 | [Pipelines](docs/PIPELINES.md) | End-to-end execution, decoder engine, and analyzer pipeline |
 | [Developer guide](docs/DEVELOPER_GUIDE.md) | Repository layout and implementation workflow |
 | [Intelligence Layer](docs/INTELLIGENCE_LAYER.md) | Signals, classification, ranking, and compatibility |

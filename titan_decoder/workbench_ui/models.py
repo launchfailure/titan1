@@ -28,19 +28,34 @@ class AnalysisSnapshot:
 
     @property
     def nodes(self) -> list[dict[str, Any]]:
-        return list(self.report.get("nodes") or [])
+        values = self.report.get("nodes")
+        if not isinstance(values, list):
+            return []
+        return [item for item in values if isinstance(item, dict)]
 
     @property
     def iocs(self) -> dict[str, list[Any]]:
-        return dict(self.report.get("iocs") or {})
+        values = self.report.get("iocs")
+        if not isinstance(values, dict):
+            return {}
+        return {
+            str(kind): list(items)
+            for kind, items in values.items()
+            if isinstance(items, list)
+        }
 
     @property
     def detections(self) -> list[dict[str, Any]]:
-        return list(self.report.get("detections") or [])
+        values = self.report.get("detections")
+        if not isinstance(values, list):
+            return []
+        return [item for item in values if isinstance(item, dict)]
 
     @property
     def strings(self) -> list[str]:
         values = self.report.get("interesting_strings") or self.report.get("strings") or []
+        if not isinstance(values, list):
+            return []
         return [str(value) for value in values]
 
     @property
@@ -52,7 +67,12 @@ class AnalysisSnapshot:
     @property
     def relationships(self) -> list[dict[str, Any]]:
         correlation = self.report.get("correlation") or {}
-        return list(correlation.get("relationships") or [])
+        if not isinstance(correlation, dict):
+            return []
+        values = correlation.get("relationships")
+        if not isinstance(values, list):
+            return []
+        return [item for item in values if isinstance(item, dict)]
 
     @property
     def ioc_count(self) -> int:

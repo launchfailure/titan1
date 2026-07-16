@@ -1,14 +1,33 @@
 from __future__ import annotations
 
-from html import escape
+import math
+import re
 from typing import Any
 
 from .models import AnalysisSnapshot
 
 
+_RICH_MARKUP = re.compile(r"(\\*)(\[[a-z#/@][^[]*?)", re.IGNORECASE)
+
+
+def markup_escape(value: Any) -> str:
+    """Escape untrusted text while keeping the lightweight package dependency-free."""
+    markup = str(value)
+
+    def escape_match(match: re.Match[str]) -> str:
+        backslashes, tag = match.groups()
+        return f"{backslashes}{backslashes}\\{tag}"
+
+    escaped = _RICH_MARKUP.sub(escape_match, markup)
+    if escaped.endswith("\\") and not escaped.endswith("\\\\"):
+        escaped += "\\"
+    return escaped
+
+
 def short(value: Any, limit: int = 70) -> str:
     text = str(value).replace("\n", " ")
-    return text if len(text) <= limit else text[: limit - 1] + "…"
+    shortened = text if len(text) <= limit else text[: limit - 1] + "…"
+    return markup_escape(shortened)
 
 
 def summary_text(snapshot: AnalysisSnapshot) -> str:
@@ -16,7 +35,7 @@ def summary_text(snapshot: AnalysisSnapshot) -> str:
         status = "Successful" if snapshot.decoder_success else "Failed"
         output_size = len(snapshot.decoded_output or b"")
         return (
-            f"[b]Decoder[/b]      {snapshot.decoder_label}\n"
+            f"[b]Decoder[/b]      {markup_escape(snapshot.decoder_label)}\n"
             f"[b]Status[/b]       {status}\n"
             f"[b]Input bytes[/b]  {snapshot.source_size}\n"
             f"[b]Output bytes[/b] {output_size}\n"
@@ -38,7 +57,7 @@ def findings_text(snapshot: AnalysisSnapshot) -> str:
     lines: list[str] = []
     for kind, values in sorted(snapshot.iocs.items()):
         if values:
-            lines.append(f"[b]{kind}[/b]  {len(values)}")
+            lines.append(f"[b]{markup_escape(kind)}[/b]  {len(values)}")
     if snapshot.detections:
         lines.append(f"[b]Detections[/b]  {len(snapshot.detections)}")
     if snapshot.relationships:
@@ -51,10 +70,16 @@ def decode_tree_text(snapshot: AnalysisSnapshot) -> str:
         return "No decode tree available."
     lines = []
     for node in snapshot.nodes[:300]:
-        depth = int(node.get("depth", 0) or 0)
+        try:
+            depth = int(node.get("depth", 0) or 0)
+        except (TypeError, ValueError):
+            depth = 0
+        depth = min(max(depth, 0), 50)
         method = node.get("method") or node.get("decoder_used") or "input"
         ctype = node.get("content_type") or "unknown"
-        lines.append(f"{'  ' * depth}• {method} [{ctype}]")
+        lines.append(
+            f"{'  ' * depth}• {markup_escape(method)} [{markup_escape(ctype)}]"
+        )
     return "\n".join(lines)
 
 
@@ -65,7 +90,7 @@ def detections_text(snapshot: AnalysisSnapshot) -> str:
     for item in snapshot.detections[:250]:
         name = item.get("name") or item.get("rule_id") or item.get("id") or "detection"
         severity = item.get("severity") or item.get("risk") or "unknown"
-        lines.append(f"• {name} — {severity}")
+        lines.append(f"• {markup_escape(name)} — {markup_escape(severity)}")
     return "\n".join(lines)
 
 
@@ -80,7 +105,7 @@ def iocs_text(snapshot: AnalysisSnapshot) -> str:
         return "No IOCs."
     lines = []
     for kind, values in sorted(snapshot.iocs.items()):
-        lines.append(f"[b]{kind}[/b]")
+        lines.append(f"[b]{markup_escape(kind)}[/b]")
         lines.extend(f"  • {short(value, 120)}" for value in values[:100])
     return "\n".join(lines)
 
@@ -105,7 +130,7 @@ def decoded_text(snapshot: AnalysisSnapshot) -> str:
     if data is None:
         return "Run a decoder to inspect output."
     try:
-        return escape(data.decode("utf-8", errors="replace")[:12000])
+        return markup_escape(data.decode("utf-8", errors="replace")[:12000])
     except Exception:
         return hex_preview(data)
 
@@ -120,24 +145,50 @@ def timeline_text(snapshot: AnalysisSnapshot) -> str:
     events.sort()
     if not events:
         return "No timeline events recorded in the active report."
-    return "\n".join(f"{ts:<26} {kind:<18} {short(summary, 100)}" for ts, kind, summary in events[:500])
+    return "\n".join(
+        f"{markup_escape(ts):<26} {markup_escape(kind):<18} {short(summary, 100)}"
+        for ts, kind, summary in events[:500]
+    )
 
 
 def correlation_text(snapshot: AnalysisSnapshot) -> str:
     lines = []
     for item in snapshot.relationships:
+        try:
+            score = float(item.get("score", 0) or 0)
+        except (TypeError, ValueError):
+            score = 0.0
+        if not math.isfinite(score):
+            score = 0.0
         lines.append(
-            f"• {item.get('left_analysis_id', '?')} ↔ {item.get('right_analysis_id', '?')} "
-            f"score={float(item.get('score', 0) or 0):.3f} confidence={item.get('confidence', '')}"
+            f"• {markup_escape(item.get('left_analysis_id', '?'))} ↔ "
+            f"{markup_escape(item.get('right_analysis_id', '?'))} "
+            f"score={score:.3f} "
+            f"confidence={markup_escape(item.get('confidence', ''))}"
         )
-    for item in (snapshot.report.get("attribution_hints") or {}).get("hints") or []:
+    attribution = snapshot.report.get("attribution_hints")
+    hints = attribution.get("hints") if isinstance(attribution, dict) else []
+    for item in hints if isinstance(hints, list) else []:
         if isinstance(item, dict):
             lines.append(
-                f"• attribution hint {item.get('left_analysis_id', '?')} ↔ "
-                f"{item.get('right_analysis_id', '?')} confidence={item.get('confidence', '')}"
+                f"• attribution hint {markup_escape(item.get('left_analysis_id', '?'))} ↔ "
+                f"{markup_escape(item.get('right_analysis_id', '?'))} "
+                f"confidence={markup_escape(item.get('confidence', ''))}"
             )
-    for item in (snapshot.report.get("campaigns") or {}).get("campaigns") or []:
+    campaigns_group = snapshot.report.get("campaigns")
+    campaigns = (
+        campaigns_group.get("campaigns")
+        if isinstance(campaigns_group, dict)
+        else []
+    )
+    for item in campaigns if isinstance(campaigns, list) else []:
         if isinstance(item, dict):
-            members = ", ".join(map(str, item.get("member_analysis_ids") or []))
-            lines.append(f"• campaign [{item.get('confidence', '')}] members: {members}")
+            raw_members = item.get("member_analysis_ids")
+            if not isinstance(raw_members, list):
+                raw_members = []
+            members = ", ".join(
+                markup_escape(member) for member in raw_members
+            )
+            confidence = markup_escape(item.get("confidence", ""))
+            lines.append(f"• campaign [{confidence}] members: {members}")
     return "\n".join(lines) if lines else "No cross-case correlation data recorded in the active report."

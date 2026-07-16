@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+Integrated workbench interface redesign:
+
+- Replace the oversized stock application chrome with a compact live header and
+  status bar modeled on the Titan forensic-workbench reference.
+- Rebalance the shell into dense navigation, investigation/results, and decoder
+  columns; replace large quick-action buttons with compact selectable rows.
+- Make navigation, center content, status cards, decoder lists, results, and
+  details independently scrollable, with an automatic compact layout for narrow
+  Codespaces terminals.
+- Add `titan-ui` as a shorter launch alias while retaining
+  `titan-workbench-ui` for backwards compatibility.
+
+Integrated Textual workbench audit fixes:
+
+- Await all dynamic widget removal/mount operations so analysis, decoder, report,
+  and navigation refreshes cannot raise `DuplicateIds` under Textual 1.0.
+- Treat overlong pasted text and hex as evidence instead of invalid filesystem
+  paths; bound file reads before allocation using Titan's configured input cap.
+- Save directory-queue reports with deterministic path/content identities and
+  atomic replacement, preventing duplicate basenames from overwriting evidence.
+- Escape evidence-derived Rich/Textual markup, reject non-object report JSON,
+  tolerate malformed nested report values, avoid silent decoded-output
+  replacement, and make resource metrics portable to Windows and macOS.
+- Install the Textual extra in CI, add focused regressions, document the
+  integrated workbench, and synchronize Textual into the committed SBOM.
+
 Local AI Analyst (Milestone 8):
 
 - New `titan-analyst` command (`titan_decoder/analyst/`): grounded Q&A

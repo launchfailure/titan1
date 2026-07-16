@@ -2,9 +2,21 @@
 
 This build advances the Phase 9.1 shell toward the approved visual design.
 
+## Install and launch
+
+```bash
+python -m pip install -e '.[workbench-ui]'
+titan-ui
+```
+
+The existing `titan-workbench-ui` command remains an equivalent alias.
+
 ## Implemented
 
 - permanent left, center, and right columns;
+- compact custom header and status bar with live session state;
+- independently scrollable navigation, investigation, results, and decoder areas;
+- dense quick-start rows in place of oversized action buttons;
 - investigation input and file-path workspace;
 - always-visible decoder browser and details panel;
 - live decoder inventory from Titan;
@@ -33,9 +45,15 @@ The recovered build is now complete for the planned integrated scope:
 - Directory paths execute as a sorted multi-file queue and save one local report per file.
 - Dynamic center-panel replacement is stable across repeated navigation.
 - Importing lightweight workbench modules no longer requires Textual.
+- Long pasted payloads are treated as evidence even when they exceed filesystem
+  filename limits.
+- Batch report names include deterministic path/content identities, preventing
+  duplicate basenames from overwriting evidence.
+- Evidence-derived text is escaped before Textual markup rendering, and malformed
+  nested report values are ignored instead of crashing result views.
 
 ## Textual 1.0 dynamic-view hotfix
 
-Dynamic center-panel replacement now awaits both widget removal and mounting.
-This prevents `DuplicateIds: dynamic-view` when navigating between Reports,
-Plugins, Settings, Correlation, Timeline, and Analyst views.
+Every dynamic center-panel replacement, including analysis and decoder result
+refreshes, awaits both widget removal and mounting. This prevents
+`DuplicateIds: dynamic-view` during navigation and normal analysis workflows.
