@@ -54,13 +54,22 @@ def sample_report():
         ],
         "iocs": {"domains": ["c2.test"], "urls": ["http://c2.test/gate"]},
         "detections": [
-            {"rule_id": "X-1", "severity": "high", "name": "Hit", "attack_ids": ["T1027"]}
+            {
+                "rule_id": "X-1",
+                "severity": "high",
+                "name": "Hit",
+                "attack_ids": ["T1027"],
+            }
         ],
         "risk_assessment": {"risk_level": "HIGH", "risk_score": 80},
         "intelligence": {"classification": "suspicious"},
         "evidence": {
             "events": [
-                {"timestamp": "2026-01-01T00:00:00Z", "event_type": "dns_query", "domain": "c2.test"}
+                {
+                    "timestamp": "2026-01-01T00:00:00Z",
+                    "event_type": "dns_query",
+                    "domain": "c2.test",
+                }
             ],
             "indicators": [{"indicator_type": "domain", "value": "c2.test"}],
             "top_pivots": ["domain:c2.test"],
@@ -68,17 +77,30 @@ def sample_report():
         },
         "correlation": {
             "relationships": [
-                {"left_analysis_id": "case-a", "right_analysis_id": "case-b", "score": 0.8, "confidence": "high"}
+                {
+                    "left_analysis_id": "case-a",
+                    "right_analysis_id": "case-b",
+                    "score": 0.8,
+                    "confidence": "high",
+                }
             ]
         },
         "attribution_hints": {
             "hints": [
-                {"left_analysis_id": "case-a", "right_analysis_id": "case-b", "confidence": "medium", "score": 0.5}
+                {
+                    "left_analysis_id": "case-a",
+                    "right_analysis_id": "case-b",
+                    "confidence": "medium",
+                    "score": 0.5,
+                }
             ]
         },
-        "campaigns": {"campaign_count": 1, "campaigns": [
-            {"confidence": "high", "member_analysis_ids": ["case-a", "case-b"]}
-        ]},
+        "campaigns": {
+            "campaign_count": 1,
+            "campaigns": [
+                {"confidence": "high", "member_analysis_ids": ["case-a", "case-b"]}
+            ],
+        },
     }
 
 
@@ -121,7 +143,7 @@ def test_render_views(tmp_path):
     assert "case-a" in report_overview(report)
     tree = decode_tree(report)
     assert "SOURCE" in tree and "DECODE_Base64" in tree
-    assert decode_tree(report, filter_text="base64") .count("•") == 1
+    assert decode_tree(report, filter_text="base64").count("•") == 1
     assert "c2.test" in indicator_view(report)
     assert indicator_view(report, filter_text="urls").count("http") == 1
     assert "X-1" in detection_view(report) and "T1027" in detection_view(report)

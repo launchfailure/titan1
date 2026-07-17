@@ -29,7 +29,9 @@ def test_catastrophic_pattern_is_bounded_by_timeout(monkeypatch):
 
 
 def test_safe_pattern_still_matches():
-    assert content_regex_search(r"powershell", ["IGNORECASE"], "PowerShell -enc") is True
+    assert (
+        content_regex_search(r"powershell", ["IGNORECASE"], "PowerShell -enc") is True
+    )
     assert content_regex_search(r"nomatch", None, "benign text") is False
 
 

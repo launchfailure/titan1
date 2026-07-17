@@ -79,7 +79,9 @@ class PerformanceProfiler:
         """Start profiling session."""
         self.start_time = time.time()
         self.start_memory = self._rss_mb()  # MB, or None without psutil
-        self.memory_samples = [self.start_memory] if self.start_memory is not None else []
+        self.memory_samples = (
+            [self.start_memory] if self.start_memory is not None else []
+        )
 
         if enable_cprofile:
             self.profiler = cProfile.Profile()

@@ -84,7 +84,7 @@ def correlate_timelines(
     for index, left in enumerate(ordered):
         left_time = _parse(left.timestamp)
         left_values = _comparable_values(left)
-        for right in ordered[index + 1:]:
+        for right in ordered[index + 1 :]:
             if left.analysis_id == right.analysis_id:
                 continue
             delta = abs((_parse(right.timestamp) - left_time).total_seconds())
@@ -100,7 +100,9 @@ def correlate_timelines(
                 if shared
                 else "same_event_kind"
             )
-            proximity = 1.0 if window_seconds == 0 else max(0.0, 1.0 - delta / window_seconds)
+            proximity = (
+                1.0 if window_seconds == 0 else max(0.0, 1.0 - delta / window_seconds)
+            )
             semantic = 1.0 if shared else 0.5
             links.append(
                 TimelineLink(

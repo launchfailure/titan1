@@ -95,7 +95,10 @@ def fingerprint_from_report(report: Mapping[str, Any]) -> PayloadFingerprint:
 
     meta = report.get("meta") or {}
     analysis_id = str(
-        meta.get("analysis_id") or report.get("analysis_id") or report.get("root_hash") or ""
+        meta.get("analysis_id")
+        or report.get("analysis_id")
+        or report.get("root_hash")
+        or ""
     )
     root_hash = str(report.get("root_hash") or meta.get("root_hash") or "")
 
@@ -150,7 +153,7 @@ def detect_shared_payloads(
     items = sorted(fingerprints, key=lambda item: item.analysis_id)
     matches: list[SharedPayload] = []
     for index, left in enumerate(items):
-        for right in items[index + 1:]:
+        for right in items[index + 1 :]:
             if left.analysis_id == right.analysis_id:
                 continue
             exact = bool(set(left.payload_hashes) & set(right.payload_hashes))
@@ -179,7 +182,9 @@ def detect_shared_payloads(
                 reasons.append("decode_chain_similarity")
             if score >= minimum_score and reasons:
                 matches.append(
-                    SharedPayload(left.analysis_id, right.analysis_id, score, tuple(reasons))
+                    SharedPayload(
+                        left.analysis_id, right.analysis_id, score, tuple(reasons)
+                    )
                 )
 
     matches.sort(key=lambda match: (-match.score, match.match_id))

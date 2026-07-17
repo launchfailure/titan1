@@ -38,8 +38,13 @@ def test_does_not_fire_on_binary_or_text():
     # a fixed corpus still exercises the guarantee without failing on an unlucky
     # draw in CI.
     rng = random.Random(0xF00D)
-    for bad in (rng.randbytes(512), b"MZ" + b"\x00" * 400, b"\x00" * 256,
-                ("plain ascii text " * 20).encode(), b"\x7fELF" + b"\x00" * 400):
+    for bad in (
+        rng.randbytes(512),
+        b"MZ" + b"\x00" * 400,
+        b"\x00" * 256,
+        ("plain ascii text " * 20).encode(),
+        b"\x7fELF" + b"\x00" * 400,
+    ):
         assert dec.can_decode(bad) is False
         assert dec.decode(bad) == (bad, False)
 

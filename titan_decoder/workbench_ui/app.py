@@ -519,7 +519,9 @@ class TitanWorkbenchApp(App):
                 yield ResultsPanel(self.snapshot)
             with VerticalScroll(id="right-column"):
                 yield DecoderPanel(self.services.decoder_rows())
-                label, description = self.services.decoder_details(self.selected_decoder)
+                label, description = self.services.decoder_details(
+                    self.selected_decoder
+                )
                 yield DecoderDetailsPanel(label, description, self.snapshot)
         yield WorkbenchStatusBar(self.services.state)
 
@@ -531,16 +533,31 @@ class TitanWorkbenchApp(App):
         await current.remove()
         await self.query_one("#center-column").mount(widget)
 
-    async def refresh_results(self) -> None:
+    async def refresh_results(self, *, reveal: bool = False) -> None:
         await self._replace_dynamic_view(ResultsPanel(self.snapshot))
+        if reveal:
+            # On short terminals the results panel sits below the fold of the
+            # scrollable center column, so a finished analysis looked like a
+            # no-op. Bring the fresh panel into view once it has a layout.
+            panel = self.query_one("#dynamic-view")
+            self.call_after_refresh(panel.scroll_visible, animate=False, top=True)
 
-    async def refresh_decoder_details(self) -> None:
+    async def refresh_decoder_details(self, *, reveal: bool = False) -> None:
         current = self.query_one(DecoderDetailsPanel)
         await current.remove()
         label, description = self.services.decoder_details(self.selected_decoder)
-        await self.query_one("#right-column").mount(
-            DecoderDetailsPanel(label, description, self.snapshot)
-        )
+        panel = DecoderDetailsPanel(label, description, self.snapshot)
+        await self.query_one("#right-column").mount(panel)
+        if reveal:
+            self.call_after_refresh(panel.scroll_visible, animate=False, top=True)
+
+    def set_activity(self, message: str | None) -> None:
+        """Reflect long-running work in the status bar so clicks aren't silent."""
+        footer = self.query_one("#footer-state", Static)
+        if message:
+            footer.update(f"[#f0ca70]●[/#f0ca70] {markup_escape(message)}")
+        else:
+            footer.update("[#36d277]●[/#36d277] Ready")
 
     @staticmethod
     def _existing_input_path(raw: str) -> tuple[Path, bool] | None:
@@ -582,6 +599,7 @@ class TitanWorkbenchApp(App):
 
     @work(thread=True, exclusive=True)
     def start_analysis(self) -> None:
+        self.call_from_thread(self.set_activity, "Analyzing evidence…")
         try:
             raw = self.call_from_thread(
                 lambda: self.query_one("#evidence-input", Input).value.strip()
@@ -593,14 +611,14 @@ class TitanWorkbenchApp(App):
                 data, source_name = self._read_input(raw)
                 snapshot = self.services.analyze(data, source_name)
         except Exception as exc:
-            self.call_from_thread(
-                self.notify, markup_escape(exc), severity="error"
-            )
+            self.call_from_thread(self.notify, markup_escape(exc), severity="error")
             return
+        finally:
+            self.call_from_thread(self.set_activity, None)
         self.snapshot = snapshot
         # Textual 1.0 types an unused async callback as Awaitable[Never], even
         # though call_from_thread awaits it and returns None at runtime.
-        self.call_from_thread(self.refresh_results)  # type: ignore[arg-type]
+        self.call_from_thread(self.refresh_results, reveal=True)  # type: ignore[arg-type]
         self.call_from_thread(self.refresh_decoder_details)  # type: ignore[arg-type]
         message = (
             f"Analysis complete ({snapshot.batch_succeeded}/{snapshot.batch_total} files)"
@@ -638,20 +656,23 @@ class TitanWorkbenchApp(App):
 
     @work(thread=True, exclusive=True)
     def start_decoder(self) -> None:
+        self.call_from_thread(self.set_activity, "Running decoder…")
         try:
             raw = self.call_from_thread(
                 lambda: self.query_one("#evidence-input", Input).value.strip()
             )
             data, source_name = self._read_input(raw)
-            snapshot = self.services.run_decoder(self.selected_decoder, data, source_name)
-        except Exception as exc:
-            self.call_from_thread(
-                self.notify, markup_escape(exc), severity="error"
+            snapshot = self.services.run_decoder(
+                self.selected_decoder, data, source_name
             )
+        except Exception as exc:
+            self.call_from_thread(self.notify, markup_escape(exc), severity="error")
             return
+        finally:
+            self.call_from_thread(self.set_activity, None)
         self.snapshot = snapshot
         self.call_from_thread(self.refresh_results)  # type: ignore[arg-type]
-        self.call_from_thread(self.refresh_decoder_details)  # type: ignore[arg-type]
+        self.call_from_thread(self.refresh_decoder_details, reveal=True)  # type: ignore[arg-type]
         self.call_from_thread(self.notify, "Decoder finished", severity="information")
 
     @on(Button.Pressed, "#save-output")
@@ -700,11 +721,9 @@ class TitanWorkbenchApp(App):
         except Exception as exc:
             self.notify(markup_escape(exc), severity="error")
             return
-        await self.refresh_results()
+        await self.refresh_results(reveal=True)
         await self.refresh_decoder_details()
-        self.notify(
-            f"Loaded {markup_escape(reports[0].name)}", severity="information"
-        )
+        self.notify(f"Loaded {markup_escape(reports[0].name)}", severity="information")
 
     @on(OptionList.OptionSelected, "#quick-start-list")
     async def quick_start_selected(self, event: OptionList.OptionSelected) -> None:
@@ -777,12 +796,14 @@ class TitanWorkbenchApp(App):
 
     async def action_show_correlation(self) -> None:
         from .presenters import correlation_text
+
         await self._show_center_overlay(
             "[b]CORRELATION ENGINE[/b]\n\n" + correlation_text(self.snapshot)
         )
 
     async def action_show_timeline(self) -> None:
         from .presenters import timeline_text
+
         await self._show_center_overlay(
             "[b]TIMELINE VIEW[/b]\n\n" + timeline_text(self.snapshot)
         )

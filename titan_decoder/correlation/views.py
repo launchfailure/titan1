@@ -15,7 +15,10 @@ def analyst_summary(result: Mapping[str, Any]) -> dict[str, Any]:
     correlation = result.get("correlation") or {}
     relationships = sorted(
         correlation.get("relationships") or [],
-        key=lambda item: (-float(item.get("score", 0.0)), item.get("relationship_id", "")),
+        key=lambda item: (
+            -float(item.get("score", 0.0)),
+            item.get("relationship_id", ""),
+        ),
     )
     return {
         "schema_version": SCHEMA_VERSION,
@@ -61,10 +64,10 @@ def to_html(view: Mapping[str, Any]) -> str:
     """
 
     return (
-        "<!doctype html><html><head><meta charset=\"utf-8\">"
+        '<!doctype html><html><head><meta charset="utf-8">'
         "<title>Titan Phase 5 Correlation</title></head><body><pre>"
         + escape(to_markdown(view))
-        + "</pre><script type=\"application/json\" id=\"correlation-view\">"
+        + '</pre><script type="application/json" id="correlation-view">'
         + escape(json.dumps(view, sort_keys=True))
         + "</script></body></html>"
     )

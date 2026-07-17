@@ -25,7 +25,13 @@ def test_evidence_links_dns_client_to_domain_and_domain_to_answer_ip():
         for link in links
     }
 
-    assert ("ipv4", "10.0.0.10", "domains", "example.com", "dns_client_queried_domain") in keys
+    assert (
+        "ipv4",
+        "10.0.0.10",
+        "domains",
+        "example.com",
+        "dns_client_queried_domain",
+    ) in keys
     assert ("domains", "example.com", "ipv4", "93.184.216.34", "dns_answer") in keys
 
 

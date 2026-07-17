@@ -35,7 +35,11 @@ def test_untrusted_evidence_is_escaped_for_textual_markup():
         },
     )
 
-    for rendered in (decoded_text(snapshot), strings_text(snapshot), iocs_text(snapshot)):
+    for rendered in (
+        decoded_text(snapshot),
+        strings_text(snapshot),
+        iocs_text(snapshot),
+    ):
         assert "\\[/bold]" in rendered
         assert "\\[@click=app.quit]" in rendered
 
@@ -47,9 +51,7 @@ def test_malformed_nested_report_values_do_not_crash_presenters():
             "iocs": [],
             "detections": "invalid",
             "strings": {"invalid": "shape"},
-            "correlation": {
-                "relationships": [{"score": "not-a-number"}, "invalid"]
-            },
+            "correlation": {"relationships": [{"score": "not-a-number"}, "invalid"]},
             "attribution_hints": "invalid",
             "campaigns": {"campaigns": [{"member_analysis_ids": "invalid"}]},
         }

@@ -340,10 +340,32 @@ class HexDecoder(Decoder):
 # whether a ROT13 rotation actually yields more English-like output than its
 # input, so the self-inverse cipher is not applied to already-readable text.
 _ENGLISH_LETTER_FREQ = {
-    "a": 8.2, "b": 1.5, "c": 2.8, "d": 4.3, "e": 12.7, "f": 2.2, "g": 2.0,
-    "h": 6.1, "i": 7.0, "j": 0.15, "k": 0.77, "l": 4.0, "m": 2.4, "n": 6.7,
-    "o": 7.5, "p": 1.9, "q": 0.095, "r": 6.0, "s": 6.3, "t": 9.1, "u": 2.8,
-    "v": 0.98, "w": 2.4, "x": 0.15, "y": 2.0, "z": 0.074,
+    "a": 8.2,
+    "b": 1.5,
+    "c": 2.8,
+    "d": 4.3,
+    "e": 12.7,
+    "f": 2.2,
+    "g": 2.0,
+    "h": 6.1,
+    "i": 7.0,
+    "j": 0.15,
+    "k": 0.77,
+    "l": 4.0,
+    "m": 2.4,
+    "n": 6.7,
+    "o": 7.5,
+    "p": 1.9,
+    "q": 0.095,
+    "r": 6.0,
+    "s": 6.3,
+    "t": 9.1,
+    "u": 2.8,
+    "v": 0.98,
+    "w": 2.4,
+    "x": 0.15,
+    "y": 2.0,
+    "z": 0.074,
 }
 
 
@@ -1239,9 +1261,7 @@ class UnicodeEscapeDecoder(Decoder):
                             low = int(text[i + 8 : i + 12], 16)
                             if 0xDC00 <= low <= 0xDFFF:
                                 combined = (
-                                    0x10000
-                                    + ((code - 0xD800) << 10)
-                                    + (low - 0xDC00)
+                                    0x10000 + ((code - 0xD800) << 10) + (low - 0xDC00)
                                 )
                                 result.append(chr(combined))
                                 i += 12

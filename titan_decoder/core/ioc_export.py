@@ -21,9 +21,7 @@ def build_ioc_summary(
     # otherwise-binary content, and filtering on content_type silently dropped
     # them from detections, risk scoring, and exports.
     nodes = report.get("nodes", [])
-    all_text = "\n".join(
-        node.get("content_preview") or "" for node in nodes
-    )
+    all_text = "\n".join(node.get("content_preview") or "" for node in nodes)
     from ..utils.helpers import extract_iocs
 
     iocs = extract_iocs(all_text)

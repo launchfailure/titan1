@@ -89,7 +89,13 @@ def detect_infrastructure_reuse(analyses: Iterable[AnalysisRecord]) -> dict[str,
         for (kind, value), ids in index.items()
         if len(ids) > 1
     ]
-    results.sort(key=lambda item: (-len(item.analysis_ids), item.indicator_type, item.normalized_value))
+    results.sort(
+        key=lambda item: (
+            -len(item.analysis_ids),
+            item.indicator_type,
+            item.normalized_value,
+        )
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "reuse_count": len(results),

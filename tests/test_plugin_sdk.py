@@ -145,8 +145,15 @@ def test_manifest_invalid_fields(override, fragment):
 # --- registry -----------------------------------------------------------------
 
 
-def _write_plugin(root, plugin_id, capability="detection", rule_ids=("EX-1",),
-                  version="1.0.0", dependencies=None, dirname=None):
+def _write_plugin(
+    root,
+    plugin_id,
+    capability="detection",
+    rule_ids=("EX-1",),
+    version="1.0.0",
+    dependencies=None,
+    dirname=None,
+):
     plugin_dir = root / (dirname or plugin_id.replace(".", "_"))
     plugin_dir.mkdir()
     body = {
@@ -247,7 +254,9 @@ def test_registry_rejects_unsatisfied_dependency(tmp_path):
 def test_registry_rejects_reserved_and_duplicate_rule_ids(tmp_path):
     _write_plugin(tmp_path, "example.reserved", rule_ids=("TITAN-999",))
     _write_plugin(tmp_path, "example.first", rule_ids=("SHARED-1",), dirname="m_first")
-    _write_plugin(tmp_path, "example.second", rule_ids=("SHARED-1",), dirname="n_second")
+    _write_plugin(
+        tmp_path, "example.second", rule_ids=("SHARED-1",), dirname="n_second"
+    )
     manager = PluginManager([tmp_path])
     manager.load_plugins()
     assert "example.reserved" not in manager.manifest_plugins
@@ -311,7 +320,9 @@ def test_validate_capability_mismatch(tmp_path):
     (plugin_dir / "titan-plugin.json").write_text(json.dumps(manifest))
     report = validate_plugin(plugin_dir)
     assert not report.ok
-    assert any(issue.code == "entry_point.capability_mismatch" for issue in report.issues)
+    assert any(
+        issue.code == "entry_point.capability_mismatch" for issue in report.issues
+    )
 
 
 def test_validate_runtime_type_errors(tmp_path):

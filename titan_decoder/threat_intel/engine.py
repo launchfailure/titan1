@@ -20,41 +20,163 @@ class ThreatIntelligenceEngine:
     BEHAVIOR_RULES = (
         # Requires a retrieval verb; a bare URL is not evidence of tool
         # transfer (URL-only indicators stay in the IOC summary).
-        ("T1105", re.compile(r"(?i)\b(?:downloadstring|downloadfile|invoke-webrequest|curl|wget|urlretrieve|start-bitstransfer)\b"), "network-transfer"),
-        ("T1027", re.compile(r"(?i)(?:\bfrombase64string\b|-enc(?:odedcommand)?\b|\b(?:base64|xor|gzip|deflate)\b)"), "obfuscation"),
-        ("T1140", re.compile(r"(?i)\b(?:frombase64string|convert\.frombase64|certutil\s+-decode|decompress|inflate)\b"), "decode"),
-        ("T1053.005", re.compile(r"(?i)\bschtasks(?:\.exe)?\b.*\/(?:create|run)\b"), "scheduled-task"),
-        ("T1547.001", re.compile(r"(?i)\breg(?:\.exe)?\s+add\b.*\\(?:run|runonce)\b"), "run-key"),
-        ("T1003", re.compile(r"(?i)\b(?:mimikatz|sekurlsa|lsass|ntds\.dit|sam\s+hive)\b"), "credential-access"),
-        ("T1003.001", re.compile(r"(?i)(?:\bsekurlsa\b|\blsass\.(?:exe|dmp)\b|\bcomsvcs(?:\.dll)?\b.{0,60}\bminidump\b|\bprocdump\b.{0,60}\blsass\b)"), "lsass-memory-dump"),
-        ("T1082", re.compile(r"(?i)\b(?:systeminfo|hostname|wmic\s+os)\b"), "system-discovery"),
-        ("T1083", re.compile(r"(?i)\b(?:dir\s+\/s|Get-ChildItem|findstr)\b"), "file-discovery"),
-        ("T1562.001", re.compile(r"(?i)\b(?:set-mppreference|disableantispyware|stop-service\s+windefend|sc\s+stop)\b"), "impair-defenses"),
-        ("T1490", re.compile(r"(?i)\b(?:vssadmin\s+delete\s+shadows|wbadmin\s+delete\s+catalog|wmic\s+shadowcopy\s+delete|bcdedit\b.{0,40}recoveryenabled\s+no)\b"), "inhibit-recovery"),
+        (
+            "T1105",
+            re.compile(
+                r"(?i)\b(?:downloadstring|downloadfile|invoke-webrequest|curl|wget|urlretrieve|start-bitstransfer)\b"
+            ),
+            "network-transfer",
+        ),
+        (
+            "T1027",
+            re.compile(
+                r"(?i)(?:\bfrombase64string\b|-enc(?:odedcommand)?\b|\b(?:base64|xor|gzip|deflate)\b)"
+            ),
+            "obfuscation",
+        ),
+        (
+            "T1140",
+            re.compile(
+                r"(?i)\b(?:frombase64string|convert\.frombase64|certutil\s+-decode|decompress|inflate)\b"
+            ),
+            "decode",
+        ),
+        (
+            "T1053.005",
+            re.compile(r"(?i)\bschtasks(?:\.exe)?\b.*\/(?:create|run)\b"),
+            "scheduled-task",
+        ),
+        (
+            "T1547.001",
+            re.compile(r"(?i)\breg(?:\.exe)?\s+add\b.*\\(?:run|runonce)\b"),
+            "run-key",
+        ),
+        (
+            "T1003",
+            re.compile(r"(?i)\b(?:mimikatz|sekurlsa|lsass|ntds\.dit|sam\s+hive)\b"),
+            "credential-access",
+        ),
+        (
+            "T1003.001",
+            re.compile(
+                r"(?i)(?:\bsekurlsa\b|\blsass\.(?:exe|dmp)\b|\bcomsvcs(?:\.dll)?\b.{0,60}\bminidump\b|\bprocdump\b.{0,60}\blsass\b)"
+            ),
+            "lsass-memory-dump",
+        ),
+        (
+            "T1082",
+            re.compile(r"(?i)\b(?:systeminfo|hostname|wmic\s+os)\b"),
+            "system-discovery",
+        ),
+        (
+            "T1083",
+            re.compile(r"(?i)\b(?:dir\s+\/s|Get-ChildItem|findstr)\b"),
+            "file-discovery",
+        ),
+        (
+            "T1562.001",
+            re.compile(
+                r"(?i)\b(?:set-mppreference|disableantispyware|stop-service\s+windefend|sc\s+stop)\b"
+            ),
+            "impair-defenses",
+        ),
+        (
+            "T1490",
+            re.compile(
+                r"(?i)\b(?:vssadmin\s+delete\s+shadows|wbadmin\s+delete\s+catalog|wmic\s+shadowcopy\s+delete|bcdedit\b.{0,40}recoveryenabled\s+no)\b"
+            ),
+            "inhibit-recovery",
+        ),
         # Ransom-note language, not the word "encrypted": prose like
         # "files are encrypted at rest" must not evidence impact.
-        ("T1486", re.compile(r"(?i)(?:\bransom(?:ware)?\b|\bdecryptor\b|\b(?:decrypt|restore|recover)\s+your\s+(?:files|data|documents)\b)"), "ransom-note"),
-        ("T1016", re.compile(r"(?i)\b(?:ipconfig|ifconfig|route\s+print|nltest\s+/domain)"), "network-config-discovery"),
+        (
+            "T1486",
+            re.compile(
+                r"(?i)(?:\bransom(?:ware)?\b|\bdecryptor\b|\b(?:decrypt|restore|recover)\s+your\s+(?:files|data|documents)\b)"
+            ),
+            "ransom-note",
+        ),
+        (
+            "T1016",
+            re.compile(r"(?i)\b(?:ipconfig|ifconfig|route\s+print|nltest\s+/domain)"),
+            "network-config-discovery",
+        ),
         ("T1033", re.compile(r"(?i)\bwhoami\b"), "user-discovery"),
-        ("T1036", re.compile(r"(?i)\.(?:pdf|docx?|xlsx?|pptx?|jpe?g|png|gif|txt)\.(?:exe|scr|com|pif|bat|cmd|js|vbs|hta)\b"), "double-extension"),
+        (
+            "T1036",
+            re.compile(
+                r"(?i)\.(?:pdf|docx?|xlsx?|pptx?|jpe?g|png|gif|txt)\.(?:exe|scr|com|pif|bat|cmd|js|vbs|hta)\b"
+            ),
+            "double-extension",
+        ),
         ("T1053.003", re.compile(r"(?i)(?:\bcrontab\b|/etc/cron)"), "cron-schedule"),
-        ("T1057", re.compile(r"(?i)(?:\btasklist\b|\bget-process\b|\bps\s+aux\b)"), "process-discovery"),
-        ("T1059.004", re.compile(r"(?i)(?:/bin/(?:ba)?sh\b|\b(?:ba)?sh\s+-c\s)"), "unix-shell"),
-        ("T1059.006", re.compile(r"(?i)\bpython(?:3(?:\.\d+)?)?(?:\.exe)?\s+-c\s"), "python-inline-exec"),
+        (
+            "T1057",
+            re.compile(r"(?i)(?:\btasklist\b|\bget-process\b|\bps\s+aux\b)"),
+            "process-discovery",
+        ),
+        (
+            "T1059.004",
+            re.compile(r"(?i)(?:/bin/(?:ba)?sh\b|\b(?:ba)?sh\s+-c\s)"),
+            "unix-shell",
+        ),
+        (
+            "T1059.006",
+            re.compile(r"(?i)\bpython(?:3(?:\.\d+)?)?(?:\.exe)?\s+-c\s"),
+            "python-inline-exec",
+        ),
         # "jscript"/ActiveXObject/.jse are Windows Script Host JavaScript
         # markers; the plain word "javascript" stays out so prose about web
         # pages cannot fire.
-        ("T1059.007", re.compile(r"(?i)(?:\bnew\s+ActiveXObject\s*\(|\bjscript\b|\.jse\b)"), "jscript-execution"),
-        ("T1070.004", re.compile(r"(?i)(?:\bdel\s+/[fqs]\b|\brm\s+-(?:rf|fr)\b|\bsdelete\b|\bremove-item\b.{0,60}-recurse|\bcipher\s+/w:)"), "file-deletion"),
-        ("T1087", re.compile(r"(?i)(?:\bnet\s+(?:user|localgroup)\b|\bget-localuser\b)"), "account-discovery"),
-        ("T1112", re.compile(r"(?i)\breg(?:\.exe)?\s+(?:add|delete)\b"), "registry-modification"),
-        ("T1489", re.compile(r"(?i)(?:\bnet\s+stop\b|\btaskkill\s+/f\b|\bstop-service\b)"), "service-stop"),
-        ("T1543.003", re.compile(r"(?i)(?:\bsc(?:\.exe)?\s+create\b|\bnew-service\b)"), "service-install"),
-        ("T1552.001", re.compile(r"(?i)(?:\bfindstr\s+/si\s+password\b|\bgrep\s+-ri?\s+password\b)"), "credentials-in-files"),
+        (
+            "T1059.007",
+            re.compile(r"(?i)(?:\bnew\s+ActiveXObject\s*\(|\bjscript\b|\.jse\b)"),
+            "jscript-execution",
+        ),
+        (
+            "T1070.004",
+            re.compile(
+                r"(?i)(?:\bdel\s+/[fqs]\b|\brm\s+-(?:rf|fr)\b|\bsdelete\b|\bremove-item\b.{0,60}-recurse|\bcipher\s+/w:)"
+            ),
+            "file-deletion",
+        ),
+        (
+            "T1087",
+            re.compile(r"(?i)(?:\bnet\s+(?:user|localgroup)\b|\bget-localuser\b)"),
+            "account-discovery",
+        ),
+        (
+            "T1112",
+            re.compile(r"(?i)\breg(?:\.exe)?\s+(?:add|delete)\b"),
+            "registry-modification",
+        ),
+        (
+            "T1489",
+            re.compile(r"(?i)(?:\bnet\s+stop\b|\btaskkill\s+/f\b|\bstop-service\b)"),
+            "service-stop",
+        ),
+        (
+            "T1543.003",
+            re.compile(r"(?i)(?:\bsc(?:\.exe)?\s+create\b|\bnew-service\b)"),
+            "service-install",
+        ),
+        (
+            "T1552.001",
+            re.compile(
+                r"(?i)(?:\bfindstr\s+/si\s+password\b|\bgrep\s+-ri?\s+password\b)"
+            ),
+            "credentials-in-files",
+        ),
         # Decoded email (MIME) evidence: an attachment header naming an
         # executable/script/container payload type. A benign attachment
         # (report.pdf, notes.docx) does not match the extension list.
-        ("T1566.001", re.compile(r"(?i)content-disposition:\s*attachment;?\s*filename\*?=[\"']?[^\"'\r\n]{0,120}\.(?:docm|xlsm|pptm|potm|exe|scr|com|pif|js|jse|vbs|vbe|wsf|hta|lnk|iso|img|cab|chm|bat|cmd)\b"), "spearphish-attachment"),
+        (
+            "T1566.001",
+            re.compile(
+                r"(?i)content-disposition:\s*attachment;?\s*filename\*?=[\"']?[^\"'\r\n]{0,120}\.(?:docm|xlsm|pptm|potm|exe|scr|com|pif|js|jse|vbs|vbe|wsf|hta|lnk|iso|img|cab|chm|bat|cmd)\b"
+            ),
+            "spearphish-attachment",
+        ),
     )
 
     def analyze(
@@ -64,15 +186,11 @@ class ThreatIntelligenceEngine:
         detections: Sequence[Mapping[str, Any]] | None = None,
     ) -> Dict[str, Any]:
         nodes = [
-            item
-            for item in (report.get("nodes") or [])
-            if isinstance(item, Mapping)
+            item for item in (report.get("nodes") or []) if isinstance(item, Mapping)
         ]
         iocs = iocs or report.get("iocs") or {}
         detections = list(
-            detections
-            if detections is not None
-            else report.get("detections") or []
+            detections if detections is not None else report.get("detections") or []
         )
 
         catalog = load_attack_catalog()
@@ -92,9 +210,7 @@ class ThreatIntelligenceEngine:
                         "node_ids": list(finding.node_ids),
                     }
                 )
-                rules_by_technique[technique_id].append(
-                    f"lolbin:{finding.executable}"
-                )
+                rules_by_technique[technique_id].append(f"lolbin:{finding.executable}")
 
         for node in nodes:
             text = self._node_text(node)
@@ -111,9 +227,7 @@ class ThreatIntelligenceEngine:
 
         for detection in detections:
             attack_ids = (
-                detection.get("attack_ids")
-                or detection.get("mitre_attack")
-                or []
+                detection.get("attack_ids") or detection.get("mitre_attack") or []
             )
             if isinstance(attack_ids, str):
                 attack_ids = [attack_ids]
@@ -126,61 +240,41 @@ class ThreatIntelligenceEngine:
                             "name": detection.get("name"),
                         }
                     )
-                    rules_by_technique[technique_id].append(
-                        "detection-metadata"
-                    )
+                    rules_by_technique[technique_id].append("detection-metadata")
 
         techniques: List[AttackTechniqueFinding] = []
         for technique_id in sorted(evidence_by_technique):
             catalog_item = by_id.get(technique_id)
             if not catalog_item:
                 continue
-            evidence = self._deduplicate_evidence(
-                evidence_by_technique[technique_id]
-            )
-            source_rules = sorted(
-                set(rules_by_technique[technique_id])
-            )
+            evidence = self._deduplicate_evidence(evidence_by_technique[technique_id])
+            source_rules = sorted(set(rules_by_technique[technique_id]))
             techniques.append(
                 AttackTechniqueFinding(
                     technique_id=technique_id,
                     name=str(catalog_item["name"]),
                     tactics=list(catalog_item.get("tactics") or []),
-                    confidence=self._finding_confidence(
-                        evidence, source_rules
-                    ),
+                    confidence=self._finding_confidence(evidence, source_rules),
                     evidence=evidence,
                     source_rules=source_rules,
                 )
             )
 
-        techniques.sort(
-            key=lambda item: (-item.confidence, item.technique_id)
-        )
-        tactics = sorted(
-            {tactic for item in techniques for tactic in item.tactics}
-        )
-        relationships = self._relationships(
-            techniques, lolbins, malware_tags
-        )
-        confidence = self._assessment_confidence(
-            techniques, lolbins, malware_tags
-        )
+        techniques.sort(key=lambda item: (-item.confidence, item.technique_id))
+        tactics = sorted({tactic for item in techniques for tactic in item.tactics})
+        relationships = self._relationships(techniques, lolbins, malware_tags)
+        confidence = self._assessment_confidence(techniques, lolbins, malware_tags)
 
         assessment = ThreatAssessment(
             version=self.VERSION,
-            catalog_version=str(
-                catalog.get("catalog_version") or "unknown"
-            ),
+            catalog_version=str(catalog.get("catalog_version") or "unknown"),
             techniques=techniques,
             tactics=tactics,
             lolbins=lolbins,
             malware_tags=malware_tags,
             relationships=relationships,
             confidence=confidence,
-            summary=self._summary(
-                techniques, lolbins, malware_tags
-            ),
+            summary=self._summary(techniques, lolbins, malware_tags),
         )
         return assessment.to_dict()
 
@@ -204,12 +298,7 @@ class ThreatIntelligenceEngine:
         unique: Dict[str, Dict[str, Any]] = {}
         for item in items:
             normalized = dict(item)
-            key = repr(
-                sorted(
-                    (str(k), repr(v))
-                    for k, v in normalized.items()
-                )
-            )
+            key = repr(sorted((str(k), repr(v)) for k, v in normalized.items()))
             unique[key] = normalized
         return [unique[key] for key in sorted(unique)]
 
@@ -218,28 +307,18 @@ class ThreatIntelligenceEngine:
         evidence: Sequence[Mapping[str, Any]],
         source_rules: Sequence[str],
     ) -> float:
-        source_kinds = {
-            str(item.get("kind"))
-            for item in evidence
-        }
+        source_kinds = {str(item.get("kind")) for item in evidence}
         value = 0.45 + min(0.25, len(evidence) * 0.07)
         value += min(0.15, len(source_kinds) * 0.05)
         value += min(0.10, len(source_rules) * 0.03)
         return round(min(0.98, value), 2)
 
     @staticmethod
-    def _assessment_confidence(
-        techniques, lolbins, malware_tags
-    ) -> float:
+    def _assessment_confidence(techniques, lolbins, malware_tags) -> float:
         if not (techniques or lolbins or malware_tags):
             return 0.0
-        corroboration = (
-            len(techniques) + len(lolbins) + len(malware_tags)
-        )
-        diversity = sum(
-            bool(group)
-            for group in (techniques, lolbins, malware_tags)
-        )
+        corroboration = len(techniques) + len(lolbins) + len(malware_tags)
+        diversity = sum(bool(group) for group in (techniques, lolbins, malware_tags))
         strongest = max(
             [item.confidence for item in techniques]
             + [item.confidence for item in lolbins]
@@ -261,9 +340,7 @@ class ThreatIntelligenceEngine:
         )
 
     @staticmethod
-    def _relationships(
-        techniques, lolbins, malware_tags
-    ) -> List[Dict[str, Any]]:
+    def _relationships(techniques, lolbins, malware_tags) -> List[Dict[str, Any]]:
         relationships: List[Dict[str, Any]] = []
         for technique in techniques:
             node_ids = {
@@ -285,9 +362,7 @@ class ThreatIntelligenceEngine:
                             "id": technique.technique_id,
                         },
                         "relationship": "supports",
-                        "score": round(
-                            technique.confidence, 2
-                        ),
+                        "score": round(technique.confidence, 2),
                     }
                 )
 
@@ -335,23 +410,14 @@ class ThreatIntelligenceEngine:
         )
 
     @staticmethod
-    def _summary(
-        techniques, lolbins, malware_tags
-    ) -> str:
+    def _summary(techniques, lolbins, malware_tags) -> str:
         if not (techniques or lolbins or malware_tags):
-            return (
-                "No deterministic threat-intelligence "
-                "mappings were produced."
-            )
+            return "No deterministic threat-intelligence mappings were produced."
         parts = []
         if techniques:
-            parts.append(
-                f"{len(techniques)} ATT&CK technique(s)"
-            )
+            parts.append(f"{len(techniques)} ATT&CK technique(s)")
         if lolbins:
             parts.append(f"{len(lolbins)} LOLBin(s)")
         if malware_tags:
-            parts.append(
-                f"{len(malware_tags)} behavioral malware tag(s)"
-            )
+            parts.append(f"{len(malware_tags)} behavioral malware tag(s)")
         return "Identified " + ", ".join(parts) + "."

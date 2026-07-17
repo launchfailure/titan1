@@ -105,7 +105,11 @@ def evaluate() -> Dict:
             if (precision + recall)
             else 0.0
         )
-        return {"precision": round(precision, 3), "recall": round(recall, 3), "f1": round(f1, 3)}
+        return {
+            "precision": round(precision, 3),
+            "recall": round(recall, 3),
+            "f1": round(f1, 3),
+        }
 
     per_rule = {r: {**counts[r], **prf(counts[r])} for r in ALL_RULES}
 
@@ -136,8 +140,10 @@ def _print_table(metrics: Dict) -> None:
         f"Corpus: {metrics['corpus_size']} samples "
         f"({metrics['malicious_count']} malicious, {metrics['benign_count']} benign)\n"
     )
-    print(f"{'Rule':<12}{'TP':>4}{'FP':>4}{'FN':>4}{'TN':>4}"
-          f"{'Prec':>8}{'Recall':>8}{'F1':>7}")
+    print(
+        f"{'Rule':<12}{'TP':>4}{'FP':>4}{'FN':>4}{'TN':>4}"
+        f"{'Prec':>8}{'Recall':>8}{'F1':>7}"
+    )
     print("-" * 72)
     for rule, m in metrics["per_rule"].items():
         print(

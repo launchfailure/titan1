@@ -123,7 +123,7 @@ def satisfies(version: "str | Version", requirement: str) -> bool:
             )
             if operator is None:
                 raise ValueError(f"invalid version requirement clause: {clause!r}")
-            target = Version.parse(clause[len(operator):].strip())
+            target = Version.parse(clause[len(operator) :].strip())
             satisfied = {
                 ">=": value >= target,
                 "<=": value <= target,

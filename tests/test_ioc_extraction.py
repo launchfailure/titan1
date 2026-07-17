@@ -13,7 +13,9 @@ def test_hash_ioc_only_matches_real_digest_lengths():
 def test_hash_ioc_ignores_non_standard_hex_runs():
     # Hex-encoded payloads / arbitrary hex runs of non-hash length must not be
     # reported as hash IOCs.
-    hex_text = "48656c6c6f20576f726c6420746573740a"  # 34 chars: hex of "Hello World test\n"
+    hex_text = (
+        "48656c6c6f20576f726c6420746573740a"  # 34 chars: hex of "Hello World test\n"
+    )
     assert extract_iocs(hex_text)["hashes"] == []
 
     for length in (31, 33, 34, 39, 41, 50, 63, 65, 95, 127):
@@ -51,7 +53,14 @@ def test_domain_extraction_drops_filenames():
         "c2 is evil-corp.net via cdn.bad.example.org"
     )
     domains = extract_iocs(text)["domains"]
-    for filename in ("config.json", "gate.php", "report.pdf", "data.csv", "style.css", "app.exe"):
+    for filename in (
+        "config.json",
+        "gate.php",
+        "report.pdf",
+        "data.csv",
+        "style.css",
+        "app.exe",
+    ):
         assert filename not in domains
     assert "evil-corp.net" in domains
     assert "cdn.bad.example.org" in domains

@@ -26,8 +26,19 @@ def _report(analysis_id: str, domain: str, timestamp: str):
         "meta": {"analysis_id": analysis_id, "started_at": "2026-01-01T00:00:00+00:00"},
         "node_count": 2,
         "nodes": [
-            {"id": 0, "parent": None, "method": "SOURCE", "sha256": f"root-{analysis_id}"},
-            {"id": 1, "parent": 0, "method": "Base64", "decoder_used": "Base64", "sha256": "same"},
+            {
+                "id": 0,
+                "parent": None,
+                "method": "SOURCE",
+                "sha256": f"root-{analysis_id}",
+            },
+            {
+                "id": 1,
+                "parent": 0,
+                "method": "Base64",
+                "decoder_used": "Base64",
+                "sha256": "same",
+            },
         ],
         "iocs": {"domains": [domain]},
         "evidence": {
@@ -115,7 +126,10 @@ def test_shared_payloads_and_timeline_are_cross_case_without_prior_reports(tmp_p
 
     assert result["shared_payloads"]["match_count"] == 1
     match = result["shared_payloads"]["matches"][0]
-    assert {match["left_analysis_id"], match["right_analysis_id"]} == {"case-a", "case-b"}
+    assert {match["left_analysis_id"], match["right_analysis_id"]} == {
+        "case-a",
+        "case-b",
+    }
 
     assert result["timeline_correlation"]["event_count"] == 2
     assert result["timeline_correlation"]["link_count"] == 1

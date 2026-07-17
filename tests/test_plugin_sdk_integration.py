@@ -43,8 +43,10 @@ def test_engine_decodes_with_sdk_decoder_plugin():
     config.set("plugin_dirs", [str(EXAMPLES / "rot47_decoder")])
     engine = TitanEngine(config)
     # ROT47-encoded text whose decode exposes a URL (clear structure gain):
-    rot47 = bytes(((b - 33 + 47) % 94) + 33 if 33 <= b <= 126 else b
-                  for b in b"fetch http://malware-marker.example/gate.php now")
+    rot47 = bytes(
+        ((b - 33 + 47) % 94) + 33 if 33 <= b <= 126 else b
+        for b in b"fetch http://malware-marker.example/gate.php now"
+    )
     report = engine.run_analysis(rot47)
     methods = {node.get("decoder_used") for node in report["nodes"]}
     assert "ROT47" in methods
@@ -65,7 +67,9 @@ def test_detection_plugins_run_in_detection_stage():
         "iocs": {},
     }
     args = _args(enable_detections=True, quiet=True)
-    detections, risk = cli.run_detections_stage(args, Config(), report, None, engine=engine)
+    detections, risk = cli.run_detections_stage(
+        args, Config(), report, None, engine=engine
+    )
     plugin_hits = [d for d in detections if d.get("source", {}).get("type") == "plugin"]
     assert len(plugin_hits) == 1
     hit = plugin_hits[0]
@@ -106,7 +110,9 @@ def test_detection_plugin_failure_never_aborts_stage(tmp_path, capsys):
     engine = SimpleNamespace(plugin_manager=manager)
     report = {"meta": {}, "node_count": 0, "nodes": [], "iocs": {}}
     args = _args(enable_detections=True, quiet=False)
-    detections, _ = cli.run_detections_stage(args, Config(), report, None, engine=engine)
+    detections, _ = cli.run_detections_stage(
+        args, Config(), report, None, engine=engine
+    )
     assert all(d.get("source", {}).get("type") != "plugin" for d in detections)
     assert "Crashy failed" in capsys.readouterr().err
 

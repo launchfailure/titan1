@@ -64,7 +64,9 @@ class IndicatorRecord:
             raise ValueError("value must not be empty")
 
         object.__setattr__(self, "indicator_type", self.indicator_type.strip().lower())
-        object.__setattr__(self, "normalized_value", self.normalized_value or self.value.strip())
+        object.__setattr__(
+            self, "normalized_value", self.normalized_value or self.value.strip()
+        )
         object.__setattr__(
             self,
             "references",
@@ -120,7 +122,9 @@ class AnalysisRecord:
         )
         object.__setattr__(self, "attack_ids", _sorted_unique(self.attack_ids))
         object.__setattr__(self, "threat_tags", _sorted_unique(self.threat_tags))
-        object.__setattr__(self, "decode_chain", tuple(str(item) for item in self.decode_chain))
+        object.__setattr__(
+            self, "decode_chain", tuple(str(item) for item in self.decode_chain)
+        )
         object.__setattr__(self, "metadata", dict(self.metadata))
 
     def to_dict(self) -> dict[str, Any]:
@@ -267,5 +271,7 @@ class CorrelationReport:
             "schema_version": self.schema_version,
             "subject_analysis_id": self.subject_analysis_id,
             "generated_at": self.generated_at,
-            "relationships": [relationship.to_dict() for relationship in self.relationships],
+            "relationships": [
+                relationship.to_dict() for relationship in self.relationships
+            ],
         }

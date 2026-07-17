@@ -53,7 +53,9 @@ class AnalysisSnapshot:
 
     @property
     def strings(self) -> list[str]:
-        values = self.report.get("interesting_strings") or self.report.get("strings") or []
+        values = (
+            self.report.get("interesting_strings") or self.report.get("strings") or []
+        )
         if not isinstance(values, list):
             return []
         return [str(value) for value in values]
@@ -61,7 +63,12 @@ class AnalysisSnapshot:
     @property
     def timeline(self) -> list[dict[str, Any]]:
         evidence = self.report.get("evidence") or {}
-        source = (evidence.get("events") if isinstance(evidence, dict) else None) or self.report.get("timeline") or self.report.get("evidence_timeline") or []
+        source = (
+            (evidence.get("events") if isinstance(evidence, dict) else None)
+            or self.report.get("timeline")
+            or self.report.get("evidence_timeline")
+            or []
+        )
         return [item for item in source if isinstance(item, dict)]
 
     @property
@@ -76,4 +83,6 @@ class AnalysisSnapshot:
 
     @property
     def ioc_count(self) -> int:
-        return sum(len(values) for values in self.iocs.values() if isinstance(values, list))
+        return sum(
+            len(values) for values in self.iocs.values() if isinstance(values, list)
+        )

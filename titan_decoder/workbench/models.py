@@ -128,4 +128,6 @@ class TitanReport:
         return result
 
     def detections(self) -> list[dict[str, Any]]:
-        return [item for item in self.data.get("detections") or [] if isinstance(item, dict)]
+        return [
+            item for item in self.data.get("detections") or [] if isinstance(item, dict)
+        ]

@@ -120,13 +120,13 @@ def parse_powershell_history(path: Path) -> Tuple[List[EvidenceEvent], List[Indi
 
 def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
     cur = conn.cursor()
-    cur.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (name,)
-    )
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (name,))
     return cur.fetchone() is not None
 
 
-def parse_browser_history_sqlite(path: Path) -> Tuple[List[EvidenceEvent], List[Indicator]]:
+def parse_browser_history_sqlite(
+    path: Path,
+) -> Tuple[List[EvidenceEvent], List[Indicator]]:
     extracted_by = "endpoint_parser:browser_history"
     events: List[EvidenceEvent] = []
     indicators: List[Indicator] = []

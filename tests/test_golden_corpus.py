@@ -34,7 +34,9 @@ _INPUTS = build_inputs()
 def test_output_matches_golden(name):
     data = _INPUTS[name]
     expected_path = os.path.join(EXPECTED_DIR, name + ".json")
-    assert os.path.exists(expected_path), f"missing golden for {name} (run tools/golden.py --regen)"
+    assert os.path.exists(expected_path), (
+        f"missing golden for {name} (run tools/golden.py --regen)"
+    )
     expected = open(expected_path).read()
     actual = normalized_json(TitanEngine(Config()).run_analysis(data))
     assert actual == expected, (

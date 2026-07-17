@@ -36,7 +36,13 @@ def decode_tree(report: TitanReport, *, filter_text: str = "") -> str:
     for node in report.nodes():
         text = " ".join(
             str(node.get(key, ""))
-            for key in ("method", "decoder_used", "content_type", "content_preview", "artifact_name")
+            for key in (
+                "method",
+                "decoder_used",
+                "content_type",
+                "content_preview",
+                "artifact_name",
+            )
         )
         if needle and needle not in text.lower():
             continue
@@ -107,7 +113,9 @@ def timeline_view(report: TitanReport, *, filter_text: str = "") -> str:
     events = []
     for item in report.timeline():
         timestamp = str(item.get("timestamp") or item.get("time") or "")
-        kind = str(item.get("kind") or item.get("event_type") or item.get("type") or "event")
+        kind = str(
+            item.get("kind") or item.get("event_type") or item.get("type") or "event"
+        )
         summary = str(
             item.get("summary") or item.get("message") or item.get("description") or ""
         )

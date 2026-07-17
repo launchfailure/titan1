@@ -31,7 +31,9 @@ def build_evidence_timeline(report: Dict[str, Any]) -> List[Dict[str, Any]]:
     return out
 
 
-def export_evidence_timeline(timeline: List[Dict[str, Any]], path: Path, fmt: str = "json") -> None:
+def export_evidence_timeline(
+    timeline: List[Dict[str, Any]], path: Path, fmt: str = "json"
+) -> None:
     fmt = (fmt or "json").lower()
     if fmt == "json":
         path.write_text(json.dumps(timeline, indent=2))

@@ -71,7 +71,9 @@ class PluginManifest:
             homepage=str(data.get("homepage", "")),
             permissions=tuple(data.get("permissions") or ()),
             dependencies=dict(data.get("dependencies") or {}),
-            schema_version=str(data.get("schema_version") or PLUGIN_MANIFEST_SCHEMA_VERSION),
+            schema_version=str(
+                data.get("schema_version") or PLUGIN_MANIFEST_SCHEMA_VERSION
+            ),
         )
 
     @classmethod
@@ -122,7 +124,10 @@ def validate_manifest(
     if not manifest.name.strip():
         errors.append("name must not be empty")
 
-    for label, value in (("version", manifest.version), ("api_version", manifest.api_version)):
+    for label, value in (
+        ("version", manifest.version),
+        ("api_version", manifest.api_version),
+    ):
         try:
             Version.parse(value)
         except ValueError:
@@ -150,7 +155,9 @@ def validate_manifest(
 
             satisfies("0.0.0", requirement)
         except ValueError:
-            errors.append(f"invalid dependency requirement for {dependency}: {requirement!r}")
+            errors.append(
+                f"invalid dependency requirement for {dependency}: {requirement!r}"
+            )
 
     try:
         if not is_manifest_api_compatible(manifest.api_version, provided_api_version):

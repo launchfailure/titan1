@@ -141,7 +141,9 @@ class DetectionFinding:
         if self.severity not in {"low", "medium", "high", "critical"}:
             raise ValueError("severity must be low, medium, high, or critical")
         object.__setattr__(self, "attack_ids", tuple(sorted(set(self.attack_ids))))
-        object.__setattr__(self, "evidence", tuple(dict(item) for item in self.evidence))
+        object.__setattr__(
+            self, "evidence", tuple(dict(item) for item in self.evidence)
+        )
         object.__setattr__(self, "metadata", dict(self.metadata))
 
     def to_dict(self) -> dict[str, Any]:
@@ -271,7 +273,9 @@ class AnalyzerPlugin(PluginAnalyzer):
     api_version = PLUGIN_API_VERSION
 
     @abstractmethod
-    def can_analyze(self, data: bytes, context: PluginContext | None = None) -> bool: ...
+    def can_analyze(
+        self, data: bytes, context: PluginContext | None = None
+    ) -> bool: ...
 
     @abstractmethod
     def analyze(

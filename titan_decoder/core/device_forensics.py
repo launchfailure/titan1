@@ -90,9 +90,7 @@ class ForensicsEngine:
             "recommendations": recommendations,
         }
 
-    def _meaningful_nodes(
-        self, nodes: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _meaningful_nodes(self, nodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Keep only leaf nodes (decoded/final content).
 
         Intermediate encoding layers (e.g. the raw base64 or compressed bytes of

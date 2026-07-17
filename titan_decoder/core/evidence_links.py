@@ -34,7 +34,9 @@ def _split_answers(raw_answers: Any) -> List[str]:
     if isinstance(raw_answers, list):
         return [str(a).strip() for a in raw_answers if str(a).strip()]
     if isinstance(raw_answers, str):
-        return [a.strip() for a in raw_answers.replace(";", ",").split(",") if a.strip()]
+        return [
+            a.strip() for a in raw_answers.replace(";", ",").split(",") if a.strip()
+        ]
     s = str(raw_answers).strip()
     return [s] if s else []
 
@@ -50,7 +52,13 @@ class EvidenceLink:
     sources: List[Dict[str, Any]] = field(default_factory=list)
 
     def key(self) -> tuple[str, str, str, str, str]:
-        return (self.src_type, self.src_value, self.dst_type, self.dst_value, self.reason_code)
+        return (
+            self.src_type,
+            self.src_value,
+            self.dst_type,
+            self.dst_value,
+            self.reason_code,
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -108,7 +116,9 @@ def json_key(source: Dict[str, Any]) -> str:
     )
 
 
-def build_links_from_evidence_events(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def build_links_from_evidence_events(
+    events: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
     """Derive evidence links from normalized evidence events.
 
     Expects event dicts as produced by EvidenceEvent.to_dict().
@@ -274,7 +284,19 @@ def build_links_from_evidence_events(events: List[Dict[str, Any]]) -> List[Dict[
             )
 
     # Return deterministic ordering
-    out = [link.to_dict() for link in sorted(links.values(), key=lambda x: (x.src_type, x.src_value, x.dst_type, x.dst_value, x.reason_code))]
+    out = [
+        link.to_dict()
+        for link in sorted(
+            links.values(),
+            key=lambda x: (
+                x.src_type,
+                x.src_value,
+                x.dst_type,
+                x.dst_value,
+                x.reason_code,
+            ),
+        )
+    ]
     return out
 
 

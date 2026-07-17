@@ -184,7 +184,10 @@ def test_spearphish_attachment_maps_from_mime_headers():
 
 
 def test_benign_prose_produces_no_techniques():
-    assert _techniques_for(
-        "The quarterly budget report is attached for review. Totals were "
-        "confirmed by the finance team during the planning meeting."
-    ) == set()
+    assert (
+        _techniques_for(
+            "The quarterly budget report is attached for review. Totals were "
+            "confirmed by the finance team during the planning meeting."
+        )
+        == set()
+    )

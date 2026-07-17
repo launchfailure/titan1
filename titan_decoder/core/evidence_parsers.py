@@ -224,7 +224,11 @@ def _extract_indicators_from_fields(
                     last_seen=ts,
                     confidence=confidence,
                     tags=list(tags),
-                    sources=[_mk_ref(path, extracted_by, record, field=field, preview=_rec_prev)],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, record, field=field, preview=_rec_prev
+                        )
+                    ],
                 )
             )
     return inds
@@ -238,9 +242,21 @@ def parse_dns_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
     for rec in records:
         _rec_prev = _record_preview(rec)
         ts = parse_timestamp(_pick(rec, ["timestamp", "time", "ts", "datetime"]))
-        client_ip = _pick(rec, ["client_ip", "src_ip", "src", "ip", "client"])  # best-effort
+        client_ip = _pick(
+            rec, ["client_ip", "src_ip", "src", "ip", "client"]
+        )  # best-effort
         query = _pick(rec, ["query", "qname", "domain", "name"])
-        answers = _pick(rec, ["answers", "answer", "resolved_ips", "resolved_ip", "ip_answer", "resolved"])
+        answers = _pick(
+            rec,
+            [
+                "answers",
+                "answer",
+                "resolved_ips",
+                "resolved_ip",
+                "ip_answer",
+                "resolved",
+            ],
+        )
         server_ip = _pick(rec, ["server_ip", "resolver_ip", "dns_server"])
 
         # Normalize answers into list
@@ -248,7 +264,9 @@ def parse_dns_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
         if isinstance(answers, list):
             answer_list = [str(a).strip() for a in answers if str(a).strip()]
         elif isinstance(answers, str):
-            answer_list = [a.strip() for a in answers.replace(";", ",").split(",") if a.strip()]
+            answer_list = [
+                a.strip() for a in answers.replace(";", ",").split(",") if a.strip()
+            ]
         elif answers not in (None, ""):
             answer_list = [str(answers).strip()]
 
@@ -291,7 +309,15 @@ def parse_dns_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
                     last_seen=ts,
                     confidence="medium",
                     tags=["dns", "client"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="client_ip")],
+                    sources=[
+                        _mk_ref(
+                            path,
+                            extracted_by,
+                            rec,
+                            preview=_rec_prev,
+                            field="client_ip",
+                        )
+                    ],
                 )
             )
         for ip in answer_list:
@@ -303,7 +329,11 @@ def parse_dns_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
                     last_seen=ts,
                     confidence="high",
                     tags=["dns", "answer"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="answers")],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, rec, preview=_rec_prev, field="answers"
+                        )
+                    ],
                 )
             )
 
@@ -352,7 +382,9 @@ def parse_proxy_records(path: Path, records: List[Dict[str, Any]]) -> ParseResul
                     last_seen=ts,
                     confidence="high",
                     tags=["proxy"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="url")],
+                    sources=[
+                        _mk_ref(path, extracted_by, rec, preview=_rec_prev, field="url")
+                    ],
                 )
             )
         if domain:
@@ -364,7 +396,11 @@ def parse_proxy_records(path: Path, records: List[Dict[str, Any]]) -> ParseResul
                     last_seen=ts,
                     confidence="high",
                     tags=["proxy"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="host")],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, rec, preview=_rec_prev, field="host"
+                        )
+                    ],
                 )
             )
         if user_agent:
@@ -376,7 +412,15 @@ def parse_proxy_records(path: Path, records: List[Dict[str, Any]]) -> ParseResul
                     last_seen=ts,
                     confidence="medium",
                     tags=["proxy"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="user_agent")],
+                    sources=[
+                        _mk_ref(
+                            path,
+                            extracted_by,
+                            rec,
+                            preview=_rec_prev,
+                            field="user_agent",
+                        )
+                    ],
                 )
             )
         if src_ip:
@@ -388,7 +432,11 @@ def parse_proxy_records(path: Path, records: List[Dict[str, Any]]) -> ParseResul
                     last_seen=ts,
                     confidence="medium",
                     tags=["proxy", "client"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="src_ip")],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, rec, preview=_rec_prev, field="src_ip"
+                        )
+                    ],
                 )
             )
         if dst_ip:
@@ -400,7 +448,11 @@ def parse_proxy_records(path: Path, records: List[Dict[str, Any]]) -> ParseResul
                     last_seen=ts,
                     confidence="medium",
                     tags=["proxy", "server"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="dst_ip")],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, rec, preview=_rec_prev, field="dst_ip"
+                        )
+                    ],
                 )
             )
 
@@ -471,8 +523,12 @@ def parse_firewall_records(path: Path, records: List[Dict[str, Any]]) -> ParseRe
                 ],
             )
         )
-        proto = _pick(rec, ["proto", "protocol", "ipproto", "transport", "protocol_name"])  # tcp/udp/icmp
-        action = _pick(rec, ["action", "decision", "rule_action", "verdict", "disposition"])
+        proto = _pick(
+            rec, ["proto", "protocol", "ipproto", "transport", "protocol_name"]
+        )  # tcp/udp/icmp
+        action = _pick(
+            rec, ["action", "decision", "rule_action", "verdict", "disposition"]
+        )
 
         e = EvidenceEvent(
             event_type="network_flow",
@@ -502,7 +558,11 @@ def parse_firewall_records(path: Path, records: List[Dict[str, Any]]) -> ParseRe
                     last_seen=ts,
                     confidence="medium",
                     tags=["firewall", "src"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="src_ip")],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, rec, preview=_rec_prev, field="src_ip"
+                        )
+                    ],
                 )
             )
         if dst_ip:
@@ -514,7 +574,11 @@ def parse_firewall_records(path: Path, records: List[Dict[str, Any]]) -> ParseRe
                     last_seen=ts,
                     confidence="medium",
                     tags=["firewall", "dst"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="dst_ip")],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, rec, preview=_rec_prev, field="dst_ip"
+                        )
+                    ],
                 )
             )
 
@@ -559,7 +623,11 @@ def parse_vpn_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
                     last_seen=ts,
                     confidence="high",
                     tags=["vpn"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="user")],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, rec, preview=_rec_prev, field="user"
+                        )
+                    ],
                 )
             )
         if src_ip:
@@ -571,7 +639,11 @@ def parse_vpn_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
                     last_seen=ts,
                     confidence="high",
                     tags=["vpn", "client"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="src_ip")],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, rec, preview=_rec_prev, field="src_ip"
+                        )
+                    ],
                 )
             )
         if assigned_ip:
@@ -583,7 +655,15 @@ def parse_vpn_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult:
                     last_seen=ts,
                     confidence="medium",
                     tags=["vpn", "assigned"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="assigned_ip")],
+                    sources=[
+                        _mk_ref(
+                            path,
+                            extracted_by,
+                            rec,
+                            preview=_rec_prev,
+                            field="assigned_ip",
+                        )
+                    ],
                 )
             )
 
@@ -628,7 +708,11 @@ def parse_auth_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
                     last_seen=ts,
                     confidence="high",
                     tags=["auth"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="user")],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, rec, preview=_rec_prev, field="user"
+                        )
+                    ],
                 )
             )
         if src_ip:
@@ -640,7 +724,11 @@ def parse_auth_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
                     last_seen=ts,
                     confidence="medium",
                     tags=["auth"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="src_ip")],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, rec, preview=_rec_prev, field="src_ip"
+                        )
+                    ],
                 )
             )
         if host:
@@ -652,7 +740,11 @@ def parse_auth_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
                     last_seen=ts,
                     confidence="medium",
                     tags=["auth"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="host")],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, rec, preview=_rec_prev, field="host"
+                        )
+                    ],
                 )
             )
 
@@ -694,7 +786,9 @@ def parse_dhcp_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
                     last_seen=ts,
                     confidence="high",
                     tags=["dhcp"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="mac")],
+                    sources=[
+                        _mk_ref(path, extracted_by, rec, preview=_rec_prev, field="mac")
+                    ],
                 )
             )
         if ip:
@@ -706,7 +800,9 @@ def parse_dhcp_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
                     last_seen=ts,
                     confidence="high",
                     tags=["dhcp"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="ip")],
+                    sources=[
+                        _mk_ref(path, extracted_by, rec, preview=_rec_prev, field="ip")
+                    ],
                 )
             )
         if hostname:
@@ -718,7 +814,11 @@ def parse_dhcp_records(path: Path, records: List[Dict[str, Any]]) -> ParseResult
                     last_seen=ts,
                     confidence="medium",
                     tags=["dhcp"],
-                    sources=[_mk_ref(path, extracted_by, rec, preview=_rec_prev, field="hostname")],
+                    sources=[
+                        _mk_ref(
+                            path, extracted_by, rec, preview=_rec_prev, field="hostname"
+                        )
+                    ],
                 )
             )
 
@@ -734,7 +834,13 @@ def parse_evidence_file(path: Path, kind: str) -> ParseResult:
         events, indicators = parse_powershell_history(path)
         return ParseResult(events=events, indicators=merge_indicators(indicators))
 
-    if kind in {"browser", "browser_history", "chrome_history", "edge_history", "firefox_history"}:
+    if kind in {
+        "browser",
+        "browser_history",
+        "chrome_history",
+        "edge_history",
+        "firefox_history",
+    }:
         events, indicators = parse_browser_history_sqlite(path)
         return ParseResult(events=events, indicators=merge_indicators(indicators))
 
@@ -788,7 +894,13 @@ def parse_evidence_file(path: Path, kind: str) -> ParseResult:
         ]
         indicators.extend(
             _extract_indicators_from_fields(
-                path, extracted_by, e.to_dict(), ts, field_map, confidence="low", tags=["generic"]
+                path,
+                extracted_by,
+                e.to_dict(),
+                ts,
+                field_map,
+                confidence="low",
+                tags=["generic"],
             )
         )
 

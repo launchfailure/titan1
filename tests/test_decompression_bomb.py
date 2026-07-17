@@ -66,7 +66,9 @@ def test_pdf_flatedecode_bomb_is_bounded():
     pdf = (
         b"%PDF-1.5\n1 0 obj<</Filter/FlateDecode/Length "
         + str(len(flate_bomb)).encode()
-        + b">>stream\n" + flate_bomb + b"\nendstream endobj\n%%EOF"
+        + b">>stream\n"
+        + flate_bomb
+        + b"\nendstream endobj\n%%EOF"
     )
     out, ok = PDFDecoder(cap).decode(pdf)
     # Bomb exceeds the cap: the inflated 50 MB must NOT be produced.
@@ -81,7 +83,8 @@ def test_pdf_legit_flate_stream_still_extracted():
     payload = b"http://pdf-c2.example.net 8.8.8.8 secret"
     pdf = (
         b"%PDF-1.5\n1 0 obj<</Filter/FlateDecode/Length 0>>stream\n"
-        + zlib.compress(payload) + b"\nendstream endobj\n%%EOF"
+        + zlib.compress(payload)
+        + b"\nendstream endobj\n%%EOF"
     )
     out, ok = PDFDecoder(50 * 1024 * 1024).decode(pdf)
     assert ok is True

@@ -79,15 +79,12 @@ class Config:
         "correlation_db_path": None,
         "enable_yara": False,  # Optional YARA scanning on decoded artifacts
         "yara_rules_path": None,
-
         # Reproducibility / strictness
         "seed": None,  # Optional deterministic seed recorded in run_manifest
         "strict": False,  # Optional CLI strict mode can enforce report contract
         "max_report_size_mb": None,  # Optional guard against huge report outputs
-
         # Detection rule packs (rules-as-data)
         "detection_rule_packs": [],  # list of JSON/YAML pack paths
-
         # Local vault (history/search)
         "vault_dir": None,  # default: ~/.titan_decoder/vault
         "vault_db_path": None,  # default: <vault_dir>/vault.db

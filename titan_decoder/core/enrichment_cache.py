@@ -54,7 +54,9 @@ class EnrichmentCache:
         conn.executescript(SCHEMA)
         return conn
 
-    def get(self, provider: str, indicator_type: str, indicator_value: str) -> Optional[CacheHit]:
+    def get(
+        self, provider: str, indicator_type: str, indicator_value: str
+    ) -> Optional[CacheHit]:
         provider = (provider or "").strip().lower()
         indicator_type = (indicator_type or "").strip().lower()
         indicator_value = (indicator_value or "").strip()
@@ -93,7 +95,13 @@ class EnrichmentCache:
         finally:
             conn.close()
 
-    def set(self, provider: str, indicator_type: str, indicator_value: str, payload: Dict[str, Any]) -> str:
+    def set(
+        self,
+        provider: str,
+        indicator_type: str,
+        indicator_value: str,
+        payload: Dict[str, Any],
+    ) -> str:
         provider = (provider or "").strip().lower()
         indicator_type = (indicator_type or "").strip().lower()
         indicator_value = (indicator_value or "").strip()
@@ -109,7 +117,13 @@ class EnrichmentCache:
         try:
             conn.execute(
                 "INSERT OR REPLACE INTO enrichment_cache(provider, indicator_type, indicator_value, cached_at, payload_json) VALUES (?, ?, ?, ?, ?)",
-                (provider, indicator_type, indicator_value, cached_at, json.dumps(payload, sort_keys=True)),
+                (
+                    provider,
+                    indicator_type,
+                    indicator_value,
+                    cached_at,
+                    json.dumps(payload, sort_keys=True),
+                ),
             )
             conn.commit()
         except sqlite3.DatabaseError:

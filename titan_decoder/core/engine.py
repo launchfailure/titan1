@@ -151,9 +151,7 @@ class TitanEngine:
 
         # Initialize decoders based on config
         # Cap decompressed output to defend against decompression bombs.
-        max_decompressed = int(
-            self.config.get("max_data_size", 50 * 1024 * 1024)
-        )
+        max_decompressed = int(self.config.get("max_data_size", 50 * 1024 * 1024))
         self.decoders: List[Decoder] = []
         if self.config.get("decoders", {}).get("recursive_base64", True):
             self.decoders.append(RecursiveBase64Decoder())
@@ -274,11 +272,11 @@ class TitanEngine:
         # resolve to the first decoder tried, so this sort is what makes tie
         # resolution reproducible.
         try:
-            self.decoders.sort(key=lambda d: (getattr(d, "name", "")))
+            self.decoders.sort(key=lambda d: getattr(d, "name", ""))
         except Exception:
             pass
         try:
-            self.analyzers.sort(key=lambda a: (getattr(a, "name", "")))
+            self.analyzers.sort(key=lambda a: getattr(a, "name", ""))
         except Exception:
             pass
 
@@ -505,9 +503,7 @@ class TitanEngine:
                                 "type": "decoder",
                                 "name": decoder.name,
                                 "success": True,
-                                "duration_ms": int(
-                                    (time.monotonic() - started) * 1000
-                                ),
+                                "duration_ms": int((time.monotonic() - started) * 1000),
                                 "score": score,
                                 "decoded_size": len(decoded) if decoded else 0,
                             }
@@ -628,7 +624,9 @@ class TitanEngine:
         self._finalize_provenance()
 
         finished_wall = datetime.now(timezone.utc)
-        duration_ms = int((time.monotonic() - (self._analysis_started_monotonic or 0)) * 1000)
+        duration_ms = int(
+            (time.monotonic() - (self._analysis_started_monotonic or 0)) * 1000
+        )
 
         # Extract IOCs from every node's preview, not just Text-classified ones.
         # Malware routinely embeds C2 URLs/IPs in otherwise-binary content (config

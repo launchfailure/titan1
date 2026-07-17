@@ -14,7 +14,7 @@ from titan_decoder.plugins import (
 )
 
 
-COMPATIBLE_PLUGIN = '''
+COMPATIBLE_PLUGIN = """
 from titan_decoder.plugins.api import PluginDecoder, PLUGIN_API_VERSION
 
 PLUGIN_API_VERSION = PLUGIN_API_VERSION
@@ -30,9 +30,9 @@ class ReverseDecoder(PluginDecoder):
 
     def decode(self, data):
         return data[::-1], True
-'''
+"""
 
-INCOMPATIBLE_PLUGIN = '''
+INCOMPATIBLE_PLUGIN = """
 from titan_decoder.plugins.api import PluginDecoder
 
 # Declares a future MAJOR the engine does not provide.
@@ -49,7 +49,7 @@ class FromTheFutureDecoder(PluginDecoder):
 
     def decode(self, data):
         return data, False
-'''
+"""
 
 
 def test_is_api_compatible():

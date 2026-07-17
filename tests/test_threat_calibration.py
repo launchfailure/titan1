@@ -28,9 +28,7 @@ def _corpus():
 
 
 def _cases():
-    return [
-        pytest.param(case, id=case["id"]) for case in _corpus()["cases"]
-    ]
+    return [pytest.param(case, id=case["id"]) for case in _corpus()["cases"]]
 
 
 @pytest.mark.parametrize("case", _cases())
@@ -41,16 +39,14 @@ def test_calibration_case_matches_expected(case):
     expected = case["expected"]
 
     assert result["confidence"] == expected["confidence"]
-    assert [
-        item["technique_id"] for item in result["techniques"]
-    ] == expected["technique_ids"]
+    assert [item["technique_id"] for item in result["techniques"]] == expected[
+        "technique_ids"
+    ]
     assert result["tactics"] == expected["tactics"]
-    assert [
-        item["executable"] for item in result["lolbins"]
-    ] == expected["lolbin_executables"]
-    assert [
-        item["tag"] for item in result["malware_tags"]
-    ] == expected["malware_tags"]
+    assert [item["executable"] for item in result["lolbins"]] == expected[
+        "lolbin_executables"
+    ]
+    assert [item["tag"] for item in result["malware_tags"]] == expected["malware_tags"]
 
 
 @pytest.mark.parametrize("case", _cases())

@@ -102,7 +102,9 @@ class AnalystEngine:
             kinds=plan.kinds, terms=plan.terms, limit=self.max_evidence_items
         )
         if not selected and plan.terms:
-            selected = self.index.select(kinds=plan.kinds, limit=self.max_evidence_items)
+            selected = self.index.select(
+                kinds=plan.kinds, limit=self.max_evidence_items
+            )
         fallback = deterministic_answer(plan, selected)
         if self.backend is None:
             return AnalystResponse(

@@ -1,4 +1,3 @@
-
 import pytest
 
 from titan_decoder.correlation.models import CorrelationReport

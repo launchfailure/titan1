@@ -75,8 +75,7 @@ def _bench_corpus() -> Dict[str, bytes]:
         base64.b64encode(b"payload http://c2.example/x " * 500)
     )
     corpus["big_xor"] = bytes(
-        b ^ 0x3C
-        for b in (b"config http://malware.example/panel sleep=60 " * 400)
+        b ^ 0x3C for b in (b"config http://malware.example/panel sleep=60 " * 400)
     )
     return corpus
 
@@ -121,7 +120,11 @@ def check() -> int:
     # overhead-bound corpus timings do not scale with a CPU-bound calibration,
     # so shrinking the budget on a fast runner produced false regressions. We
     # only ever relax the budget (scale it up) on a slower runner.
-    raw_speed = current["calibration"] / baseline["calibration"] if baseline["calibration"] else 1.0
+    raw_speed = (
+        current["calibration"] / baseline["calibration"]
+        if baseline["calibration"]
+        else 1.0
+    )
     speed = max(1.0, raw_speed)
     threshold = baseline.get("time_threshold", TIME_THRESHOLD)
 

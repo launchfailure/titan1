@@ -80,9 +80,7 @@ def build_sbom(deterministic: bool = True) -> dict:
     if not deterministic:
         import datetime
 
-        metadata["timestamp"] = datetime.datetime.now(
-            datetime.timezone.utc
-        ).isoformat()
+        metadata["timestamp"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     sbom = {
         "bomFormat": "CycloneDX",

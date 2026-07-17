@@ -288,6 +288,12 @@ def merge_indicators(indicators: List[Indicator]) -> List[Indicator]:
 
         # Confidence: if either is high -> high; else if either medium -> medium
         order = {"low": 0, "medium": 1, "high": 2}
-        cur.confidence = "high" if order.get(cur.confidence, 1) >= 2 or order.get(ind.confidence, 1) >= 2 else "medium" if order.get(cur.confidence, 1) >= 1 or order.get(ind.confidence, 1) >= 1 else "low"
+        cur.confidence = (
+            "high"
+            if order.get(cur.confidence, 1) >= 2 or order.get(ind.confidence, 1) >= 2
+            else "medium"
+            if order.get(cur.confidence, 1) >= 1 or order.get(ind.confidence, 1) >= 1
+            else "low"
+        )
 
     return list(merged.values())

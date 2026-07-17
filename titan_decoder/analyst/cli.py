@@ -107,13 +107,17 @@ def main(argv=None) -> int:
 
     def answer(question: str) -> None:
         response = engine.ask(question)
-        print(json.dumps(response.to_dict(), indent=2) if args.json else response.answer)
+        print(
+            json.dumps(response.to_dict(), indent=2) if args.json else response.answer
+        )
 
     if args.ask:
         answer(args.ask)
         return 0
 
-    print(f"Titan Local AI Analyst — {len(reports)} report(s), backend: {args.backend}.")
+    print(
+        f"Titan Local AI Analyst — {len(reports)} report(s), backend: {args.backend}."
+    )
     print("Type a question, or 'quit' to exit.")
     while True:
         try:

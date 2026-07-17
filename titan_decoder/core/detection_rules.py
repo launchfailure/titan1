@@ -90,12 +90,8 @@ class CorrelationRulesEngine:
 
             for index, rule_def in enumerate(rules):
                 problems = validate_rule_def(rule_def)
-                rid = (
-                    rule_def.get("id") if isinstance(rule_def, dict) else None
-                )
-                label = (
-                    rid if isinstance(rid, str) and rid else f"rules[{index}]"
-                )
+                rid = rule_def.get("id") if isinstance(rule_def, dict) else None
+                label = rid if isinstance(rid, str) and rid else f"rules[{index}]"
                 if problems:
                     pack_meta["rules_skipped"] += 1
                     logger.warning(
@@ -280,10 +276,9 @@ class CorrelationRulesEngine:
         """Detect Office documents with macros and network IOCs."""
         nodes = report.get("nodes", [])
         has_ole = any(
-            "ole" in (
-                (node.get("method", "") or "")
-                + " "
-                + ((node.get("decoder_used") or ""))
+            "ole"
+            in (
+                (node.get("method", "") or "") + " " + (node.get("decoder_used") or "")
             ).lower()
             for node in nodes
         )
@@ -395,10 +390,9 @@ class CorrelationRulesEngine:
         """Detect PDFs with embedded executables."""
         nodes = report.get("nodes", [])
         has_pdf = any(
-            "pdf" in (
-                (node.get("method", "") or "")
-                + " "
-                + ((node.get("decoder_used") or ""))
+            "pdf"
+            in (
+                (node.get("method", "") or "") + " " + (node.get("decoder_used") or "")
             ).lower()
             for node in nodes
         )

@@ -12,9 +12,9 @@ def _build_pe(magic, opt_header_size, tail=b""):
     )
     # Standard optional-header common fields (24 bytes):
     # magic, major/minor linker, code/init/uninit sizes, entry point, base of code.
-    opt = struct.pack(
-        "<HBBIIIII", magic, 14, 29, 0x1000, 0x800, 0, 0x1500, 0x1000
-    ) + tail
+    opt = (
+        struct.pack("<HBBIIIII", magic, 14, 29, 0x1000, 0x800, 0, 0x1500, 0x1000) + tail
+    )
     return mz + b"PE\x00\x00" + coff + opt
 
 
@@ -31,7 +31,9 @@ def test_pe32plus_metadata():
 
 def test_pe32_metadata():
     pe = _build_pe(
-        0x10B, 0xE0, tail=struct.pack("<I", 0) + struct.pack("<I", 0x400000) + b"\x00" * 200
+        0x10B,
+        0xE0,
+        tail=struct.pack("<I", 0) + struct.pack("<I", 0x400000) + b"\x00" * 200,
     )
     md = PEAnalyzer()._extract_pe_metadata(pe)
     assert "error" not in md

@@ -67,8 +67,14 @@ class EnhancedInteractiveApp(InteractiveApp):
     def _banner(self) -> None:
         width = terminal_width()
         self._print()
-        self._print(self.st.cyan(self.st.bold("  TITAN // FORENSIC INTELLIGENCE CONSOLE")))
-        self._print(self.st.dim(f"  deterministic analysis · v{TITAN_VERSION} · terminal workspace"))
+        self._print(
+            self.st.cyan(self.st.bold("  TITAN // FORENSIC INTELLIGENCE CONSOLE"))
+        )
+        self._print(
+            self.st.dim(
+                f"  deterministic analysis · v{TITAN_VERSION} · terminal workspace"
+            )
+        )
         self._print("  " + "═" * max(10, width - 4))
 
     def _dashboard(self) -> None:
@@ -95,7 +101,9 @@ class EnhancedInteractiveApp(InteractiveApp):
         self._dashboard()
         self._print()
         self._print(self.st.bold("  QUICK ACTIONS"))
-        self._print(f"    [1] {self.st.green('Analyze input')}          full recursive engine")
+        self._print(
+            f"    [1] {self.st.green('Analyze input')}          full recursive engine"
+        )
         self._print("    [2] Decode with one decoder")
         self._print("    [3] Decoder catalog")
         self._print("    [4] Plugin manager")
@@ -156,9 +164,11 @@ class EnhancedInteractiveApp(InteractiveApp):
 
     def _save_report(self, report: "dict[str, Any]") -> None:
         default = self.reports_dir / "latest.json"
-        answer = self._ask(
-            f"  Save JSON report [{default}] (Enter=default, -=skip): "
-        ).strip().strip("'\"")
+        answer = (
+            self._ask(f"  Save JSON report [{default}] (Enter=default, -=skip): ")
+            .strip()
+            .strip("'\"")
+        )
         if answer == "-":
             return
         path = Path(os.path.expanduser(answer)) if answer else default
@@ -175,7 +185,9 @@ class EnhancedInteractiveApp(InteractiveApp):
         self._print()
         self._print(self.st.bold("  DECODER CATALOG"))
         for index, choice in enumerate(self.registry, 1):
-            self._print(f"    [{index:>2}] {choice.label:<20} {self.st.dim(choice.description)}")
+            self._print(
+                f"    [{index:>2}] {choice.label:<20} {self.st.dim(choice.description)}"
+            )
         self._print("    [b] Back")
         sel = self._ask(self.st.cyan("  decoder> ")).strip().lower()
         if sel in {"", "b", "back"}:
@@ -195,7 +207,9 @@ class EnhancedInteractiveApp(InteractiveApp):
             self._print(self.st.red(f"  Decoder raised an error: {exc}"))
             return
         self._print()
-        self._print(format_decode_result(self.st, choice.label, source_len, decoded, success))
+        self._print(
+            format_decode_result(self.st, choice.label, source_len, decoded, success)
+        )
         if success and decoded:
             self._print()
             self._maybe_save(decoded, "Save decoded output to")
@@ -231,7 +245,9 @@ class EnhancedInteractiveApp(InteractiveApp):
                 f"v{loaded.manifest.version:<10} {capabilities}"
             )
         for name in sorted(manager.loaded_plugins):
-            self._print(f"    {self.st.green('✓')} {name:<28} {self.st.dim('single-file plugin')}")
+            self._print(
+                f"    {self.st.green('✓')} {name:<28} {self.st.dim('single-file plugin')}"
+            )
         for error in manager.errors:
             self._print(f"    {self.st.red('✗')} {error['path']}: {error['error']}")
 
@@ -348,7 +364,9 @@ class EnhancedInteractiveApp(InteractiveApp):
                 elif choice == "6":
                     self.action_options()
                 elif choice:
-                    self._print(self.st.red("  Unknown option — choose 1 through 6, or q."))
+                    self._print(
+                        self.st.red("  Unknown option — choose 1 through 6, or q.")
+                    )
         except (_QuitSignal, KeyboardInterrupt):
             self._print()
         self._print(self.st.dim("  Session closed."))

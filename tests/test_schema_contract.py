@@ -44,9 +44,12 @@ def _sample_inputs():
         "nested_base64": __import__("base64").b64encode(
             __import__("base64").b64encode(b"http://c2.example/panel more bytes here")
         ),
-        "cfb_doc": build_cfb([("Macros/VBA/Module1", b'Sub x()\nEnd Sub\n')]),
+        "cfb_doc": build_cfb([("Macros/VBA/Module1", b"Sub x()\nEnd Sub\n")]),
         "pdf": build_pdf(
-            [(1, b"<< /Type /Catalog >>"), (2, flate_stream(b"", b"hello http://x.example/"))]
+            [
+                (1, b"<< /Type /Catalog >>"),
+                (2, flate_stream(b"", b"hello http://x.example/")),
+            ]
         ),
         "high_entropy": bytes((i * 37 + 11) % 256 for i in range(2048)),
     }

@@ -37,18 +37,37 @@ from titan_decoder.decoders.base import (
     Utf16Decoder,
 )
 
-ALL_NAMES = {
-    d().name
-    for d in (
-        Base64Decoder, RecursiveBase64Decoder, Base64UrlDecoder, PemArmorDecoder,
-        GzipDecoder, Bz2Decoder, LzmaDecoder, ZlibDecoder, HexDecoder, Rot13Decoder,
-        XorDecoder, PDFDecoder, OLEDecoder, Utf16Decoder,
-    )
-} | {
-    UUDecoder().name, ASN1Decoder().name, QuotedPrintableDecoder().name,
-    Base32Decoder().name, URLDecoder().name, HTMLEntityDecoder().name,
-    UnicodeEscapeDecoder().name,
-} | {ZipAnalyzer().name, TarAnalyzer().name, PEAnalyzer().name, ELFAnalyzer().name}
+ALL_NAMES = (
+    {
+        d().name
+        for d in (
+            Base64Decoder,
+            RecursiveBase64Decoder,
+            Base64UrlDecoder,
+            PemArmorDecoder,
+            GzipDecoder,
+            Bz2Decoder,
+            LzmaDecoder,
+            ZlibDecoder,
+            HexDecoder,
+            Rot13Decoder,
+            XorDecoder,
+            PDFDecoder,
+            OLEDecoder,
+            Utf16Decoder,
+        )
+    }
+    | {
+        UUDecoder().name,
+        ASN1Decoder().name,
+        QuotedPrintableDecoder().name,
+        Base32Decoder().name,
+        URLDecoder().name,
+        HTMLEntityDecoder().name,
+        UnicodeEscapeDecoder().name,
+    }
+    | {ZipAnalyzer().name, TarAnalyzer().name, PEAnalyzer().name, ELFAnalyzer().name}
+)
 
 
 def test_no_orphan_cost_keys():

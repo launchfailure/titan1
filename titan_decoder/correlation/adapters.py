@@ -84,7 +84,9 @@ def _decode_chain(report: Mapping[str, Any]) -> tuple[str, ...]:
     return tuple(chain)
 
 
-def _indicators(report: Mapping[str, Any], analysis_id: str) -> tuple[IndicatorRecord, ...]:
+def _indicators(
+    report: Mapping[str, Any], analysis_id: str
+) -> tuple[IndicatorRecord, ...]:
     indicators: list[IndicatorRecord] = []
     iocs = report.get("iocs") or {}
     if not isinstance(iocs, Mapping):
@@ -97,7 +99,11 @@ def _indicators(report: Mapping[str, Any], analysis_id: str) -> tuple[IndicatorR
             continue
         for item in items:
             if isinstance(item, Mapping):
-                value = item.get("value") or item.get("normalized_value") or item.get("indicator")
+                value = (
+                    item.get("value")
+                    or item.get("normalized_value")
+                    or item.get("indicator")
+                )
                 node_id = item.get("node_id")
                 evidence_id = item.get("evidence_id") or item.get("id")
             else:
@@ -113,7 +119,9 @@ def _indicators(report: Mapping[str, Any], analysis_id: str) -> tuple[IndicatorR
                         EvidenceReference(
                             analysis_id=analysis_id,
                             node_id=str(node_id) if node_id is not None else None,
-                            evidence_id=str(evidence_id) if evidence_id is not None else None,
+                            evidence_id=str(evidence_id)
+                            if evidence_id is not None
+                            else None,
                             source="report.iocs",
                         ),
                     ),
@@ -122,7 +130,9 @@ def _indicators(report: Mapping[str, Any], analysis_id: str) -> tuple[IndicatorR
     return tuple(indicators)
 
 
-def _attack_ids_and_tags(report: Mapping[str, Any]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+def _attack_ids_and_tags(
+    report: Mapping[str, Any],
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
     attacks: set[str] = set()
     tags: set[str] = set()
 
@@ -157,7 +167,9 @@ def analysis_record_from_report(report: Mapping[str, Any]) -> AnalysisRecord:
         raise ValueError("report has no root hash (missing root node sha256)")
 
     meta = report.get("meta") or {}
-    created_at = meta.get("started_at") or meta.get("created_at") or report.get("created_at")
+    created_at = (
+        meta.get("started_at") or meta.get("created_at") or report.get("created_at")
+    )
     attack_ids, threat_tags = _attack_ids_and_tags(report)
 
     return AnalysisRecord(
@@ -192,15 +204,24 @@ def timeline_events_from_report(report: Mapping[str, Any]) -> tuple[TimelineEven
         report.get("events"),
     )
     for source in sources:
-        if not isinstance(source, Iterable) or isinstance(source, (str, bytes, Mapping)):
+        if not isinstance(source, Iterable) or isinstance(
+            source, (str, bytes, Mapping)
+        ):
             continue
         for index, item in enumerate(source):
             if not isinstance(item, Mapping):
                 continue
-            timestamp = item.get("timestamp") or item.get("time") or item.get("created_at")
+            timestamp = (
+                item.get("timestamp") or item.get("time") or item.get("created_at")
+            )
             if not timestamp:
                 continue
-            kind = str(item.get("event_type") or item.get("kind") or item.get("type") or "event")
+            kind = str(
+                item.get("event_type")
+                or item.get("kind")
+                or item.get("type")
+                or "event"
+            )
             summary = str(
                 item.get("summary")
                 or item.get("message")
@@ -216,9 +237,21 @@ def timeline_events_from_report(report: Mapping[str, Any]) -> tuple[TimelineEven
             }
             for key, value in item.items():
                 if key in metadata or key in {
-                    "timestamp", "time", "created_at", "kind", "event_type",
-                    "type", "summary", "message", "description", "event_id",
-                    "id", "source", "extracted_by", "raw", "tags",
+                    "timestamp",
+                    "time",
+                    "created_at",
+                    "kind",
+                    "event_type",
+                    "type",
+                    "summary",
+                    "message",
+                    "description",
+                    "event_id",
+                    "id",
+                    "source",
+                    "extracted_by",
+                    "raw",
+                    "tags",
                 }:
                     continue
                 if isinstance(value, (str, int, float)) and value != "":
@@ -230,7 +263,11 @@ def timeline_events_from_report(report: Mapping[str, Any]) -> tuple[TimelineEven
                         timestamp=str(timestamp),
                         kind=kind,
                         summary=summary,
-                        source_id=str(item.get("event_id") or item.get("id") or f"{analysis_id}:{index}"),
+                        source_id=str(
+                            item.get("event_id")
+                            or item.get("id")
+                            or f"{analysis_id}:{index}"
+                        ),
                         metadata=metadata,
                     )
                 )

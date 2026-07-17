@@ -457,7 +457,7 @@ def handle_info_commands(args, config) -> "int | None":
     # List rule packs and exit.
     if args.list_rule_packs:
         packs = []
-        for p in (config.get("detection_rule_packs", []) or []):
+        for p in config.get("detection_rule_packs", []) or []:
             packs.append({"path": str(p), "exists": Path(p).exists()})
         print(json.dumps({"rule_packs": packs}, indent=2))
         return 0
@@ -504,13 +504,19 @@ def handle_info_commands(args, config) -> "int | None":
         listing = {}
         if args.list_decoders:
             decs = [
-                {"name": getattr(d, "name", type(d).__name__), "class": type(d).__name__}
+                {
+                    "name": getattr(d, "name", type(d).__name__),
+                    "class": type(d).__name__,
+                }
                 for d in engine.decoders
             ]
             listing["decoders"] = sorted(decs, key=lambda x: x["name"])
         if args.list_analyzers:
             ans = [
-                {"name": getattr(a, "name", type(a).__name__), "class": type(a).__name__}
+                {
+                    "name": getattr(a, "name", type(a).__name__),
+                    "class": type(a).__name__,
+                }
                 for a in engine.analyzers
             ]
             listing["analyzers"] = sorted(ans, key=lambda x: x["name"])
@@ -825,6 +831,7 @@ def attach_evidence_stage(args, report, evidence_result) -> None:
             "top_links": top_links(links, limit=10),
         }
 
+
 # Bounded plugin output: a plugin may contribute at most this many findings
 # or report sections per run, mirroring the per-pack rule limit.
 MAX_PLUGIN_FINDINGS = 200
@@ -918,9 +925,7 @@ def run_detections_stage(args, config, report, evidence_result, engine=None):
         iocs = build_ioc_summary(report, None)
         _merge_evidence_iocs(iocs, evidence_result)
         detections = rules_engine.evaluate_all(report, iocs)
-        detections.extend(
-            _run_detection_plugins(args, config, report, iocs, engine)
-        )
+        detections.extend(_run_detection_plugins(args, config, report, iocs, engine))
 
         if getattr(rules_engine, "rule_packs", None) is not None:
             report.setdefault("meta", {})
@@ -967,9 +972,7 @@ def attach_intelligence_stage(
     )
 
 
-def attach_threat_intelligence_stage(
-    args, report, detections, evidence_result
-) -> None:
+def attach_threat_intelligence_stage(args, report, detections, evidence_result) -> None:
     """Attach deterministic ATT&CK, LOLBin, and behavioral mappings."""
     from .core.ioc_export import build_ioc_summary
     from .threat_intel import ThreatIntelligenceEngine
@@ -1020,6 +1023,7 @@ def run_enrichment_stage(args, config, report, evidence_result) -> None:
                 "Offline mode enabled: skipping enrichment.",
                 file=sys.stderr,
             )
+
 
 def run_phase5_correlation_stage(args, report) -> int:
     """Run Phase 5 cross-case correlation when any of its outputs were requested.
@@ -1147,11 +1151,15 @@ def _run_report_plugins(args, config, report, engine) -> None:
                 continue
             sections.append(data)
     if sections:
-        sections.sort(key=lambda item: (item.get("order", 100), item.get("section_id", "")))
+        sections.sort(
+            key=lambda item: (item.get("order", 100), item.get("section_id", ""))
+        )
         report["plugin_report_sections"] = sections
 
 
-def write_outputs_stage(args, config, report, engine, detections, risk_assessment, evidence_result) -> int:
+def write_outputs_stage(
+    args, config, report, engine, detections, risk_assessment, evidence_result
+) -> int:
     """Run all exports, contract validation, output, and compute the exit code.
 
     Covers forensics, IOC/case-report/correlation, timeline, graph, JSONL,
@@ -1204,7 +1212,9 @@ def write_outputs_stage(args, config, report, engine, detections, risk_assessmen
                 )
                 db_path.parent.mkdir(parents=True, exist_ok=True)
                 with CorrelationStore(db_path) as store:
-                    analysis_id = report.get("meta", {}).get("analysis_id") or "analysis"
+                    analysis_id = (
+                        report.get("meta", {}).get("analysis_id") or "analysis"
+                    )
                     # Correlate against *prior* runs before recording this one,
                     # otherwise every IOC trivially matches the current run.
                     matches = store.correlate(iocs)
@@ -1256,10 +1266,15 @@ def write_outputs_stage(args, config, report, engine, detections, risk_assessmen
 
     # Evidence timeline export (from evidence events)
     if args.evidence_timeline_out:
-        from .core.evidence_timeline import build_evidence_timeline, export_evidence_timeline
+        from .core.evidence_timeline import (
+            build_evidence_timeline,
+            export_evidence_timeline,
+        )
 
         ev_tl = build_evidence_timeline(report)
-        export_evidence_timeline(ev_tl, args.evidence_timeline_out, args.evidence_timeline_format)
+        export_evidence_timeline(
+            ev_tl, args.evidence_timeline_out, args.evidence_timeline_format
+        )
         if not args.quiet:
             print(
                 f"Evidence timeline exported to {args.evidence_timeline_out} ({args.evidence_timeline_format})",
@@ -1312,7 +1327,10 @@ def write_outputs_stage(args, config, report, engine, detections, risk_assessmen
         ok, errors = _validate_report_contract(report)
         if not ok:
             if not args.quiet:
-                print(json.dumps({"ok": False, "errors": errors}, indent=2), file=sys.stderr)
+                print(
+                    json.dumps({"ok": False, "errors": errors}, indent=2),
+                    file=sys.stderr,
+                )
             sys.exit(1)
 
     # Optional human-readable intelligence output. It goes to stderr so
@@ -1498,9 +1516,7 @@ def main():
     attach_intelligence_stage(
         args, report, detections, risk_assessment, evidence_result
     )
-    attach_threat_intelligence_stage(
-        args, report, detections, evidence_result
-    )
+    attach_threat_intelligence_stage(args, report, detections, evidence_result)
     run_enrichment_stage(args, config, report, evidence_result)
     exit_code = write_outputs_stage(
         args, config, report, engine, detections, risk_assessment, evidence_result
@@ -1538,7 +1554,7 @@ def _run_doctor(config: Config) -> dict:
             return False
 
     pack_results = []
-    for p in (config.get("detection_rule_packs", []) or []):
+    for p in config.get("detection_rule_packs", []) or []:
         try:
             from titan_decoder.core.rule_packs import load_rule_pack
 
@@ -1604,7 +1620,9 @@ def _write_jsonl(report: dict, path: Path) -> None:
 
 def _vault_paths(config: Config) -> tuple[Path, Path]:
     vault_dir = config.get("vault_dir")
-    vault_dir = Path(vault_dir) if vault_dir else (Path.home() / ".titan_decoder" / "vault")
+    vault_dir = (
+        Path(vault_dir) if vault_dir else (Path.home() / ".titan_decoder" / "vault")
+    )
 
     db_path = config.get("vault_db_path")
     db_path = Path(db_path) if db_path else (vault_dir / "vault.db")
@@ -1637,7 +1655,9 @@ def _vault_store(config: Config, report: dict) -> None:
                 report_path,
                 node_count=node_count,
                 risk_level=str(risk_level) if risk_level is not None else None,
-                risk_score=int(risk_score) if isinstance(risk_score, (int, float)) else None,
+                risk_score=int(risk_score)
+                if isinstance(risk_score, (int, float))
+                else None,
                 ioc_count=int(ioc_count),
             )
             store.record_iocs(analysis_id, iocs)
@@ -1678,7 +1698,10 @@ def _vault_prune(config: Config, days: int) -> dict:
 
     _, db_path = _vault_paths(config)
     if not db_path.exists():
-        return {"ok": True, "result": {"before_runs": 0, "after_runs": 0, "deleted_runs": 0}}
+        return {
+            "ok": True,
+            "result": {"before_runs": 0, "after_runs": 0, "deleted_runs": 0},
+        }
     try:
         with VaultStore(db_path) as store:
             result = store.prune_days(days)
@@ -1815,9 +1838,7 @@ def run_batch_analysis(args, config):
             if max_mb is not None:
                 max_bytes = int(float(max_mb) * 1024 * 1024)
                 if len(report_json.encode("utf-8")) > max_bytes:
-                    raise ValueError(
-                        f"Report exceeds max-report-size-mb ({max_mb} MB)"
-                    )
+                    raise ValueError(f"Report exceeds max-report-size-mb ({max_mb} MB)")
 
             # Save report
             report_path = output_dir / f"{file_path.stem}_report.json"

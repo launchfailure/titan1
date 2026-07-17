@@ -42,7 +42,7 @@ def cluster_campaigns(
     graph: dict[str, set[str]] = {record.analysis_id: set() for record in records}
     edges: list[Relationship] = []
     for index, left in enumerate(records):
-        for right in records[index + 1:]:
+        for right in records[index + 1 :]:
             relationship = scorer.score(left, right)
             if relationship.score > 0.0 and relationship.score >= minimum_score:
                 graph[left.analysis_id].add(right.analysis_id)
@@ -73,7 +73,9 @@ def cluster_campaigns(
             {
                 "campaign_id": stable_id("campaign", {"members": list(member_ids)}),
                 "member_analysis_ids": list(member_ids),
-                "relationship_ids": sorted(edge.relationship_id for edge in relationships),
+                "relationship_ids": sorted(
+                    edge.relationship_id for edge in relationships
+                ),
                 "relationship_count": len(relationships),
                 "confidence": _confidence(strongest),
                 "maximum_relationship_score": round(strongest, 6),
