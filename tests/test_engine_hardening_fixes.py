@@ -173,6 +173,25 @@ def test_html_entity_surrogate_does_not_void_decode():
     assert out == b"&#55296; ping & A &#xDFFF;"
 
 
+def test_url_decoder_plus_only_in_form_context():
+    # '+' is a space only in form-encoded contexts (a URL's query component or
+    # a bare k=v&k=v body). Converting it everywhere corrupted literal '+' --
+    # notably base64 embedded in percent-encoded payloads, where each converted
+    # '+' broke the next decode layer.
+    from titan_decoder.decoders.base import URLDecoder
+
+    dec = URLDecoder()
+    # '+' in the path stays literal; '+' in the query becomes a space.
+    out, ok = dec.decode(b"http://x/a+b/c%2Ed?q=hello+world&r=1")
+    assert ok and out == b"http://x/a+b/c.d?q=hello world&r=1"
+    # Percent-encoded base64: '+' must survive for the next decode layer.
+    out, ok = dec.decode(b"c2VjcmV0K3BhcnQ%3D")
+    assert ok and out == b"c2VjcmV0K3BhcnQ="
+    # Bare form-encoded body: '+' is a space.
+    out, ok = dec.decode(b"cmd=whoami+/all&dst=evil%2Ecom")
+    assert ok and out == b"cmd=whoami /all&dst=evil.com"
+
+
 def test_gzip_stream_with_percent_bytes_not_hijacked():
     import gzip as _gzip
     import json as _json

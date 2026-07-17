@@ -4,8 +4,11 @@ from titan_decoder.decoders.base import HTMLEntityDecoder, URLDecoder
 
 
 def test_url_decoder_correctness():
+    # '+' stays literal outside a form-encoded context (no '?' query, no
+    # k=v&k=v body) so literal plus signs -- e.g. in embedded base64 -- are
+    # not corrupted.
     out, ok = URLDecoder().decode(b"%41%42%43 http%3A%2F%2Fevil.com a+b")
-    assert ok and out == b"ABC http://evil.com a b"
+    assert ok and out == b"ABC http://evil.com a+b"
 
 
 def test_html_entity_decoder_correctness():
