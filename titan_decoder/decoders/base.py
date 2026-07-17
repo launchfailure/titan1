@@ -918,8 +918,16 @@ class UUDecoder(Decoder):
                     # Some encoders strip trailing whitespace; recompute the
                     # expected line length (length char + data chars, same
                     # formula as CPython's uu module) and retry on that slice.
-                    nchars = (((line[0] - 32) & 0x3F) * 4 + 5) // 3
-                    out += binascii.a2b_uu(line[:nchars])
+                    try:
+                        nchars = (((line[0] - 32) & 0x3F) * 4 + 5) // 3
+                        out += binascii.a2b_uu(line[:nchars])
+                    except binascii.Error:
+                        # Truly corrupt line. Skip it and keep decoding:
+                        # aborting here used to discard every line already
+                        # recovered, so one flipped byte mid-file lost the
+                        # whole artifact. Best-effort recovery of the
+                        # remaining lines is what triage needs.
+                        continue
 
             decoded = bytes(out)
             if decoded:
@@ -1131,6 +1139,21 @@ class URLDecoder(Decoder):
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
             text = data.decode("utf-8")
+            # '+' means space only in the application/x-www-form-urlencoded
+            # context: a URL's query component, or a bare form-encoded body.
+            # Converting it everywhere corrupted '+' that is literal data --
+            # most damagingly base64 embedded in percent-encoded payloads,
+            # where each converted '+' broke the next decode layer. Convert
+            # only past the first '?', or throughout a bare k=v&k=v body
+            # ('&' never occurs in base64, so that shape is a safe signal).
+            qpos = text.find("?")
+            plus_from: int | None
+            if qpos != -1:
+                plus_from = qpos
+            elif "=" in text and "&" in text:
+                plus_from = -1
+            else:
+                plus_from = None
             # Use a bytearray: byte concatenation in a loop (result += ...) is
             # O(n^2) and hangs on percent-heavy payloads.
             result = bytearray()
@@ -1145,7 +1168,7 @@ class URLDecoder(Decoder):
                         continue
                     except ValueError:
                         pass
-                if ch == "+":
+                if ch == "+" and plus_from is not None and i > plus_from:
                     result += b" "
                 else:
                     result += ch.encode("utf-8")
@@ -1194,19 +1217,30 @@ class HTMLEntityDecoder(Decoder):
             # text[i:] and re-ran the regex for every character (O(n^2)), which
             # hangs on entity-heavy payloads.
             def _sub(m: "re.Match") -> str:
+                # Numeric entities in the UTF-16 surrogate range (U+D800..DFFF)
+                # are kept literal: chr() accepts them but the resulting lone
+                # surrogate cannot be UTF-8-encoded, so one crafted entity
+                # (e.g. &#55296;) would make encode() raise and void the whole
+                # decode. Same handling as UnicodeEscapeDecoder.
                 dec, hexv, name = m.group(1), m.group(2), m.group(3)
                 if dec is not None:
                     try:
-                        return chr(int(dec))
+                        code = int(dec)
+                        if 0xD800 <= code <= 0xDFFF:
+                            return m.group(0)
+                        return chr(code)
                     except (ValueError, OverflowError):
                         return m.group(0)
                 if hexv is not None:
                     try:
-                        return chr(int(hexv, 16))
+                        code = int(hexv, 16)
+                        if 0xD800 <= code <= 0xDFFF:
+                            return m.group(0)
+                        return chr(code)
                     except (ValueError, OverflowError):
                         return m.group(0)
-                code = self._NAMED.get(name.lower())
-                return chr(code) if code is not None else m.group(0)
+                named = self._NAMED.get(name.lower())
+                return chr(named) if named is not None else m.group(0)
 
             decoded = self._ENTITY_RE.sub(_sub, text).encode("utf-8")
             return decoded, decoded != data

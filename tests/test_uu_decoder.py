@@ -53,3 +53,17 @@ def test_uudecode_graceful_on_garbage():
 
 def test_uudecode_disabled_by_default():
     assert UUDecoder().can_decode(_uuencode(b"x" * 20)) is False
+
+
+def test_uudecode_corrupt_line_keeps_rest():
+    # A single corrupt data line used to abort the whole decode (the retry's
+    # exception escaped to the blanket handler), discarding every line already
+    # recovered. Corrupt lines must be skipped, keeping the rest.
+    dec = UUDecoder(enabled=True)
+    payload = b"A" * 45 + b"B" * 45 + b"C" * 45
+    data = _uuencode(payload)
+    lines = data.split(b"\n")
+    lines[2] = b"\x7f!!! not a valid uu line !!!"  # clobber the middle data line
+    out, ok = dec.decode(b"\n".join(lines))
+    assert ok is True
+    assert out == b"A" * 45 + b"C" * 45
