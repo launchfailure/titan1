@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 
-
 def test_evidence_parser_dns_csv_produces_indicators(tmp_path: Path):
     from titan_decoder.core.evidence_parsers import parse_evidence_file
 

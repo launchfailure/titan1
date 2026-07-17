@@ -130,7 +130,9 @@ class CorrelationDatabase(AbstractContextManager["CorrelationDatabase"]):
                 """,
                 (record.analysis_id, record.root_hash, record.created_at, payload),
             )
-            conn.execute("DELETE FROM indicators WHERE analysis_id = ?", (record.analysis_id,))
+            conn.execute(
+                "DELETE FROM indicators WHERE analysis_id = ?", (record.analysis_id,)
+            )
             conn.executemany(
                 """
                 INSERT INTO indicators(
@@ -155,28 +157,40 @@ class CorrelationDatabase(AbstractContextManager["CorrelationDatabase"]):
             )
 
     def get_analysis(self, analysis_id: str) -> AnalysisRecord | None:
-        row = self._conn().execute(
-            "SELECT payload_json FROM analyses WHERE analysis_id = ?",
-            (analysis_id,),
-        ).fetchone()
+        row = (
+            self._conn()
+            .execute(
+                "SELECT payload_json FROM analyses WHERE analysis_id = ?",
+                (analysis_id,),
+            )
+            .fetchone()
+        )
         if row is None:
             return None
         return AnalysisRecord.from_dict(json.loads(str(row["payload_json"])))
 
-    def iter_analyses(self, exclude_analysis_id: str | None = None) -> tuple[AnalysisRecord, ...]:
+    def iter_analyses(
+        self, exclude_analysis_id: str | None = None
+    ) -> tuple[AnalysisRecord, ...]:
         if exclude_analysis_id is None:
-            rows = self._conn().execute(
-                "SELECT payload_json FROM analyses ORDER BY analysis_id"
-            ).fetchall()
+            rows = (
+                self._conn()
+                .execute("SELECT payload_json FROM analyses ORDER BY analysis_id")
+                .fetchall()
+            )
         else:
-            rows = self._conn().execute(
-                """
+            rows = (
+                self._conn()
+                .execute(
+                    """
                 SELECT payload_json FROM analyses
                 WHERE analysis_id != ?
                 ORDER BY analysis_id
                 """,
-                (exclude_analysis_id,),
-            ).fetchall()
+                    (exclude_analysis_id,),
+                )
+                .fetchall()
+            )
         return tuple(
             AnalysisRecord.from_dict(json.loads(str(row["payload_json"])))
             for row in rows
@@ -205,9 +219,13 @@ class CorrelationDatabase(AbstractContextManager["CorrelationDatabase"]):
     def iter_fingerprints(self) -> tuple["PayloadFingerprint", ...]:
         from .payload_similarity import PayloadFingerprint
 
-        rows = self._conn().execute(
-            "SELECT payload_json FROM payload_fingerprints ORDER BY analysis_id"
-        ).fetchall()
+        rows = (
+            self._conn()
+            .execute(
+                "SELECT payload_json FROM payload_fingerprints ORDER BY analysis_id"
+            )
+            .fetchall()
+        )
         return tuple(
             PayloadFingerprint.from_dict(json.loads(str(row["payload_json"])))
             for row in rows
@@ -255,9 +273,13 @@ class CorrelationDatabase(AbstractContextManager["CorrelationDatabase"]):
     def iter_timeline_events(self) -> tuple["TimelineEvent", ...]:
         from .timeline import TimelineEvent
 
-        rows = self._conn().execute(
-            "SELECT payload_json FROM timeline_events ORDER BY timestamp, event_id"
-        ).fetchall()
+        rows = (
+            self._conn()
+            .execute(
+                "SELECT payload_json FROM timeline_events ORDER BY timestamp, event_id"
+            )
+            .fetchall()
+        )
         return tuple(
             TimelineEvent.from_dict(json.loads(str(row["payload_json"])))
             for row in rows
@@ -301,31 +323,41 @@ class CorrelationDatabase(AbstractContextManager["CorrelationDatabase"]):
         matches: set[str] = set()
         for indicator_type, normalized_value in sorted(set(indicators)):
             if exclude_analysis_id is None:
-                rows = self._conn().execute(
-                    """
+                rows = (
+                    self._conn()
+                    .execute(
+                        """
                     SELECT analysis_id FROM indicators
                     WHERE indicator_type = ? AND normalized_value = ?
                     ORDER BY analysis_id
                     """,
-                    (indicator_type, normalized_value),
-                ).fetchall()
+                        (indicator_type, normalized_value),
+                    )
+                    .fetchall()
+                )
             else:
-                rows = self._conn().execute(
-                    """
+                rows = (
+                    self._conn()
+                    .execute(
+                        """
                     SELECT analysis_id FROM indicators
                     WHERE indicator_type = ? AND normalized_value = ?
                       AND analysis_id != ?
                     ORDER BY analysis_id
                     """,
-                    (indicator_type, normalized_value, exclude_analysis_id),
-                ).fetchall()
+                        (indicator_type, normalized_value, exclude_analysis_id),
+                    )
+                    .fetchall()
+                )
             matches.update(str(row["analysis_id"]) for row in rows)
         return tuple(sorted(matches))
 
     def schema_version(self) -> int:
-        row = self._conn().execute(
-            "SELECT value FROM correlation_meta WHERE key = 'schema_version'"
-        ).fetchone()
+        row = (
+            self._conn()
+            .execute("SELECT value FROM correlation_meta WHERE key = 'schema_version'")
+            .fetchone()
+        )
         if row is None:
             raise RuntimeError("correlation database schema version is missing")
         return int(row["value"])

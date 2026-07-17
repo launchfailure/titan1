@@ -36,11 +36,17 @@ def test_graph_export_mermaid_uses_labeled_edge_syntax():
 
     nodes = [
         {"id": 0, "parent": None, "depth": 0, "method": "ANALYZE"},
-        {"id": 1, "parent": 0, "depth": 1, "method": "ANALYZE", "decoder_used": "zip|inflate"},
+        {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "method": "ANALYZE",
+            "decoder_used": "zip|inflate",
+        },
     ]
 
     mermaid = GraphExporter(nodes).to_mermaid()
     # Mermaid labeled edges should look like: 0 -->|label| 1
     assert "-->|" in mermaid
     # Ensure we don't emit the old edge-label bracket syntax
-    assert "[\"" not in mermaid
+    assert '["' not in mermaid

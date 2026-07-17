@@ -9,7 +9,9 @@ def test_url_decoder_correctness():
 
 
 def test_html_entity_decoder_correctness():
-    out, ok = HTMLEntityDecoder().decode(b"&lt;b&gt; &amp; &#65;&#x42; &quot; &unknownent;")
+    out, ok = HTMLEntityDecoder().decode(
+        b"&lt;b&gt; &amp; &#65;&#x42; &quot; &unknownent;"
+    )
     assert ok
     assert out == b'<b> & AB " &unknownent;'
 

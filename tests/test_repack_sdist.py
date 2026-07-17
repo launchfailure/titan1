@@ -114,8 +114,7 @@ def test_verify_catches_content_corruption(tmp_path, monkeypatch):
     original = path.read_bytes()
 
     corrupted = [
-        (info, data.replace(b"1.0", b"6.6") if data else data)
-        for info, data in members
+        (info, data.replace(b"1.0", b"6.6") if data else data) for info, data in members
     ]
     monkeypatch.setattr(
         "tools.repack_sdist.repack_bytes",

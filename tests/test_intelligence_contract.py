@@ -85,5 +85,9 @@ def test_calibration_corpus():
         assert result["version"] == corpus["schema_version"], case["id"]
         assert result["intelligence_score"] == expected["score"], case["id"]
         assert result["classification"] == expected["classification"], case["id"]
-        assert [item["code"] for item in result["signals"]] == expected["signal_codes"], case["id"]
-        assert [item["node_id"] for item in result["top_artifacts"]] == expected["top_node_ids"], case["id"]
+        assert [item["code"] for item in result["signals"]] == expected[
+            "signal_codes"
+        ], case["id"]
+        assert [item["node_id"] for item in result["top_artifacts"]] == expected[
+            "top_node_ids"
+        ], case["id"]

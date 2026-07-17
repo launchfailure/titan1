@@ -38,7 +38,13 @@ def test_line_wrapped_binary_reconstructs_exactly():
 
 def test_non_base64_returns_failure_not_hallucination():
     dec = Base64Decoder()
-    for bad in (b"\x00\x01\x02 not base64 !!!", b"short", b"%" * 32, b"", b"\xff\xfe\xfd"):
+    for bad in (
+        b"\x00\x01\x02 not base64 !!!",
+        b"short",
+        b"%" * 32,
+        b"",
+        b"\xff\xfe\xfd",
+    ):
         out, ok = dec.decode(bad)
         assert ok is False
         assert out == bad

@@ -64,7 +64,11 @@ class PDFRef:
         return f"{self.num} {self.gen} R"
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, PDFRef) and other.num == self.num and other.gen == self.gen
+        return (
+            isinstance(other, PDFRef)
+            and other.num == self.num
+            and other.gen == self.gen
+        )
 
     def __hash__(self) -> int:
         return hash(("PDFRef", self.num, self.gen))
@@ -162,7 +166,11 @@ class _Lexer:
                     self.pos += 1
                 elif 0x30 <= e <= 0x37:  # octal escape (1-3 digits)
                     oct_digits = bytearray()
-                    while self.pos < n and len(oct_digits) < 3 and 0x30 <= d[self.pos] <= 0x37:
+                    while (
+                        self.pos < n
+                        and len(oct_digits) < 3
+                        and 0x30 <= d[self.pos] <= 0x37
+                    ):
                         oct_digits.append(d[self.pos])
                         self.pos += 1
                     out.append(int(oct_digits, 8) & 0xFF)
@@ -239,7 +247,11 @@ class _Lexer:
     def _parse_token(self) -> Any:
         d, n = self.data, self.n
         start = self.pos
-        while self.pos < n and d[self.pos] not in _WHITESPACE and d[self.pos] not in _DELIM:
+        while (
+            self.pos < n
+            and d[self.pos] not in _WHITESPACE
+            and d[self.pos] not in _DELIM
+        ):
             self.pos += 1
         tok = d[start : self.pos]
         if not tok:
@@ -257,7 +269,11 @@ class _Lexer:
             save = self.pos
             self._skip_ws()
             gstart = self.pos
-            while self.pos < n and d[self.pos] not in _WHITESPACE and d[self.pos] not in _DELIM:
+            while (
+                self.pos < n
+                and d[self.pos] not in _WHITESPACE
+                and d[self.pos] not in _DELIM
+            ):
                 self.pos += 1
             gtok = d[gstart : self.pos]
             if re.fullmatch(rb"\d+", gtok):
@@ -374,7 +390,10 @@ def _lzw_decode(
             if prev is not None:
                 table[dict_size] = prev + entry[:1]
                 dict_size += 1
-                if dict_size + early_change - 1 >= (1 << code_width) and code_width < 12:
+                if (
+                    dict_size + early_change - 1 >= (1 << code_width)
+                    and code_width < 12
+                ):
                     code_width += 1
             prev = entry
             if len(out) >= max_output:
@@ -384,7 +403,9 @@ def _lzw_decode(
     return bytes(out)
 
 
-def _apply_predictor(data: bytes, predictor: int, colors: int, bpc: int, columns: int) -> bytes:
+def _apply_predictor(
+    data: bytes, predictor: int, colors: int, bpc: int, columns: int
+) -> bytes:
     if predictor < 2:
         return data
     bytes_per_pixel = max(1, (colors * bpc + 7) // 8)
@@ -469,7 +490,10 @@ class PDFDocument:
         value = lexer.parse_object()
         lexer._skip_ws()
         # A stream follows a dictionary when the `stream` keyword appears.
-        if isinstance(value, dict) and self.data[lexer.pos : lexer.pos + 6] == b"stream":
+        if (
+            isinstance(value, dict)
+            and self.data[lexer.pos : lexer.pos + 6] == b"stream"
+        ):
             p = lexer.pos + 6
             # Skip the CRLF/LF after `stream`.
             if self.data[p : p + 2] == b"\r\n":

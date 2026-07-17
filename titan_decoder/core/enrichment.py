@@ -93,7 +93,9 @@ class EnrichmentEngine:
             info["init_error"] = self._cache_init_error
         return info
 
-    def _cache_get(self, provider: str, indicator_type: str, indicator_value: str) -> Optional[Dict[str, Any]]:
+    def _cache_get(
+        self, provider: str, indicator_type: str, indicator_value: str
+    ) -> Optional[Dict[str, Any]]:
         if self._cache is None or self.refresh_enrichment:
             return None
         try:
@@ -107,14 +109,22 @@ class EnrichmentEngine:
         except Exception:
             return None
 
-    def _cache_set(self, provider: str, indicator_type: str, indicator_value: str, payload: Dict[str, Any]) -> None:
+    def _cache_set(
+        self,
+        provider: str,
+        indicator_type: str,
+        indicator_value: str,
+        payload: Dict[str, Any],
+    ) -> None:
         if self._cache is None:
             return
         try:
             # Never persist existing cache metadata.
             clean = dict(payload or {})
             clean.pop("_cache", None)
-            cached_at = self._cache.set(provider, indicator_type, indicator_value, clean)
+            cached_at = self._cache.set(
+                provider, indicator_type, indicator_value, clean
+            )
             payload.setdefault("_cache", {})
             payload["_cache"][provider] = {"hit": False, "cached_at": cached_at}
         except Exception:
@@ -260,7 +270,9 @@ class EnrichmentEngine:
                         "name_servers": getattr(whois_data, "name_servers", []),
                     }
                     self.whois_cache[domain] = result["whois"]
-                    self._cache_set("whois", "domain", domain, {"whois": result.get("whois")})
+                    self._cache_set(
+                        "whois", "domain", domain, {"whois": result.get("whois")}
+                    )
                 except Exception as e:
                     logger.debug(f"WHOIS lookup failed for {domain}: {e}")
                     result["whois"] = None

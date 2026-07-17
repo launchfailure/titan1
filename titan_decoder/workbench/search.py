@@ -55,7 +55,9 @@ def search_reports(
             lowered = text.lower()
             if needle not in lowered:
                 continue
-            score = 100 if lowered == needle else 70 if lowered.startswith(needle) else 40
+            score = (
+                100 if lowered == needle else 70 if lowered.startswith(needle) else 40
+            )
             preview = text.replace("\n", " ")
             if len(preview) > MAX_PREVIEW_CHARS:
                 preview = preview[: MAX_PREVIEW_CHARS - 1] + "…"

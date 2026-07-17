@@ -79,7 +79,9 @@ def _hashed_id(kind: str, path: str, value: Any) -> str:
 class EvidenceIndex:
     """Immutable, deterministic ledger over one or more reports."""
 
-    def __init__(self, items: Iterable[EvidenceItem], max_items: int = MAX_EVIDENCE_ITEMS):
+    def __init__(
+        self, items: Iterable[EvidenceItem], max_items: int = MAX_EVIDENCE_ITEMS
+    ):
         self.items = tuple(
             sorted(items, key=lambda x: (x.kind, x.path, x.evidence_id))[:max_items]
         )
@@ -126,7 +128,12 @@ class EvidenceIndex:
                     )
 
             intelligence = report.get("intelligence") or {}
-            for key in ("classification", "intelligence_score", "confidence", "recommendation"):
+            for key in (
+                "classification",
+                "intelligence_score",
+                "confidence",
+                "recommendation",
+            ):
                 if key in intelligence:
                     path = f"reports[{rn}].intelligence.{key}"
                     items.append(
@@ -158,7 +165,9 @@ class EvidenceIndex:
                 if not isinstance(node, Mapping):
                     continue
                 node_id = str(
-                    node.get("id") if node.get("id") is not None else node.get("node_id", i)
+                    node.get("id")
+                    if node.get("id") is not None
+                    else node.get("node_id", i)
                 )
                 value = {
                     key: node.get(key)
@@ -259,7 +268,9 @@ class EvidenceIndex:
                         source_id=rel_id,
                     )
                 )
-            for i, hint in enumerate((report.get("attribution_hints") or {}).get("hints") or []):
+            for i, hint in enumerate(
+                (report.get("attribution_hints") or {}).get("hints") or []
+            ):
                 if not isinstance(hint, Mapping):
                     continue
                 hint_id = str(hint.get("hint_id") or i)

@@ -128,7 +128,7 @@ def test_pe_armnt_machine_not_mislabeled_arm64():
 
     analyzer = PEAnalyzer()
     assert analyzer.can_analyze(bytes(data))
-    (_, meta_json), = analyzer.analyze(bytes(data))
+    ((_, meta_json),) = analyzer.analyze(bytes(data))
     assert b'"ARM Thumb-2"' in meta_json
     assert b"ARM64" not in meta_json
 

@@ -18,7 +18,9 @@ def _write_report(tmp_path, name="report.json", data=None):
 def _run(script):
     it = iter(script)
     out = io.StringIO()
-    app = AnalystWorkbench(input_fn=lambda prompt="": next(it), out=out, style=Style(False))
+    app = AnalystWorkbench(
+        input_fn=lambda prompt="": next(it), out=out, style=Style(False)
+    )
     rc = app.run()
     return rc, out.getvalue(), app
 
@@ -53,15 +55,22 @@ def test_load_directory_and_explore(tmp_path):
 
     rc, text, app = _run(
         [
-            "1", str(tmp_path),          # load directory
-            "2", "2",                    # select report 2
-            "3",                          # overview
-            "4", "base64",               # decode tree filtered
-            "6", "",                     # IOC browser, no filter
-            "7", "high",                 # detections filtered
-            "8", "",                     # timeline
-            "9", "",                     # evidence browser
-            "c",                          # correlation view
+            "1",
+            str(tmp_path),  # load directory
+            "2",
+            "2",  # select report 2
+            "3",  # overview
+            "4",
+            "base64",  # decode tree filtered
+            "6",
+            "",  # IOC browser, no filter
+            "7",
+            "high",  # detections filtered
+            "8",
+            "",  # timeline
+            "9",
+            "",  # evidence browser
+            "c",  # correlation view
             "q",
         ]
     )
@@ -82,10 +91,13 @@ def test_graph_viewer_node_detail_and_export(tmp_path):
     graph_out = tmp_path / "graph.mmd"
     rc, text, _ = _run(
         [
-            "1", str(report_path),
-            "5",                          # graph viewer
-            "1",                          # node detail for id 1
-            "x", "mermaid", str(graph_out),
+            "1",
+            str(report_path),
+            "5",  # graph viewer
+            "1",  # node detail for id 1
+            "x",
+            "mermaid",
+            str(graph_out),
             "b",
             "q",
         ]
@@ -109,10 +121,16 @@ def test_notes_tags_status_and_workspace_roundtrip(tmp_path):
     workspace_path = tmp_path / "ws.json"
     rc, text, _ = _run(
         [
-            "1", str(report_path),
-            "n", "1", "priority",         # add tag
-            "n", "4", "in-progress",      # set status
-            "s", str(workspace_path),     # save workspace
+            "1",
+            str(report_path),
+            "n",
+            "1",
+            "priority",  # add tag
+            "n",
+            "4",
+            "in-progress",  # set status
+            "s",
+            str(workspace_path),  # save workspace
             "q",
         ]
     )
@@ -136,9 +154,14 @@ def test_export_menu_writes_csv_and_bundle(tmp_path):
     bundle_path = tmp_path / "case.zip"
     rc, text, _ = _run(
         [
-            "1", str(report_path),
-            "e", "1", str(csv_path),
-            "e", "3", str(bundle_path),
+            "1",
+            str(report_path),
+            "e",
+            "1",
+            str(csv_path),
+            "e",
+            "3",
+            str(bundle_path),
             "q",
         ]
     )

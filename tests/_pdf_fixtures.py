@@ -35,7 +35,13 @@ def build_pdf(objects: List[Tuple[int, bytes]], root_ref: str = "1 0 R") -> byte
 def flate_stream(dict_extra: bytes, payload: bytes) -> bytes:
     """Build a stream object body with FlateDecode-compressed ``payload``."""
     comp = zlib.compress(payload)
-    d = b"<< /Length " + str(len(comp)).encode() + b" /Filter /FlateDecode " + dict_extra + b" >>"
+    d = (
+        b"<< /Length "
+        + str(len(comp)).encode()
+        + b" /Filter /FlateDecode "
+        + dict_extra
+        + b" >>"
+    )
     return d + b"\nstream\n" + comp + b"\nendstream"
 
 

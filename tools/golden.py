@@ -103,10 +103,15 @@ def build_inputs() -> Dict[str, bytes]:
     # pinning them makes the input byte-reproducible everywhere.
     _gz = bytearray(gzip.compress(b"INFO log line ok\n" * 40, mtime=0))
     _gz[8] = 0x00  # XFL
-    _gz[9] = 0xff  # OS = unknown (fixed)
+    _gz[9] = 0xFF  # OS = unknown (fixed)
     inputs["gzip_text.bin"] = bytes(_gz)
     inputs["cfb_macro.doc"] = build_cfb(
-        [("Macros/VBA/Module1", b'Sub AutoOpen()\n url="http://evil.example/c2"\nEnd Sub\n')]
+        [
+            (
+                "Macros/VBA/Module1",
+                b'Sub AutoOpen()\n url="http://evil.example/c2"\nEnd Sub\n',
+            )
+        ]
     )
     inputs["pdf_js.pdf"] = build_pdf(
         [

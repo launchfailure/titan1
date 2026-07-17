@@ -27,11 +27,18 @@ def _make_zip(entries):
 def _nested_archive(fan=8):
     """Outer zip -> middle zips -> inner zips -> distinct leaf files."""
     inner = [
-        (f"in_{a}_{b}.zip", _make_zip([(f"{a}_{b}_l{i}.txt", f"u-{a}-{b}-{i}".encode())
-                                       for i in range(fan)]))
-        for a in range(fan) for b in range(fan)
+        (
+            f"in_{a}_{b}.zip",
+            _make_zip(
+                [(f"{a}_{b}_l{i}.txt", f"u-{a}-{b}-{i}".encode()) for i in range(fan)]
+            ),
+        )
+        for a in range(fan)
+        for b in range(fan)
     ]
-    middle = [(f"mid_{a}.zip", _make_zip(inner[a * fan:(a + 1) * fan])) for a in range(fan)]
+    middle = [
+        (f"mid_{a}.zip", _make_zip(inner[a * fan : (a + 1) * fan])) for a in range(fan)
+    ]
     return _make_zip(middle)
 
 

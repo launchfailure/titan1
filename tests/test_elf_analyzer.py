@@ -14,12 +14,36 @@ def _make_elf(entry, machine, etype, phnum, shnum, cls64=True, little_endian=Tru
     if cls64:
         rest = struct.pack(
             endian + "HHIQQQIHHHHHH",
-            etype, machine, 1, entry, 0x40, 0x2000, 0, 64, 56, phnum, 64, shnum, 29,
+            etype,
+            machine,
+            1,
+            entry,
+            0x40,
+            0x2000,
+            0,
+            64,
+            56,
+            phnum,
+            64,
+            shnum,
+            29,
         )
     else:
         rest = struct.pack(
             endian + "HHIIIIIHHHHHH",
-            etype, machine, 1, entry, 0x40, 0x2000, 0, 52, 32, phnum, 40, shnum, 28,
+            etype,
+            machine,
+            1,
+            entry,
+            0x40,
+            0x2000,
+            0,
+            52,
+            32,
+            phnum,
+            40,
+            shnum,
+            28,
         )
     return e_ident + rest + b"\x00" * 200
 

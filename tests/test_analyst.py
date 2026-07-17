@@ -18,30 +18,59 @@ def sample_report(analysis_id="case-a"):
         "meta": {"analysis_id": analysis_id},
         "node_count": 2,
         "nodes": [
-            {"id": 0, "parent": None, "depth": 0, "method": "SOURCE",
-             "content_type": "Text", "sha256": "root", "content_preview": "cG93ZXJzaGVsbA=="},
-            {"id": 1, "parent": 0, "depth": 1, "method": "DECODE_Base64",
-             "decoder_used": "Base64", "content_type": "Text", "sha256": "child",
-             "content_preview": "powershell -EncodedCommand xyz"},
+            {
+                "id": 0,
+                "parent": None,
+                "depth": 0,
+                "method": "SOURCE",
+                "content_type": "Text",
+                "sha256": "root",
+                "content_preview": "cG93ZXJzaGVsbA==",
+            },
+            {
+                "id": 1,
+                "parent": 0,
+                "depth": 1,
+                "method": "DECODE_Base64",
+                "decoder_used": "Base64",
+                "content_type": "Text",
+                "sha256": "child",
+                "content_preview": "powershell -EncodedCommand xyz",
+            },
         ],
         "iocs": {"domains": ["c2.test"]},
         "detections": [
-            {"rule_id": "TITAN-003", "name": "LOLBin abuse", "severity": "high",
-             "attack_ids": ["T1059.001"]}
+            {
+                "rule_id": "TITAN-003",
+                "name": "LOLBin abuse",
+                "severity": "high",
+                "attack_ids": ["T1059.001"],
+            }
         ],
         "risk_assessment": {"risk_level": "HIGH", "risk_score": 82},
         "intelligence": {
             "classification": "HIGH_RISK_PAYLOAD",
             "recommendation": "Contain the host and review the decoded stage.",
-            "signals": [{"code": "script_execution", "points": 20, "summary": "Script execution"}],
+            "signals": [
+                {
+                    "code": "script_execution",
+                    "points": 20,
+                    "summary": "Script execution",
+                }
+            ],
         },
         "threat_intelligence": {
             "techniques": [{"technique_id": "T1059.001", "name": "PowerShell"}]
         },
         "correlation": {
             "relationships": [
-                {"relationship_id": "relationship:abc", "left_analysis_id": "case-a",
-                 "right_analysis_id": "case-b", "score": 0.8, "confidence": "high"}
+                {
+                    "relationship_id": "relationship:abc",
+                    "left_analysis_id": "case-a",
+                    "right_analysis_id": "case-b",
+                    "score": 0.8,
+                    "confidence": "high",
+                }
             ]
         },
     }
@@ -62,7 +91,9 @@ def test_ledger_is_deterministic_and_citable():
 
 
 def test_ledger_namespaces_ids_across_multiple_reports():
-    index = EvidenceIndex.from_reports([sample_report("case-a"), sample_report("case-b")])
+    index = EvidenceIndex.from_reports(
+        [sample_report("case-a"), sample_report("case-b")]
+    )
     # Natural IDs collide across reports, so they get report-ordinal scopes.
     assert "node:0:1" in index.by_id and "node:1:1" in index.by_id
     assert "node:1" not in index.by_id
@@ -153,7 +184,9 @@ def test_decode_chain_answer_orders_by_depth():
 
 
 def test_compare_uses_correlation_evidence():
-    response = AnalystEngine([sample_report()]).ask("Compare this sample to previous cases.")
+    response = AnalystEngine([sample_report()]).ask(
+        "Compare this sample to previous cases."
+    )
     assert response.intent == "compare"
     assert "relationship" in response.answer
 
@@ -205,7 +238,8 @@ def test_uncited_model_answer_falls_back_with_errors():
 
 def test_invented_citation_falls_back():
     engine = AnalystEngine(
-        [sample_report()], ScriptedBackend("- Known actor infra. [ioc:domains:ffffffffff]")
+        [sample_report()],
+        ScriptedBackend("- Known actor infra. [ioc:domains:ffffffffff]"),
     )
     response = engine.ask("Summarize this investigation.")
     assert response.fallback_used
@@ -268,7 +302,11 @@ def test_local_openai_backend_round_trip():
             assert body["messages"][0]["role"] == "system"
             reply = {
                 "choices": [
-                    {"message": {"content": "- HIGH risk recorded. [detection:TITAN-003]"}}
+                    {
+                        "message": {
+                            "content": "- HIGH risk recorded. [detection:TITAN-003]"
+                        }
+                    }
                 ]
             }
             data = json.dumps(reply).encode()
@@ -315,7 +353,9 @@ def test_cli_single_question_json(tmp_path, capsys):
 def test_cli_loads_directories_and_rejects_empty(tmp_path, capsys):
     (tmp_path / "a.json").write_text(json.dumps(sample_report("case-a")))
     (tmp_path / "b.json").write_text(json.dumps(sample_report("case-b")))
-    rc = analyst_main(["--report", str(tmp_path), "--ask", "Summarize this investigation."])
+    rc = analyst_main(
+        ["--report", str(tmp_path), "--ask", "Summarize this investigation."]
+    )
     assert rc == 0
     assert "Investigation summary" in capsys.readouterr().out
 
@@ -329,10 +369,14 @@ def test_cli_refuses_remote_endpoint_without_flag(tmp_path, capsys):
     report_path.write_text(json.dumps(sample_report()))
     rc = analyst_main(
         [
-            "--report", str(report_path),
-            "--backend", "local-openai",
-            "--endpoint", "https://model.example.com/v1/chat/completions",
-            "--ask", "hi",
+            "--report",
+            str(report_path),
+            "--backend",
+            "local-openai",
+            "--endpoint",
+            "https://model.example.com/v1/chat/completions",
+            "--ask",
+            "hi",
         ]
     )
     assert rc == 2

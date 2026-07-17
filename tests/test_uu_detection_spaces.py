@@ -19,7 +19,7 @@ def _uuenc(b: bytes) -> bytes:
     out.write(b"begin 644 f\n")
     i = 0
     while i < len(b):
-        out.write(binascii.b2a_uu(b[i:i + 45]))
+        out.write(binascii.b2a_uu(b[i : i + 45]))
         i += 45
     out.write(b"`\nend\n")
     return out.getvalue()

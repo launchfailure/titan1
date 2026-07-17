@@ -3,7 +3,11 @@ import pytest
 
 
 def test_block_network_blocks_socket_calls():
-    from titan_decoder.core.offline_guard import block_network, OfflineModeError, is_network_blocked
+    from titan_decoder.core.offline_guard import (
+        block_network,
+        OfflineModeError,
+        is_network_blocked,
+    )
 
     assert is_network_blocked() is False
 

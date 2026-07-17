@@ -61,7 +61,7 @@ def test_A1_G2_nested_zip_bomb_respects_node_cap():
 def test_A1_G3_repeated_markers_do_not_hang():
     # Formerly-quadratic scans (OLE/PDF window carving) are gone; feeding many
     # repeated magic bytes must still return quickly.
-    data = (b"%PDF-\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1MZ\x7fELF" * 5000)
+    data = b"%PDF-\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1MZ\x7fELF" * 5000
     start = time.monotonic()
     TitanEngine(_cfg(nodes=30, timeout=10)).run_analysis(data)
     assert time.monotonic() - start < 10.0

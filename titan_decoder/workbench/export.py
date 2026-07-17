@@ -92,9 +92,7 @@ def export_case_bundle(
     destination.parent.mkdir(parents=True, exist_ok=True)
     reports = list(reports)
     with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr(
-            "workspace.json", json.dumps(workspace.to_dict(), indent=2)
-        )
+        archive.writestr("workspace.json", json.dumps(workspace.to_dict(), indent=2))
         manifest = {
             "schema_version": BUNDLE_SCHEMA_VERSION,
             "workspace": workspace.name,

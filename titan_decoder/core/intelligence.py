@@ -52,7 +52,9 @@ class IntelligenceEngine:
         signals: List[Dict[str, Any]] = []
         score = 0
 
-        def add_signal(code: str, points: int, summary: str, evidence: Any = None) -> None:
+        def add_signal(
+            code: str, points: int, summary: str, evidence: Any = None
+        ) -> None:
             nonlocal score
             score += points
             signal: Dict[str, Any] = {
@@ -85,7 +87,11 @@ class IntelligenceEngine:
         public_ips = self._count(iocs, "ipv4_public")
         domains = self._count(iocs, "domains")
         if urls:
-            add_signal("network_urls", min(18, 10 + urls * 2), f"{urls} URL indicator(s) discovered")
+            add_signal(
+                "network_urls",
+                min(18, 10 + urls * 2),
+                f"{urls} URL indicator(s) discovered",
+            )
         if public_ips:
             add_signal(
                 "network_public_ips",
@@ -99,7 +105,9 @@ class IntelligenceEngine:
                 f"{domains} domain indicator(s) discovered",
             )
 
-        max_depth = max((self._safe_int(node.get("depth")) for node in nodes), default=0)
+        max_depth = max(
+            (self._safe_int(node.get("depth")) for node in nodes), default=0
+        )
         if max_depth >= 4:
             add_signal(
                 "deep_obfuscation",
@@ -122,7 +130,9 @@ class IntelligenceEngine:
         executable_nodes = []
         for node in nodes:
             preview = str(node.get("content_preview") or node.get("preview") or "")
-            if preview and any(pattern.search(preview) for pattern in self.EXECUTION_PATTERNS):
+            if preview and any(
+                pattern.search(preview) for pattern in self.EXECUTION_PATTERNS
+            ):
                 execution_nodes.append(node.get("id"))
 
             for label, signature in self.EXECUTABLE_SIGNATURES:
@@ -203,7 +213,10 @@ class IntelligenceEngine:
             if "http://" in preview.lower() or "https://" in preview.lower():
                 points += 15
                 reasons.append("network indicator")
-            if any(preview.startswith(signature) for _, signature in self.EXECUTABLE_SIGNATURES):
+            if any(
+                preview.startswith(signature)
+                for _, signature in self.EXECUTABLE_SIGNATURES
+            ):
                 points += 20
                 reasons.append("structured file signature")
 

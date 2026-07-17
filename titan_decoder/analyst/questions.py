@@ -35,7 +35,9 @@ def plan_question(question: str) -> QuestionPlan:
         )
     if "decoding chain" in lower or "decode chain" in lower or "decoding" in lower:
         return QuestionPlan("decode_chain", ("node",), words)
-    if "ioc" in lower and ("detection" in lower or "caused" in lower or "trigger" in lower):
+    if "ioc" in lower and (
+        "detection" in lower or "caused" in lower or "trigger" in lower
+    ):
         return QuestionPlan("ioc_detection", ("ioc", "detection", "signal"), words)
     if "mitre" in lower or ("attack" in lower and "technique" in lower):
         return QuestionPlan("mitre", ("attack", "detection", "signal"), words)
@@ -54,6 +56,8 @@ def plan_question(question: str) -> QuestionPlan:
         )
     if "next step" in lower or "recommend" in lower:
         return QuestionPlan(
-            "next_steps", ("intelligence", "signal", "detection", "ioc", "attack"), words
+            "next_steps",
+            ("intelligence", "signal", "detection", "ioc", "attack"),
+            words,
         )
     return QuestionPlan("general", (), words)

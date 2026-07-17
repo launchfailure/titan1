@@ -24,12 +24,12 @@ def test_merge_indicators_dedupes_and_unions():
     inds = [
         _ind("a.com", 1, conf="low", tags=("t1",)),
         _ind("a.com", 1, conf="high", tags=("t2",)),  # duplicate source
-        _ind("a.com", 2, conf="low", tags=("t1",)),    # new source
+        _ind("a.com", 2, conf="low", tags=("t1",)),  # new source
     ]
     merged = merge_indicators(inds)
     assert len(merged) == 1
     m = merged[0]
-    assert len(m.sources) == 2            # duplicate source not re-added
+    assert len(m.sources) == 2  # duplicate source not re-added
     assert m.confidence == "high"
     assert m.tags == ["t1", "t2"]
 
@@ -43,7 +43,9 @@ def test_merge_indicators_is_linear_for_repeated_value():
     elapsed = time.monotonic() - start
     assert len(merged) == 1
     assert len(merged[0].sources) == 40000
-    assert elapsed < 5.0, f"merge_indicators too slow ({elapsed:.1f}s) - O(n^2) regression"
+    assert elapsed < 5.0, (
+        f"merge_indicators too slow ({elapsed:.1f}s) - O(n^2) regression"
+    )
 
 
 def test_csv_oversized_field_does_not_abort_file(tmp_path):

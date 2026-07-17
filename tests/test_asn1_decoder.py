@@ -23,7 +23,9 @@ def der(tag: int, val: bytes) -> bytes:
 
 def test_extracts_strings_from_sequence():
     asn = ASN1Decoder(enabled=True)
-    seq = der(0x30, der(0x13, b"hello") + der(0x04, b"worldbytes") + der(0x0C, b"utf8here"))
+    seq = der(
+        0x30, der(0x13, b"hello") + der(0x04, b"worldbytes") + der(0x0C, b"utf8here")
+    )
     out, ok = asn.decode(seq)
     assert ok is True
     assert b"hello" in out and b"worldbytes" in out and b"utf8here" in out
@@ -63,6 +65,11 @@ def test_deep_nesting_terminates_via_depth_guard():
 
 def test_malformed_lengths_do_not_crash():
     asn = ASN1Decoder(enabled=True)
-    for bad in (b"\x30\x84\xff\xff\xff\xff", b"\x30\x80", b"\x30\x81", b"\x31\x05\x04\x03ab"):
+    for bad in (
+        b"\x30\x84\xff\xff\xff\xff",
+        b"\x30\x80",
+        b"\x30\x81",
+        b"\x31\x05\x04\x03ab",
+    ):
         out, ok = asn.decode(bad)
         assert ok is False and out == bad

@@ -92,8 +92,20 @@ def test_shared_payload_rejects_bad_floor():
 
 def test_timeline_correlation_links_shared_metadata():
     events = (
-        TimelineEvent("a", "2026-01-01T00:00:00Z", "dns_query", "query", metadata={"domain": "c2.test"}),
-        TimelineEvent("b", "2026-01-01T00:01:00Z", "proxy_request", "connect", metadata={"domain": "c2.test"}),
+        TimelineEvent(
+            "a",
+            "2026-01-01T00:00:00Z",
+            "dns_query",
+            "query",
+            metadata={"domain": "c2.test"},
+        ),
+        TimelineEvent(
+            "b",
+            "2026-01-01T00:01:00Z",
+            "proxy_request",
+            "connect",
+            metadata={"domain": "c2.test"},
+        ),
     )
     report = correlate_timelines(events, window_seconds=300)
     assert report["event_count"] == 2
@@ -105,16 +117,40 @@ def test_timeline_correlation_links_shared_metadata():
 
 def test_timeline_correlation_respects_window():
     events = (
-        TimelineEvent("a", "2026-01-01T00:00:00Z", "dns_query", "query", metadata={"domain": "c2.test"}),
-        TimelineEvent("b", "2026-01-01T01:00:00Z", "dns_query", "query", metadata={"domain": "c2.test"}),
+        TimelineEvent(
+            "a",
+            "2026-01-01T00:00:00Z",
+            "dns_query",
+            "query",
+            metadata={"domain": "c2.test"},
+        ),
+        TimelineEvent(
+            "b",
+            "2026-01-01T01:00:00Z",
+            "dns_query",
+            "query",
+            metadata={"domain": "c2.test"},
+        ),
     )
     assert correlate_timelines(events, window_seconds=300)["link_count"] == 0
 
 
 def test_timeline_correlation_never_links_same_analysis():
     events = (
-        TimelineEvent("a", "2026-01-01T00:00:00Z", "dns_query", "query", metadata={"domain": "c2.test"}),
-        TimelineEvent("a", "2026-01-01T00:00:30Z", "dns_query", "query", metadata={"domain": "c2.test"}),
+        TimelineEvent(
+            "a",
+            "2026-01-01T00:00:00Z",
+            "dns_query",
+            "query",
+            metadata={"domain": "c2.test"},
+        ),
+        TimelineEvent(
+            "a",
+            "2026-01-01T00:00:30Z",
+            "dns_query",
+            "query",
+            metadata={"domain": "c2.test"},
+        ),
     )
     assert correlate_timelines(events, window_seconds=300)["link_count"] == 0
 

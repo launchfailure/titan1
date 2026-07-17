@@ -66,9 +66,7 @@ def to_markdown(case: Dict[str, Any]) -> str:
     if intelligence:
         lines.extend(_intelligence_markdown(intelligence))
 
-    threat = _normalize_threat_intelligence(
-        case.get("threat_intelligence")
-    )
+    threat = _normalize_threat_intelligence(case.get("threat_intelligence"))
     if threat:
         lines.extend(_threat_markdown(threat))
 
@@ -171,9 +169,7 @@ def to_html(case: Dict[str, Any]) -> str:
     recs = case.get("recommendations", [])
     ev = case.get("evidence") or {}
     intelligence = _normalize_intelligence(case.get("intelligence"))
-    threat = _normalize_threat_intelligence(
-        case.get("threat_intelligence")
-    )
+    threat = _normalize_threat_intelligence(case.get("threat_intelligence"))
 
     def esc(value: Any) -> str:
         return (
@@ -303,8 +299,12 @@ def _normalize_intelligence(value: Any) -> Dict[str, Any]:
         "intelligence_score": value.get("intelligence_score"),
         "classification": value.get("classification"),
         "confidence": value.get("confidence"),
-        "signals": list(signals) if isinstance(signals, Sequence) and not isinstance(signals, (str, bytes)) else [],
-        "top_artifacts": list(artifacts) if isinstance(artifacts, Sequence) and not isinstance(artifacts, (str, bytes)) else [],
+        "signals": list(signals)
+        if isinstance(signals, Sequence) and not isinstance(signals, (str, bytes))
+        else [],
+        "top_artifacts": list(artifacts)
+        if isinstance(artifacts, Sequence) and not isinstance(artifacts, (str, bytes))
+        else [],
         "recommendation": value.get("recommendation"),
     }
 
@@ -371,7 +371,9 @@ def _intelligence_html(intelligence: Dict[str, Any], esc) -> str:
         evidence = signal.get("evidence")
         evidence_html = ""
         if evidence not in (None, "", [], {}):
-            evidence_html = f" <small>Evidence: <code>{esc(_compact_json(evidence))}</code></small>"
+            evidence_html = (
+                f" <small>Evidence: <code>{esc(_compact_json(evidence))}</code></small>"
+            )
         signal_items.append(
             "<li>"
             f"<strong>{esc(signal.get('code', 'unknown'))}</strong> "
@@ -513,30 +515,38 @@ def _threat_html(threat: Dict[str, Any], esc) -> str:
         )
     if not rows:
         rows.append("<tr><td colspan='4'><em>None</em></td></tr>")
-    lolbins = "".join(
-        f"<li><strong>{esc(item.get('executable'))}</strong> — "
-        f"{esc(', '.join(item.get('technique_ids') or []))}</li>"
-        for item in threat.get("lolbins") or []
-    ) or "<li>None</li>"
-    tags = "".join(
-        f"<li><strong>{esc(item.get('tag'))}</strong> "
-        f"({esc(item.get('category'))})</li>"
-        for item in threat.get("malware_tags") or []
-    ) or "<li>None</li>"
-    return "\n".join([
-        "  <section id='threat-intelligence'>",
-        "    <h2>Threat Intelligence</h2>",
-        f"    <p><strong>Confidence:</strong> {esc(_format_confidence(threat.get('confidence')))}</p>",
-        f"    <p>{esc(threat.get('summary') or '')}</p>",
-        "    <h3>MITRE ATT&CK</h3>",
-        "    <table><thead><tr><th>Technique</th><th>Name</th><th>Tactics</th><th>Confidence</th></tr></thead>",
-        f"    <tbody>{''.join(rows)}</tbody></table>",
-        "    <h3>LOLBins</h3>",
-        f"    <ul>{lolbins}</ul>",
-        "    <h3>Behavioral Malware Tags</h3>",
-        f"    <ul>{tags}</ul>",
-        "  </section>",
-    ])
+    lolbins = (
+        "".join(
+            f"<li><strong>{esc(item.get('executable'))}</strong> — "
+            f"{esc(', '.join(item.get('technique_ids') or []))}</li>"
+            for item in threat.get("lolbins") or []
+        )
+        or "<li>None</li>"
+    )
+    tags = (
+        "".join(
+            f"<li><strong>{esc(item.get('tag'))}</strong> "
+            f"({esc(item.get('category'))})</li>"
+            for item in threat.get("malware_tags") or []
+        )
+        or "<li>None</li>"
+    )
+    return "\n".join(
+        [
+            "  <section id='threat-intelligence'>",
+            "    <h2>Threat Intelligence</h2>",
+            f"    <p><strong>Confidence:</strong> {esc(_format_confidence(threat.get('confidence')))}</p>",
+            f"    <p>{esc(threat.get('summary') or '')}</p>",
+            "    <h3>MITRE ATT&CK</h3>",
+            "    <table><thead><tr><th>Technique</th><th>Name</th><th>Tactics</th><th>Confidence</th></tr></thead>",
+            f"    <tbody>{''.join(rows)}</tbody></table>",
+            "    <h3>LOLBins</h3>",
+            f"    <ul>{lolbins}</ul>",
+            "    <h3>Behavioral Malware Tags</h3>",
+            f"    <ul>{tags}</ul>",
+            "  </section>",
+        ]
+    )
 
 
 def _format_confidence(value: Any) -> str:

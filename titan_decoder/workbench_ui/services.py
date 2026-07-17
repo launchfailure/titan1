@@ -71,7 +71,9 @@ class WorkbenchServices:
             for name in self._AGGRESSIVE_DECODERS:
                 decoders[name] = True
             cfg.set("min_score_threshold", 0.0)
-            cfg.set("max_recursion_depth", max(int(cfg.get("max_recursion_depth", 5)), 6))
+            cfg.set(
+                "max_recursion_depth", max(int(cfg.get("max_recursion_depth", 5)), 6)
+            )
             cfg.set("max_node_count", max(int(cfg.get("max_node_count", 100)), 200))
         else:
             cfg.set("min_score_threshold", self._baseline_min_score)
@@ -83,6 +85,7 @@ class WorkbenchServices:
         engine = self._configured_engine()
         if self.state.offline:
             from titan_decoder.core.offline_guard import block_network
+
             with block_network():
                 report = engine.run_analysis(data)
         else:
@@ -146,19 +149,28 @@ class WorkbenchServices:
             except Exception as exc:
                 errors.append(f"{candidate}: {exc}")
         if latest is None:
-            raise RuntimeError("Every queued file failed analysis: " + "; ".join(errors[:5]))
+            raise RuntimeError(
+                "Every queued file failed analysis: " + "; ".join(errors[:5])
+            )
         latest.batch_total = len(candidates)
         latest.batch_succeeded = succeeded
         latest.batch_errors = tuple(errors)
         return latest
 
-    def analyst_answer(self, snapshot: AnalysisSnapshot, question: str) -> dict[str, Any]:
+    def analyst_answer(
+        self, snapshot: AnalysisSnapshot, question: str
+    ) -> dict[str, Any]:
         if not snapshot.report:
-            raise ValueError("Load or analyze a Titan report before asking the analyst.")
+            raise ValueError(
+                "Load or analyze a Titan report before asking the analyst."
+            )
         from titan_decoder.analyst.engine import AnalystEngine
+
         return AnalystEngine([snapshot.report]).ask(question).to_dict()
 
-    def run_decoder(self, index: int, data: bytes, source_name: str) -> AnalysisSnapshot:
+    def run_decoder(
+        self, index: int, data: bytes, source_name: str
+    ) -> AnalysisSnapshot:
         started = time.monotonic()
         choice = self.registry[index]
         decoded, success = choice.factory().decode(data)
@@ -192,7 +204,9 @@ class WorkbenchServices:
             return 0
         return sum(1 for path in target.glob("*.json") if path.is_file())
 
-    def save_report(self, snapshot: AnalysisSnapshot, destination: Path | None = None) -> Path:
+    def save_report(
+        self, snapshot: AnalysisSnapshot, destination: Path | None = None
+    ) -> Path:
         path = destination or self.state.reports_dir / "latest.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         payload = json.dumps(snapshot.report, indent=2)
@@ -229,6 +243,7 @@ class WorkbenchServices:
     def plugin_status(self) -> tuple[int, int]:
         try:
             from titan_decoder.plugins import PluginManager
+
             manager = PluginManager()
             for plugin_dir in self.config.get("plugin_dirs", []) or []:
                 manager.add_plugin_dir(Path(plugin_dir))

@@ -191,8 +191,7 @@ def validate_rule_def(rule_def: Any) -> List[str]:
     rtype = (rule_def.get("type") or "").strip()
     if rtype not in _ALLOWED_TYPES:
         problems.append(
-            f"unknown rule type {rtype!r} (expected one of "
-            f"{sorted(_ALLOWED_TYPES)})"
+            f"unknown rule type {rtype!r} (expected one of {sorted(_ALLOWED_TYPES)})"
         )
 
     flags = rule_def.get("flags")
@@ -202,13 +201,13 @@ def validate_rule_def(rule_def: Any) -> List[str]:
             flags = None
         else:
             unknown = [
-                f for f in flags
+                f
+                for f in flags
                 if not isinstance(f, str) or f.upper() not in _ALLOWED_FLAGS
             ]
             if unknown:
                 problems.append(
-                    f"unknown flags {unknown!r} (expected "
-                    f"{sorted(_ALLOWED_FLAGS)})"
+                    f"unknown flags {unknown!r} (expected {sorted(_ALLOWED_FLAGS)})"
                 )
 
     if rtype == "content_regex":
@@ -216,9 +215,7 @@ def validate_rule_def(rule_def: Any) -> List[str]:
         if not isinstance(pattern, str) or not pattern:
             problems.append("content_regex requires a non-empty 'pattern'")
         elif len(pattern) > MAX_PATTERN_LENGTH:
-            problems.append(
-                f"'pattern' exceeds {MAX_PATTERN_LENGTH} characters"
-            )
+            problems.append(f"'pattern' exceeds {MAX_PATTERN_LENGTH} characters")
         else:
             try:
                 re.compile(pattern, _resolve_flags(flags))
@@ -236,27 +233,21 @@ def validate_rule_def(rule_def: Any) -> List[str]:
                 "ioc_present requires a non-empty 'ioc_types' array of strings"
             )
         elif len(ioc_types) > MAX_IOC_TYPES_PER_RULE:
-            problems.append(
-                f"'ioc_types' exceeds {MAX_IOC_TYPES_PER_RULE} entries"
-            )
+            problems.append(f"'ioc_types' exceeds {MAX_IOC_TYPES_PER_RULE} entries")
         min_each = rule_def.get("min_each", 1)
         if (
             not isinstance(min_each, int)
             or isinstance(min_each, bool)
             or not 1 <= min_each <= MAX_MIN_EACH
         ):
-            problems.append(
-                f"'min_each' must be an integer in [1, {MAX_MIN_EACH}]"
-            )
+            problems.append(f"'min_each' must be an integer in [1, {MAX_MIN_EACH}]")
 
     severity = rule_def.get("severity")
     if severity is not None and (
-        not isinstance(severity, str)
-        or severity.lower() not in _ALLOWED_SEVERITIES
+        not isinstance(severity, str) or severity.lower() not in _ALLOWED_SEVERITIES
     ):
         problems.append(
-            f"unknown severity {severity!r} (expected "
-            f"{sorted(_ALLOWED_SEVERITIES)})"
+            f"unknown severity {severity!r} (expected {sorted(_ALLOWED_SEVERITIES)})"
         )
 
     attack_ids = rule_def.get("attack_ids")
@@ -264,12 +255,11 @@ def validate_rule_def(rule_def: Any) -> List[str]:
         if not isinstance(attack_ids, list):
             problems.append("'attack_ids' must be an array")
         elif len(attack_ids) > MAX_ATTACK_IDS_PER_RULE:
-            problems.append(
-                f"'attack_ids' exceeds {MAX_ATTACK_IDS_PER_RULE} entries"
-            )
+            problems.append(f"'attack_ids' exceeds {MAX_ATTACK_IDS_PER_RULE} entries")
         else:
             malformed = [
-                t for t in attack_ids
+                t
+                for t in attack_ids
                 if not isinstance(t, str) or not _ATTACK_ID_PATTERN.match(t)
             ]
             if malformed:
@@ -327,7 +317,9 @@ def _resolve_flags(flags: Optional[List[str]]) -> int:
     return re_flags
 
 
-def compile_content_regex(pattern: str, flags: Optional[List[str]] = None) -> re.Pattern:
+def compile_content_regex(
+    pattern: str, flags: Optional[List[str]] = None
+) -> re.Pattern:
     return re.compile(pattern, _resolve_flags(flags))
 
 

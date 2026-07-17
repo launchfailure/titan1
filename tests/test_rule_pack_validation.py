@@ -74,9 +74,10 @@ def test_duplicate_ids_within_pack_fail_validation():
 def test_invalid_fixture_rules_each_report_their_problem(label, fragment):
     result = validate_rule_pack(INVALID_PACK)
     assert not result["ok"]
-    assert any(
-        e.startswith(f"{label}:") and fragment in e for e in result["errors"]
-    ), (label, result["errors"])
+    assert any(e.startswith(f"{label}:") and fragment in e for e in result["errors"]), (
+        label,
+        result["errors"],
+    )
 
 
 def test_unreadable_pack_reports_load_error(tmp_path):
@@ -164,9 +165,10 @@ def test_engine_rejects_builtin_id_impersonation_and_keeps_valid_rules():
     # The pack's TITAN-001 must not replace or duplicate the built-in.
     titan_001 = [r for r in engine.rules if r.rule_id == "TITAN-001"]
     assert len(titan_001) == 1
-    assert getattr(titan_001[0], "source", {"type": "builtin"}).get(
-        "type", "builtin"
-    ) == "builtin"
+    assert (
+        getattr(titan_001[0], "source", {"type": "builtin"}).get("type", "builtin")
+        == "builtin"
+    )
     # Every fixture rule is invalid, so none load.
     meta = engine.rule_packs[0]
     assert meta["rules_loaded"] == 0
@@ -211,14 +213,9 @@ def test_cli_rules_validate_passes_valid_pack(monkeypatch, capsys):
 
 
 def test_cli_rules_validate_fails_on_rule_problems(monkeypatch, capsys):
-    code, payload = _run_cli_validate(
-        monkeypatch, capsys, VALID_PACK, DUPLICATE_PACK
-    )
+    code, payload = _run_cli_validate(monkeypatch, capsys, VALID_PACK, DUPLICATE_PACK)
     assert code == 1
     assert payload["ok"] is False
     by_path = {r["path"]: r for r in payload["results"]}
     assert by_path[str(VALID_PACK)]["ok"] is True
-    assert any(
-        "duplicate rule id" in e
-        for e in by_path[str(DUPLICATE_PACK)]["errors"]
-    )
+    assert any("duplicate rule id" in e for e in by_path[str(DUPLICATE_PACK)]["errors"])

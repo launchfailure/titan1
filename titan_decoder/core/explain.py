@@ -14,8 +14,7 @@ def generate_explanation(report: Mapping[str, Any]) -> str:
     signals = list(intelligence.get("signals") or [])
     top_artifacts = list(intelligence.get("top_artifacts") or [])
     recommendation = str(
-        intelligence.get("recommendation")
-        or "No recommendation is available."
+        intelligence.get("recommendation") or "No recommendation is available."
     )
 
     lines = [

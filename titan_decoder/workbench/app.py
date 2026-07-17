@@ -83,7 +83,9 @@ class AnalystWorkbench:
         self._print()
         self._print(self.st.cyan(self.st.bold("  TITAN // ANALYST WORKBENCH")))
         self._print(
-            self.st.dim("  reports · timelines · decode trees · indicators · investigations")
+            self.st.dim(
+                "  reports · timelines · decode trees · indicators · investigations"
+            )
         )
         self._print("  " + "═" * 72)
 
@@ -178,12 +180,17 @@ class AnalystWorkbench:
         self._block(decode_tree(report))
         while True:
             self._print()
-            self._print(self.st.dim("  Enter a node id for detail, [x] export graph, [b] back"))
+            self._print(
+                self.st.dim("  Enter a node id for detail, [x] export graph, [b] back")
+            )
             choice = self._ask(self.st.cyan("  graph> ")).strip().lower()
             if choice in {"", "b", "back"}:
                 return
             if choice == "x":
-                fmt = self._ask(f"  Format {GRAPH_FORMATS}: ").strip().lower() or "mermaid"
+                fmt = (
+                    self._ask(f"  Format {GRAPH_FORMATS}: ").strip().lower()
+                    or "mermaid"
+                )
                 if fmt not in GRAPH_FORMATS:
                     self._print(self.st.red("  Unknown graph format."))
                     continue
@@ -206,7 +213,9 @@ class AnalystWorkbench:
         hits = search_reports(self.reports, query)
         self._print(f"  {len(hits)} hit(s)")
         for hit in hits[:50]:
-            self._print(f"    {Path(hit.report_path).name} {hit.location} :: {hit.preview}")
+            self._print(
+                f"    {Path(hit.report_path).name} {hit.location} :: {hit.preview}"
+            )
 
     # -- annotations ---------------------------------------------------------------------
 
@@ -319,7 +328,9 @@ class AnalystWorkbench:
             try:
                 self.reports.append(TitanReport.load(entry.report_path))
             except (OSError, ValueError) as exc:
-                self._print(self.st.yellow(f"  Missing report {entry.report_path}: {exc}"))
+                self._print(
+                    self.st.yellow(f"  Missing report {entry.report_path}: {exc}")
+                )
         self.active_index = 0 if self.reports else None
         self._print(
             f"  Opened {self.workspace.name} with {len(self.reports)} available report(s)."

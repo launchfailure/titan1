@@ -14,5 +14,6 @@ __all__ = ["TitanWorkbenchApp", "main"]
 def __getattr__(name: str) -> Any:
     if name in {"TitanWorkbenchApp", "main"}:
         from .app import TitanWorkbenchApp, main
+
         return TitanWorkbenchApp if name == "TitanWorkbenchApp" else main
     raise AttributeError(name)

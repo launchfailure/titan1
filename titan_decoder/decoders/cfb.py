@@ -242,7 +242,9 @@ class CFBReader:
         self._mini_stream = self._read_chain(self.root.start_sector, self.root.size)
         raw = self._read_chain(self.first_minifat_sector)
         count = len(raw) // 4
-        self.minifat = list(struct.unpack(f"<{count}I", raw[: count * 4])) if count else []
+        self.minifat = (
+            list(struct.unpack(f"<{count}I", raw[: count * 4])) if count else []
+        )
 
     def _read_mini_chain(self, start: int, size: int) -> bytes:
         out = bytearray()

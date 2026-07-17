@@ -21,7 +21,9 @@ def test_misp_does_not_duplicate_overlapping_ip_buckets(tmp_path):
         warnings.simplefilter("error", DeprecationWarning)
         export_misp(IOCS, out)
     event = json.loads(out.read_text())
-    ip_values = [a["value"] for a in event["Event"]["Attribute"] if a["type"] == "ip-dst"]
+    ip_values = [
+        a["value"] for a in event["Event"]["Attribute"] if a["type"] == "ip-dst"
+    ]
     assert ip_values.count("8.8.8.8") == 1
 
 
@@ -29,7 +31,9 @@ def test_stix_escapes_quotes_in_values(tmp_path):
     out = tmp_path / "stix.json"
     export_stix_minimal(IOCS, out)
     bundle = json.loads(out.read_text())
-    url_patterns = [o["pattern"] for o in bundle["objects"] if "url:value" in o["pattern"]]
+    url_patterns = [
+        o["pattern"] for o in bundle["objects"] if "url:value" in o["pattern"]
+    ]
     assert url_patterns == ["[url:value = 'http://evil.com/a\\'b']"]
 
 

@@ -135,7 +135,8 @@ class VaultStore:
                     (str(t), str(v)),
                 )
                 cur.execute(
-                    "SELECT id FROM indicators WHERE type=? AND value=?", (str(t), str(v))
+                    "SELECT id FROM indicators WHERE type=? AND value=?",
+                    (str(t), str(v)),
                 )
                 row = cur.fetchone()
                 if not row:
@@ -153,7 +154,9 @@ class VaultStore:
                     )
         self.conn.commit()
 
-    def search_value(self, value: str, ioc_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    def search_value(
+        self, value: str, ioc_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """Search prior runs for an exact indicator value (optionally filtered by type)."""
         cur = self.conn.cursor()
         if ioc_type:

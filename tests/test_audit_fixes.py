@@ -23,7 +23,16 @@ def test_imsi_detection_not_dead_and_imei_luhn_validated():
     # 490154203237518 is Luhn-valid (IMEI); 310150123456789 is not (IMSI).
     text = "IMEI 490154203237518 IMSI 310150123456789"
     summary = ForensicsEngine().analyze(
-        {"nodes": [{"id": 0, "parent": None, "content_preview": text, "content_type": "Text"}]}
+        {
+            "nodes": [
+                {
+                    "id": 0,
+                    "parent": None,
+                    "content_preview": text,
+                    "content_type": "Text",
+                }
+            ]
+        }
     )
     assert summary["mobile_ids"]["imei"] == ["490154203237518"]
     assert summary["mobile_ids"]["imsi"] == ["310150123456789"]
@@ -34,7 +43,10 @@ def test_ioc_summary_includes_binary_nodes():
     # were dropped from detections/exports by the Text-only filter.
     report = {
         "nodes": [
-            {"content_preview": "http://binary-c2.example.net/x", "content_type": "Binary"}
+            {
+                "content_preview": "http://binary-c2.example.net/x",
+                "content_type": "Binary",
+            }
         ]
     }
     assert build_ioc_summary(report)["urls"] == ["http://binary-c2.example.net/x"]

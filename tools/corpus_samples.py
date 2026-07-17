@@ -25,7 +25,9 @@ from typing import List, Set
 # Reuse the synthetic CFB / PDF builders from the test fixtures. This harness is
 # a developer tool (not shipped in the package), so importing test helpers is
 # fine and keeps the builders DRY.
-_TESTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tests")
+_TESTS = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tests"
+)
 if _TESTS not in sys.path:
     sys.path.insert(0, _TESTS)
 
@@ -128,7 +130,9 @@ def build_corpus() -> List[Sample]:
     )
 
     # TITAN-007: PDF carrying an embedded PE (MZ) via a stream.
-    mz_payload = b"MZ\x90\x00" + b"\x00" * 200 + b"This program cannot be run in DOS mode"
+    mz_payload = (
+        b"MZ\x90\x00" + b"\x00" * 200 + b"This program cannot be run in DOS mode"
+    )
     pdf = build_pdf(
         [
             (1, b"<< /Type /Catalog /OpenAction 3 0 R >>"),
@@ -285,7 +289,9 @@ def build_corpus() -> List[Sample]:
     samples.append(
         Sample(
             "ben_clean_doc",
-            build_cfb([("WordDocument", b"Meeting notes: agenda, action items, none.")]),
+            build_cfb(
+                [("WordDocument", b"Meeting notes: agenda, action items, none.")]
+            ),
             malicious=False,
         )
     )
@@ -327,7 +333,12 @@ def build_corpus() -> List[Sample]:
         [
             (1, b"<< /Type /Catalog /OpenAction 3 0 R >>"),
             (3, b"<< /S /JavaScript /JS 5 0 R >>"),
-            (5, flate_stream(b"", b"app.alert('Please enable content'); // benign form script")),
+            (
+                5,
+                flate_stream(
+                    b"", b"app.alert('Please enable content'); // benign form script"
+                ),
+            ),
         ]
     )
     samples.append(Sample("ben_pdf_js_only", js_pdf, malicious=False))

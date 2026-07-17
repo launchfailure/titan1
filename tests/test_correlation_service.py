@@ -13,7 +13,9 @@ from titan_decoder.correlation.payload_similarity import fingerprint_from_report
 from titan_decoder.correlation.service import analyze_milestone5, correlate_report
 
 
-def _engine_style_report(analysis_id: str, domain: str, timestamp: str, sha256: str = "same"):
+def _engine_style_report(
+    analysis_id: str, domain: str, timestamp: str, sha256: str = "same"
+):
     """Report shaped like TitanEngine.run_analysis output plus evidence events."""
 
     return {
@@ -24,8 +26,21 @@ def _engine_style_report(analysis_id: str, domain: str, timestamp: str, sha256: 
         },
         "node_count": 2,
         "nodes": [
-            {"id": 0, "parent": None, "depth": 0, "method": "SOURCE", "sha256": f"root-{analysis_id}"},
-            {"id": 1, "parent": 0, "depth": 1, "method": "Base64", "decoder_used": "Base64", "sha256": sha256},
+            {
+                "id": 0,
+                "parent": None,
+                "depth": 0,
+                "method": "SOURCE",
+                "sha256": f"root-{analysis_id}",
+            },
+            {
+                "id": 1,
+                "parent": 0,
+                "depth": 1,
+                "method": "Base64",
+                "decoder_used": "Base64",
+                "sha256": sha256,
+            },
         ],
         "iocs": {"domains": [domain], "urls": [], "ipv4_private": ["10.0.0.1"]},
         "detections": [{"rule": "obfuscation", "attack_ids": ["T1027"]}],

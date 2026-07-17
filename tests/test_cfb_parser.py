@@ -17,7 +17,7 @@ from titan_decoder.decoders.base import OLEDecoder
 VBA_SOURCE = (
     b'Attribute VB_Name = "Module1"\r\n'
     b"Sub AutoOpen()\r\n"
-    b'  Dim u As String\r\n'
+    b"  Dim u As String\r\n"
     b'  u = "http://evil.example/c2/panel"\r\n'
     b'  Shell "powershell -enc SQBFAFgA", vbHide\r\n'
     b"End Sub\r\n"

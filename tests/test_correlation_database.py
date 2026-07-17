@@ -28,6 +28,7 @@ def test_database_indicator_query_is_deterministic(tmp_path):
     with CorrelationDatabase(tmp_path / "correlation.sqlite3") as database:
         database.record_analysis(_record("case-b", "example.test"))
         database.record_analysis(_record("case-a", "example.test"))
-        assert database.analyses_for_indicators(
-            [("domain", "example.test")]
-        ) == ("case-a", "case-b")
+        assert database.analyses_for_indicators([("domain", "example.test")]) == (
+            "case-a",
+            "case-b",
+        )

@@ -40,9 +40,11 @@ def build_attribution_hints(
     for item in infrastructure_report.get("reused_infrastructure") or ():
         ids = sorted(item.get("analysis_ids") or ())
         for index, left in enumerate(ids):
-            for right in ids[index + 1:]:
+            for right in ids[index + 1 :]:
                 pair = pairs.setdefault((left, right), {"evidence": [], "score": 0.0})
-                pair["evidence"].append("infrastructure:" + str(item.get("indicator_type")))
+                pair["evidence"].append(
+                    "infrastructure:" + str(item.get("indicator_type"))
+                )
                 pair["score"] += 0.35
 
     for item in payload_report.get("matches") or ():
@@ -54,8 +56,12 @@ def build_attribution_hints(
     hints: list[dict[str, Any]] = []
     for (left, right), data in pairs.items():
         if left in records and right in records:
-            attack_overlap = set(records[left].attack_ids) & set(records[right].attack_ids)
-            tag_overlap = set(records[left].threat_tags) & set(records[right].threat_tags)
+            attack_overlap = set(records[left].attack_ids) & set(
+                records[right].attack_ids
+            )
+            tag_overlap = set(records[left].threat_tags) & set(
+                records[right].threat_tags
+            )
             if attack_overlap:
                 data["score"] += min(0.15, 0.05 * len(attack_overlap))
                 data["evidence"].append("shared_attack")

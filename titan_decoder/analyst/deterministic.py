@@ -57,7 +57,11 @@ def deterministic_answer(plan: QuestionPlan, items: Iterable[EvidenceItem]) -> s
         lines.append("Decoding chain:")
         for node in nodes:
             value = node.value if isinstance(node.value, dict) else {}
-            parent = value.get("parent") if value.get("parent") is not None else value.get("parent_id")
+            parent = (
+                value.get("parent")
+                if value.get("parent") is not None
+                else value.get("parent_id")
+            )
             method = (
                 value.get("method")
                 or value.get("decoder_used")

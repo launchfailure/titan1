@@ -118,7 +118,9 @@ def hex_preview(data: bytes | None, limit: int = 1024) -> str:
     for offset in range(0, len(view), 16):
         chunk = view[offset : offset + 16]
         hex_part = " ".join(f"{value:02x}" for value in chunk)
-        ascii_part = "".join(chr(value) if 32 <= value <= 126 else "." for value in chunk)
+        ascii_part = "".join(
+            chr(value) if 32 <= value <= 126 else "." for value in chunk
+        )
         rows.append(f"{offset:08x}  {hex_part:<47}  {ascii_part}")
     if len(data) > limit:
         rows.append(f"… {len(data) - limit} more bytes")
@@ -139,8 +141,12 @@ def timeline_text(snapshot: AnalysisSnapshot) -> str:
     events = []
     for item in snapshot.timeline:
         timestamp = str(item.get("timestamp") or item.get("time") or "")
-        kind = str(item.get("kind") or item.get("event_type") or item.get("type") or "event")
-        summary = str(item.get("summary") or item.get("message") or item.get("description") or "")
+        kind = str(
+            item.get("kind") or item.get("event_type") or item.get("type") or "event"
+        )
+        summary = str(
+            item.get("summary") or item.get("message") or item.get("description") or ""
+        )
         events.append((timestamp, kind, summary))
     events.sort()
     if not events:
@@ -177,18 +183,18 @@ def correlation_text(snapshot: AnalysisSnapshot) -> str:
             )
     campaigns_group = snapshot.report.get("campaigns")
     campaigns = (
-        campaigns_group.get("campaigns")
-        if isinstance(campaigns_group, dict)
-        else []
+        campaigns_group.get("campaigns") if isinstance(campaigns_group, dict) else []
     )
     for item in campaigns if isinstance(campaigns, list) else []:
         if isinstance(item, dict):
             raw_members = item.get("member_analysis_ids")
             if not isinstance(raw_members, list):
                 raw_members = []
-            members = ", ".join(
-                markup_escape(member) for member in raw_members
-            )
+            members = ", ".join(markup_escape(member) for member in raw_members)
             confidence = markup_escape(item.get("confidence", ""))
             lines.append(f"• campaign [{confidence}] members: {members}")
-    return "\n".join(lines) if lines else "No cross-case correlation data recorded in the active report."
+    return (
+        "\n".join(lines)
+        if lines
+        else "No cross-case correlation data recorded in the active report."
+    )

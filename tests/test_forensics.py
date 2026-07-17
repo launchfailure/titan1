@@ -46,8 +46,18 @@ def test_ignores_intermediate_encoded_layers():
     # scanned. Parent/child ids mark the root as a non-leaf intermediate node.
     report = {
         "nodes": [
-            {"id": 0, "parent": None, "content_preview": "AMDxQUNvcmU=", "content_type": "Text"},
-            {"id": 1, "parent": 0, "content_preview": "clean VMware host DESKTOP-AB12CD", "content_type": "Text"},
+            {
+                "id": 0,
+                "parent": None,
+                "content_preview": "AMDxQUNvcmU=",
+                "content_type": "Text",
+            },
+            {
+                "id": 1,
+                "parent": 0,
+                "content_preview": "clean VMware host DESKTOP-AB12CD",
+                "content_type": "Text",
+            },
         ]
     }
     summary = ForensicsEngine().analyze(report)

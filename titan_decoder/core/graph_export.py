@@ -81,7 +81,9 @@ class GraphExporter:
         lines = [f'digraph "{safe_title}" {{']
         lines.append("  rankdir=TB;")
         lines.append('  graph [fontname="Helvetica"];')
-        lines.append('  node [shape=box, style="filled,rounded", fontname="Helvetica"];')
+        lines.append(
+            '  node [shape=box, style="filled,rounded", fontname="Helvetica"];'
+        )
         lines.append('  edge [fontname="Helvetica"];')
 
         summary = self._intelligence_summary()
@@ -135,7 +137,7 @@ class GraphExporter:
                 dot_annotated_label = self._dot_escape(annotated_label).replace(
                     "\n", r"\n"
                 )
-                attrs[0] = f'label="{dot_annotated_label}"' 
+                attrs[0] = f'label="{dot_annotated_label}"'
                 attrs.append('penwidth="2.5"')
 
             if threat:
@@ -160,9 +162,7 @@ class GraphExporter:
             target = self._dot_id(edge["target"])
             label = self._dot_escape(edge.get("label", ""))
             style = "dashed" if edge.get("type") == "pruned" else "solid"
-            lines.append(
-                f'  {source} -> {target} [label="{label}", style="{style}"];'
-            )
+            lines.append(f'  {source} -> {target} [label="{label}", style="{style}"];')
 
         lines.append("}")
         return "\n".join(lines)
@@ -220,7 +220,9 @@ class GraphExporter:
             )
             lines.append(f"    {node_id}{open_b}{label}{close_b}")
             if annotation:
-                lines.append(f"    class {node_id} titan{annotation['priority'].title()}")
+                lines.append(
+                    f"    class {node_id} titan{annotation['priority'].title()}"
+                )
 
         for edge in self._build_edges():
             source = self._mermaid_id(edge["source"])
@@ -282,9 +284,7 @@ class GraphExporter:
                 "rank": rank,
                 "score": artifact_score,
                 "priority": self._priority_for_score(artifact_score),
-                "reasons": [
-                    str(reason) for reason in (artifact.get("reasons") or [])
-                ],
+                "reasons": [str(reason) for reason in (artifact.get("reasons") or [])],
                 "artifact_name": artifact.get("artifact_name"),
             }
         return annotations
@@ -345,32 +345,34 @@ class GraphExporter:
         return {
             "version": self.threat_intelligence.get("version"),
             "catalog_version": self.threat_intelligence.get("catalog_version"),
-            "confidence": self._safe_float(
-                self.threat_intelligence.get("confidence")
+            "confidence": self._safe_float(self.threat_intelligence.get("confidence")),
+            "technique_ids": sorted(
+                {
+                    str(item.get("technique_id"))
+                    for item in self.threat_intelligence.get("techniques") or []
+                    if isinstance(item, Mapping) and item.get("technique_id")
+                }
             ),
-            "technique_ids": sorted({
-                str(item.get("technique_id"))
-                for item in self.threat_intelligence.get("techniques") or []
-                if isinstance(item, Mapping) and item.get("technique_id")
-            }),
             "tactics": sorted(
-                str(item)
-                for item in self.threat_intelligence.get("tactics") or []
+                str(item) for item in self.threat_intelligence.get("tactics") or []
             ),
-            "lolbins": sorted({
-                str(item.get("executable"))
-                for item in self.threat_intelligence.get("lolbins") or []
-                if isinstance(item, Mapping) and item.get("executable")
-            }),
-            "malware_tags": sorted({
-                str(item.get("tag"))
-                for item in self.threat_intelligence.get("malware_tags") or []
-                if isinstance(item, Mapping) and item.get("tag")
-            }),
+            "lolbins": sorted(
+                {
+                    str(item.get("executable"))
+                    for item in self.threat_intelligence.get("lolbins") or []
+                    if isinstance(item, Mapping) and item.get("executable")
+                }
+            ),
+            "malware_tags": sorted(
+                {
+                    str(item.get("tag"))
+                    for item in self.threat_intelligence.get("malware_tags") or []
+                    if isinstance(item, Mapping) and item.get("tag")
+                }
+            ),
             "annotated_node_count": len(self._threat_annotations),
             "summary": self.threat_intelligence.get("summary"),
         }
-
 
     def _intelligence_summary(self) -> Dict[str, Any]:
         if not self.intelligence:
@@ -393,7 +395,10 @@ class GraphExporter:
         }
 
     def _dot_legend(self) -> List[str]:
-        lines = ['  subgraph cluster_titan_legend {', '    label="Intelligence priority";']
+        lines = [
+            "  subgraph cluster_titan_legend {",
+            '    label="Intelligence priority";',
+        ]
         lines.append('    style="rounded,dashed";')
         for priority in ("critical", "high", "medium", "low"):
             color = self.PRIORITY_COLORS[priority]
@@ -483,12 +488,7 @@ class GraphExporter:
 
     @staticmethod
     def _dot_escape(value: Any) -> str:
-        return (
-            str(value)
-            .replace("\\", "\\\\")
-            .replace('"', '\\"')
-            .replace("\r", " ")
-        )
+        return str(value).replace("\\", "\\\\").replace('"', '\\"').replace("\r", " ")
 
     @staticmethod
     def _mermaid_id(value: Any) -> str:

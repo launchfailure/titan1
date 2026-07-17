@@ -104,7 +104,9 @@ def build_cfb(streams: List[Tuple[str, bytes]]) -> bytes:
             node.child = node.children[0].index
             for i, child in enumerate(node.children):
                 child.right = (
-                    node.children[i + 1].index if i + 1 < len(node.children) else NOSTREAM
+                    node.children[i + 1].index
+                    if i + 1 < len(node.children)
+                    else NOSTREAM
                 )
                 child.left = NOSTREAM
         for child in node.children:
@@ -214,10 +216,14 @@ def build_cfb(streams: List[Tuple[str, bytes]]) -> bytes:
         fat[sec] = ENDOFCHAIN if s == n_dir_sectors - 1 else sec + 1
     for i, sec in enumerate(mini_stream_sectors):
         fat[sec] = (
-            ENDOFCHAIN if i == len(mini_stream_sectors) - 1 else mini_stream_sectors[i + 1]
+            ENDOFCHAIN
+            if i == len(mini_stream_sectors) - 1
+            else mini_stream_sectors[i + 1]
         )
     for i, sec in enumerate(minifat_sectors):
-        fat[sec] = ENDOFCHAIN if i == len(minifat_sectors) - 1 else minifat_sectors[i + 1]
+        fat[sec] = (
+            ENDOFCHAIN if i == len(minifat_sectors) - 1 else minifat_sectors[i + 1]
+        )
     for node in large:
         n = getattr(node, "_n_sectors", 0)
         for s in range(n):

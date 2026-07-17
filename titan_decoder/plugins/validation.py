@@ -124,9 +124,7 @@ def _probe_analyzer(instance: AnalyzerPlugin, context: PluginContext, report, li
             )
             continue
         if len(artifact.data) > limit:
-            report.error(
-                "analyzer.output_limit", f"artifact exceeded {limit} bytes"
-            )
+            report.error("analyzer.output_limit", f"artifact exceeded {limit} bytes")
 
 
 def _probe_detection(instance: DetectionPlugin, context: PluginContext, report):

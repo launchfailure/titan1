@@ -101,9 +101,7 @@ class WorkbenchStatusBar(Horizontal):
         if state is not None:
             self.state = state
         mode = "Offline mode" if self.state.offline else "Online mode"
-        self.query_one("#footer-mode", Static).update(
-            f"{mode}  ·  ? Help  ·  Q Quit"
-        )
+        self.query_one("#footer-mode", Static).update(f"{mode}  ·  ? Help  ·  Q Quit")
 
 
 class NavigationPanel(VerticalScroll):
@@ -207,9 +205,7 @@ class StatusCards(HorizontalScroll):
 
     def refresh_state(self, state: WorkbenchState) -> None:
         self.state = state
-        self.query_one("#engine-status-card", Static).update(
-            self._engine_status_text()
-        )
+        self.query_one("#engine-status-card", Static).update(self._engine_status_text())
 
     def compose(self) -> ComposeResult:
         plugin_value = str(self.plugin_count)
@@ -267,17 +263,30 @@ class ResultsPanel(Vertical):
                 with TabPane("SUMMARY", id="summary-tab"):
                     with Horizontal(classes="tab-columns"):
                         yield Static(summary_text(self.snapshot), classes="result-card")
-                        yield Static(findings_text(self.snapshot), classes="result-card")
-                with TabPane(f"DETECTIONS ({len(self.snapshot.detections)})", id="detections-tab"):
-                    yield Static(detections_text(self.snapshot), classes="scroll-result")
-                with TabPane(f"STRINGS ({len(self.snapshot.strings)})", id="strings-tab"):
+                        yield Static(
+                            findings_text(self.snapshot), classes="result-card"
+                        )
+                with TabPane(
+                    f"DETECTIONS ({len(self.snapshot.detections)})", id="detections-tab"
+                ):
+                    yield Static(
+                        detections_text(self.snapshot), classes="scroll-result"
+                    )
+                with TabPane(
+                    f"STRINGS ({len(self.snapshot.strings)})", id="strings-tab"
+                ):
                     yield Static(strings_text(self.snapshot), classes="scroll-result")
                 with TabPane(f"IOCS ({self.snapshot.ioc_count})", id="iocs-tab"):
                     yield Static(iocs_text(self.snapshot), classes="scroll-result")
                 with TabPane("DECODE TREE", id="tree-tab"):
-                    yield Static(decode_tree_text(self.snapshot), classes="scroll-result")
+                    yield Static(
+                        decode_tree_text(self.snapshot), classes="scroll-result"
+                    )
                 with TabPane("HEX VIEW", id="hex-tab"):
-                    yield Static(hex_preview(self.snapshot.decoded_output), classes="scroll-result")
+                    yield Static(
+                        hex_preview(self.snapshot.decoded_output),
+                        classes="scroll-result",
+                    )
 
 
 class DecoderPanel(Vertical):
@@ -297,8 +306,7 @@ class DecoderPanel(Vertical):
         yield OptionList(
             *[
                 Option(
-                    f"{index + 1:02d}  {markup_escape(label)}  "
-                    "[#36d277]●[/#36d277]",
+                    f"{index + 1:02d}  {markup_escape(label)}  [#36d277]●[/#36d277]",
                     id=str(index),
                 )
                 for index, label, _ in self.decoder_rows
@@ -364,7 +372,9 @@ class SettingsPanel(VerticalScroll):
 
 
 class AnalystPanel(VerticalScroll):
-    def __init__(self, answer: str = "Ask a grounded question about the active report."):
+    def __init__(
+        self, answer: str = "Ask a grounded question about the active report."
+    ):
         super().__init__(id="dynamic-view")
         self.answer = answer
 
