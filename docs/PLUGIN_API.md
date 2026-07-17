@@ -53,7 +53,7 @@ Each manifest plugin directory contains `titan-plugin.json`
   "capabilities": ["decoder"],
   "description": "Reverses ROT47-obfuscated printable ASCII.",
   "author": "You",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "permissions": [],
   "dependencies": {}
 }
