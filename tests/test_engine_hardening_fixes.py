@@ -159,6 +159,20 @@ def test_text_transform_decoders_do_not_fire_on_binary():
     assert ok and out == b"hi there"
 
 
+def test_html_entity_surrogate_does_not_void_decode():
+    # A numeric entity in the UTF-16 surrogate range (&#55296; = U+D800)
+    # produced a lone surrogate that chr() accepts but UTF-8 cannot encode;
+    # the blanket except then failed the whole decode, so one crafted entity
+    # disabled entity decoding for the entire payload. Surrogate entities must
+    # stay literal while the surrounding entities still decode.
+    from titan_decoder.decoders.base import HTMLEntityDecoder
+
+    dec = HTMLEntityDecoder()
+    out, ok = dec.decode(b"&#55296; ping &amp; &#x41; &#xDFFF;")
+    assert ok
+    assert out == b"&#55296; ping & A &#xDFFF;"
+
+
 def test_gzip_stream_with_percent_bytes_not_hijacked():
     import gzip as _gzip
     import json as _json

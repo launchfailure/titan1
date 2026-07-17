@@ -1194,15 +1194,26 @@ class HTMLEntityDecoder(Decoder):
             # text[i:] and re-ran the regex for every character (O(n^2)), which
             # hangs on entity-heavy payloads.
             def _sub(m: "re.Match") -> str:
+                # Numeric entities in the UTF-16 surrogate range (U+D800..DFFF)
+                # are kept literal: chr() accepts them but the resulting lone
+                # surrogate cannot be UTF-8-encoded, so one crafted entity
+                # (e.g. &#55296;) would make encode() raise and void the whole
+                # decode. Same handling as UnicodeEscapeDecoder.
                 dec, hexv, name = m.group(1), m.group(2), m.group(3)
                 if dec is not None:
                     try:
-                        return chr(int(dec))
+                        code = int(dec)
+                        if 0xD800 <= code <= 0xDFFF:
+                            return m.group(0)
+                        return chr(code)
                     except (ValueError, OverflowError):
                         return m.group(0)
                 if hexv is not None:
                     try:
-                        return chr(int(hexv, 16))
+                        code = int(hexv, 16)
+                        if 0xD800 <= code <= 0xDFFF:
+                            return m.group(0)
+                        return chr(code)
                     except (ValueError, OverflowError):
                         return m.group(0)
                 code = self._NAMED.get(name.lower())
