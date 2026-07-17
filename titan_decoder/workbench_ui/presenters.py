@@ -62,7 +62,16 @@ def findings_text(snapshot: AnalysisSnapshot) -> str:
         lines.append(f"[b]Detections[/b]  {len(snapshot.detections)}")
     if snapshot.relationships:
         lines.append(f"[b]Relationships[/b]  {len(snapshot.relationships)}")
-    return "\n".join(lines) if lines else "No findings loaded."
+    if lines:
+        return "\n".join(lines)
+    if snapshot.report:
+        # An analysis ran but surfaced no indicators; without this hint the
+        # empty card reads as if decoding itself failed.
+        return (
+            "No indicators or detections extracted.\n"
+            "Decoded content is in the DECODE TREE and HEX VIEW tabs."
+        )
+    return "No findings loaded."
 
 
 def decode_tree_text(snapshot: AnalysisSnapshot) -> str:
