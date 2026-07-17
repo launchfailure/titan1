@@ -53,6 +53,9 @@ dev = [
     "jsonschema>=4.20.0",
     "build>=1.5.0",
     "twine>=6.2.0",
+    # twine needs packaging>=24.2 to validate the Metadata-2.4
+    # License-Expression / License-File fields our SPDX license produces.
+    "packaging>=24.2",
 ]
 enrichment = [
     "psutil>=7.2.2",

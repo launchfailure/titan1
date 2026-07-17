@@ -30,6 +30,7 @@ jobs:
       - name: Lint
         run: |
           ruff check .
+          ruff format --check .
 
       - name: Type check (mypy)
         # Non-strict baseline; type errors block merge. See [tool.mypy] in

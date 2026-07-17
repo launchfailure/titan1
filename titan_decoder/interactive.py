@@ -126,42 +126,107 @@ def build_decoder_registry() -> List[DecoderChoice]:
     ``enabled=True`` here, because the user is explicitly asking for them.
     """
     return [
-        DecoderChoice("base64", "Base64", "Standard Base64 (handles line wrapping)", Base64Decoder),
+        DecoderChoice(
+            "base64", "Base64", "Standard Base64 (handles line wrapping)", Base64Decoder
+        ),
         DecoderChoice(
             "recursive_base64",
             "Recursive Base64",
             "Repeatedly Base64-decode nested layers",
             RecursiveBase64Decoder,
         ),
-        DecoderChoice("base64url", "Base64 URL-safe", "URL/filename-safe Base64 alphabet", Base64UrlDecoder),
-        DecoderChoice("base32", "Base32", "RFC 4648 Base32", lambda: Base32Decoder(enabled=True)),
+        DecoderChoice(
+            "base64url",
+            "Base64 URL-safe",
+            "URL/filename-safe Base64 alphabet",
+            Base64UrlDecoder,
+        ),
+        DecoderChoice(
+            "base32", "Base32", "RFC 4648 Base32", lambda: Base32Decoder(enabled=True)
+        ),
         DecoderChoice("hex", "Hex", "Hexadecimal (e.g. 48656c6c6f)", HexDecoder),
-        DecoderChoice("url", "URL / percent", "URL percent-encoding (%20 etc.)", URLDecoder),
-        DecoderChoice("html_entity", "HTML entities", "HTML entities (&amp; &#65; ...)", HTMLEntityDecoder),
+        DecoderChoice(
+            "url", "URL / percent", "URL percent-encoding (%20 etc.)", URLDecoder
+        ),
+        DecoderChoice(
+            "html_entity",
+            "HTML entities",
+            "HTML entities (&amp; &#65; ...)",
+            HTMLEntityDecoder,
+        ),
         DecoderChoice(
             "unicode_escape",
             "Unicode escape",
             r"\uXXXX / \xXX escape sequences",
             UnicodeEscapeDecoder,
         ),
-        DecoderChoice("utf16", "UTF-16", "UTF-16 text (with or without BOM)", Utf16Decoder),
+        DecoderChoice(
+            "utf16", "UTF-16", "UTF-16 text (with or without BOM)", Utf16Decoder
+        ),
         DecoderChoice("rot13", "ROT13", "Caesar/ROT13 letter rotation", Rot13Decoder),
-        DecoderChoice("xor", "XOR (auto-key)", "Recover single/repeating-key XOR", XorDecoder),
+        DecoderChoice(
+            "xor", "XOR (auto-key)", "Recover single/repeating-key XOR", XorDecoder
+        ),
         DecoderChoice(
             "quoted_printable",
             "Quoted-Printable",
             "MIME Quoted-Printable (=3D ...)",
             lambda: QuotedPrintableDecoder(enabled=True),
         ),
-        DecoderChoice("uuencode", "UUencode", "Classic uuencoded data", lambda: UUDecoder(enabled=True)),
-        DecoderChoice("pem", "PEM armor", "Strip PEM ----BEGIN----/----END---- armor", PemArmorDecoder),
-        DecoderChoice("gzip", "Gzip", "Gzip-compressed data", lambda: GzipDecoder(_MAX_DECOMPRESSED)),
-        DecoderChoice("zlib", "Zlib", "Zlib/deflate-compressed data", lambda: ZlibDecoder(_MAX_DECOMPRESSED)),
-        DecoderChoice("bz2", "Bzip2", "Bzip2-compressed data", lambda: Bz2Decoder(_MAX_DECOMPRESSED)),
-        DecoderChoice("lzma", "LZMA / XZ", "LZMA/XZ-compressed data", lambda: LzmaDecoder(_MAX_DECOMPRESSED)),
-        DecoderChoice("pdf", "PDF streams", "Extract/inflate PDF object streams", lambda: PDFDecoder(_MAX_DECOMPRESSED)),
-        DecoderChoice("ole", "OLE / CFB", "Parse OLE/CFB (legacy Office) streams", lambda: OLEDecoder(_MAX_DECOMPRESSED)),
-        DecoderChoice("asn1", "ASN.1 / DER", "Parse ASN.1 DER structures", lambda: ASN1Decoder(enabled=True)),
+        DecoderChoice(
+            "uuencode",
+            "UUencode",
+            "Classic uuencoded data",
+            lambda: UUDecoder(enabled=True),
+        ),
+        DecoderChoice(
+            "pem",
+            "PEM armor",
+            "Strip PEM ----BEGIN----/----END---- armor",
+            PemArmorDecoder,
+        ),
+        DecoderChoice(
+            "gzip",
+            "Gzip",
+            "Gzip-compressed data",
+            lambda: GzipDecoder(_MAX_DECOMPRESSED),
+        ),
+        DecoderChoice(
+            "zlib",
+            "Zlib",
+            "Zlib/deflate-compressed data",
+            lambda: ZlibDecoder(_MAX_DECOMPRESSED),
+        ),
+        DecoderChoice(
+            "bz2",
+            "Bzip2",
+            "Bzip2-compressed data",
+            lambda: Bz2Decoder(_MAX_DECOMPRESSED),
+        ),
+        DecoderChoice(
+            "lzma",
+            "LZMA / XZ",
+            "LZMA/XZ-compressed data",
+            lambda: LzmaDecoder(_MAX_DECOMPRESSED),
+        ),
+        DecoderChoice(
+            "pdf",
+            "PDF streams",
+            "Extract/inflate PDF object streams",
+            lambda: PDFDecoder(_MAX_DECOMPRESSED),
+        ),
+        DecoderChoice(
+            "ole",
+            "OLE / CFB",
+            "Parse OLE/CFB (legacy Office) streams",
+            lambda: OLEDecoder(_MAX_DECOMPRESSED),
+        ),
+        DecoderChoice(
+            "asn1",
+            "ASN.1 / DER",
+            "Parse ASN.1 DER structures",
+            lambda: ASN1Decoder(enabled=True),
+        ),
     ]
 
 
@@ -199,7 +264,9 @@ def format_decode_result(
     lines: List[str] = []
     if not success or decoded is None:
         lines.append(st.red(f"✗ {decoder_label} could not decode this input."))
-        lines.append(st.dim("  The bytes don't look like this format, or decoding failed."))
+        lines.append(
+            st.dim("  The bytes don't look like this format, or decoding failed.")
+        )
         return "\n".join(lines)
 
     is_text = looks_like_text(decoded)
@@ -228,7 +295,9 @@ def format_engine_summary(st: Style, report: dict) -> str:
     """Render the auto-detect (full-engine) report as a readable summary."""
     lines: List[str] = []
     nodes = report.get("nodes", []) or []
-    lines.append(st.green(f"✓ Auto-analysis complete — {len(nodes)} node(s) in the decode tree"))
+    lines.append(
+        st.green(f"✓ Auto-analysis complete — {len(nodes)} node(s) in the decode tree")
+    )
     lines.append("")
 
     # Decode tree: indent by depth, show the method that produced each node.
@@ -371,7 +440,9 @@ class InteractiveApp:
 
     def _maybe_save(self, data: bytes, prompt: str) -> None:
         """Offer to write ``data`` to a file. Blank input skips (the default)."""
-        path_s = self._ask(f"  {prompt} (path, or Enter to skip): ").strip().strip("'\"")
+        path_s = (
+            self._ask(f"  {prompt} (path, or Enter to skip): ").strip().strip("'\"")
+        )
         if not path_s:
             return
         path = Path(os.path.expanduser(path_s))
@@ -416,7 +487,9 @@ class InteractiveApp:
                 decoders[name] = True
             cfg.set("min_score_threshold", 0.0)
             # Deepen the search a little, but never *below* the profile's budget.
-            cfg.set("max_recursion_depth", max(int(cfg.get("max_recursion_depth", 5)), 6))
+            cfg.set(
+                "max_recursion_depth", max(int(cfg.get("max_recursion_depth", 5)), 6)
+            )
             cfg.set("max_node_count", max(int(cfg.get("max_node_count", 100)), 200))
         else:
             cfg.set("min_score_threshold", self._baseline_min_score)
@@ -476,7 +549,9 @@ class InteractiveApp:
             self._print(self.st.red(f"  Decoder raised an error: {e}"))
             return
         self._print()
-        self._print(format_decode_result(self.st, choice.label, source_len, decoded, success))
+        self._print(
+            format_decode_result(self.st, choice.label, source_len, decoded, success)
+        )
         if success and decoded:
             self._print()
             self._maybe_save(decoded, "Save decoded output to")
@@ -498,7 +573,9 @@ class InteractiveApp:
         while True:
             self._print()
             self._print(self.st.bold("  Options"))
-            self._print(f"    [1] Analysis profile : {self.st.cyan(self.profile)}  (safe / fast / full)")
+            self._print(
+                f"    [1] Analysis profile : {self.st.cyan(self.profile)}  (safe / fast / full)"
+            )
             self._print(
                 f"    [2] Network           : {self.st.cyan('offline' if self.offline else 'online')}"
             )
@@ -529,7 +606,9 @@ class InteractiveApp:
                 # main menu); single-decoder mode is unchanged.
                 self.aggressive = not self.aggressive
                 state = "on" if self.aggressive else "off"
-                self._print(self.st.green(f"    Aggressive auto-detect is now {state}."))
+                self._print(
+                    self.st.green(f"    Aggressive auto-detect is now {state}.")
+                )
                 if self.aggressive:
                     self._print(
                         self.st.dim(
@@ -545,10 +624,18 @@ class InteractiveApp:
     def _banner(self) -> None:
         st = self.st
         self._print()
-        self._print(st.cyan(st.bold("  ╔══════════════════════════════════════════════╗")))
-        self._print(st.cyan(st.bold("  ║           TITAN  DECODER  ENGINE               ║")))
-        self._print(st.cyan(st.bold(f"  ║   interactive console · v{TITAN_VERSION:<20}║")))
-        self._print(st.cyan(st.bold("  ╚══════════════════════════════════════════════╝")))
+        self._print(
+            st.cyan(st.bold("  ╔══════════════════════════════════════════════╗"))
+        )
+        self._print(
+            st.cyan(st.bold("  ║           TITAN  DECODER  ENGINE               ║"))
+        )
+        self._print(
+            st.cyan(st.bold(f"  ║   interactive console · v{TITAN_VERSION:<20}║"))
+        )
+        self._print(
+            st.cyan(st.bold("  ╚══════════════════════════════════════════════╝"))
+        )
         self._print(st.dim("  Decode payloads by hand or let the engine auto-detect."))
 
     def _menu(self) -> str:
@@ -557,10 +644,14 @@ class InteractiveApp:
         self._print(st.bold("  What would you like to do?"))
         net = "offline" if self.offline else "online"
         agg = ", aggressive" if self.aggressive else ""
-        self._print(f"    [1] {st.green('Auto-detect & decode')}   {st.dim('(run the full engine)')}")
+        self._print(
+            f"    [1] {st.green('Auto-detect & decode')}   {st.dim('(run the full engine)')}"
+        )
         self._print("    [2] Choose a specific decoder")
         self._print("    [3] List available decoders")
-        self._print(f"    [4] Options {st.dim(f'(profile={self.profile}, {net}{agg})')}")
+        self._print(
+            f"    [4] Options {st.dim(f'(profile={self.profile}, {net}{agg})')}"
+        )
         self._print("    [q] Quit")
         return self._ask(st.cyan("  titan> ")).strip().lower()
 
@@ -595,8 +686,20 @@ class _QuitSignal(Exception):
 
 def main(argv: Optional[List[str]] = None) -> int:
     """Console entry point for the ``titan`` command."""
-    # No flags today; accept and ignore argv so `python -m` / wrappers work and
-    # there's room to grow (e.g. --no-color) without breaking callers.
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="titan",
+        description=(
+            "Interactive Titan console. Run with no arguments for the "
+            "menu-driven experience; use titan-decoder for the scriptable CLI."
+        ),
+    )
+    parser.add_argument("--version", action="version", version=f"titan {TITAN_VERSION}")
+    # Unknown arguments are tolerated (and ignored) so `python -m` shims and
+    # wrappers keep working, and there's room to grow without breaking callers.
+    parser.parse_known_args(argv)
+
     # The enhanced console subclasses InteractiveApp; the base app remains the
     # stable, tested core the upgrade layers presentation on top of.
     from .ui.console import EnhancedInteractiveApp

@@ -6,9 +6,28 @@ from titan_decoder.workbench_ui.presenters import correlation_text, timeline_tex
 
 def sample_report():
     return {
-        "evidence": {"events": [{"timestamp": "2026-01-01T00:00:00Z", "event_type": "dns", "summary": "query"}]},
-        "correlation": {"relationships": [{"left_analysis_id": "a", "right_analysis_id": "b", "score": .8, "confidence": "high"}]},
-        "campaigns": {"campaigns": [{"confidence": "high", "member_analysis_ids": ["a", "b"]}]},
+        "evidence": {
+            "events": [
+                {
+                    "timestamp": "2026-01-01T00:00:00Z",
+                    "event_type": "dns",
+                    "summary": "query",
+                }
+            ]
+        },
+        "correlation": {
+            "relationships": [
+                {
+                    "left_analysis_id": "a",
+                    "right_analysis_id": "b",
+                    "score": 0.8,
+                    "confidence": "high",
+                }
+            ]
+        },
+        "campaigns": {
+            "campaigns": [{"confidence": "high", "member_analysis_ids": ["a", "b"]}]
+        },
     }
 
 
@@ -93,6 +112,45 @@ def test_analysis_worker_refreshes_results_without_duplicate_ids(monkeypatch):
     asyncio.run(exercise())
 
 
+def test_analysis_reveals_results_on_short_terminals(monkeypatch):
+    """Regression: on short terminals the results panel rendered below the fold,
+    so a finished analysis looked like it produced nothing."""
+    import asyncio
+    import pytest
+
+    pytest.importorskip("textual")
+    from textual.widgets import Input, Static
+
+    from titan_decoder.workbench_ui.app import TitanWorkbenchApp
+
+    async def exercise():
+        app = TitanWorkbenchApp()
+
+        def fake_analyze(data, source_name):
+            return AnalysisSnapshot(
+                source_name=source_name,
+                source_size=len(data),
+                report={"nodes": [{"depth": 0}]},
+            )
+
+        monkeypatch.setattr(app.services, "analyze", fake_analyze)
+        async with app.run_test(size=(120, 30)) as pilot:
+            app.query_one("#evidence-input", Input).value = "A" * 300
+            column = app.query_one("#center-column")
+            assert column.scroll_offset.y == 0
+            worker = app.start_analysis()
+            await app.workers.wait_for_complete([worker])
+            await pilot.pause()
+            assert column.scroll_offset.y > 0, (
+                "results panel was not scrolled into view"
+            )
+            # the busy indicator must be back to Ready once the worker finishes
+            footer = app.query_one("#footer-state", Static)
+            assert "Ready" in str(footer.renderable)
+
+    asyncio.run(exercise())
+
+
 def test_dense_scrollable_shell_and_quick_start_actions():
     import asyncio
     import pytest
@@ -132,9 +190,7 @@ def test_dense_scrollable_shell_and_quick_start_actions():
             await app.action_show_help()
             assert len(app.query("#dynamic-view")) == 1
 
-            app.services.update_state(
-                profile="full", offline=False, aggressive=True
-            )
+            app.services.update_state(profile="full", offline=False, aggressive=True)
             app.refresh_shell_status()
             assert app.query_one(WorkbenchHeader).state == app.services.state
             assert app.query_one(WorkbenchStatusBar).state == app.services.state
