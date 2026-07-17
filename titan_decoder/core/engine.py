@@ -391,6 +391,10 @@ class TitanEngine:
                         logger.info(
                             f"Enabled Base32 decoder (confidence: {confidence:.2f})"
                         )
+            # The appends above put newly-enabled decoders at the tail, which
+            # would break the name-sorted order that decode-score tie
+            # resolution relies on. Restore the invariant before scoring.
+            self.decoders.sort(key=lambda d: getattr(d, "name", ""))
 
         # Prefer archive analyzers before heuristic decoders.
         # This avoids cases where a container format (e.g., ZIP) is "successfully"
