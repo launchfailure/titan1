@@ -43,6 +43,30 @@ def test_findings_distinguish_no_indicators_from_no_analysis():
     assert "urls" in findings_text(with_iocs)
 
 
+def test_decode_tree_shows_content_previews():
+    snapshot = AnalysisSnapshot(
+        report={
+            "nodes": [
+                {
+                    "depth": 0,
+                    "method": "DECODE_Base64",
+                    "content_type": "Text",
+                    "content_preview": "SGVsbG8gVGl0YW4=",
+                },
+                {
+                    "depth": 1,
+                    "method": "ANALYZE",
+                    "content_type": "Text",
+                    "content_preview": "Hello Titan",
+                },
+            ]
+        }
+    )
+    text = decode_tree_text(snapshot)
+    assert "DECODE_Base64" in text
+    assert "Hello Titan" in text, "decoded payload preview must be readable"
+
+
 def test_untrusted_evidence_is_escaped_for_textual_markup():
     malicious = "[/bold][@click=app.quit]quit[/]"
     snapshot = AnalysisSnapshot(

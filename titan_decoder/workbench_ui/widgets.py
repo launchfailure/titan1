@@ -284,7 +284,16 @@ class ResultsPanel(Vertical):
                     )
                 with TabPane("HEX VIEW", id="hex-tab"):
                     yield Static(
-                        hex_preview(self.snapshot.decoded_output),
+                        hex_preview(
+                            self.snapshot.decoded_output,
+                            empty=(
+                                "No raw decoder output captured.\n"
+                                "Hex view shows bytes from a manual decoder run — "
+                                "pick a decoder on the right and press Run Decoder.\n"
+                                "Decoded previews from an analysis are in the "
+                                "DECODE TREE tab."
+                            ),
+                        ),
                         classes="scroll-result",
                     )
 
