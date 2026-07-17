@@ -8,6 +8,7 @@ from titan_decoder.workbench_ui.presenters import (
     iocs_text,
     strings_text,
     summary_text,
+    timeline_text,
 )
 
 
@@ -101,3 +102,16 @@ def test_malformed_nested_report_values_do_not_crash_presenters():
 
     assert "\\[@click=app.quit]" in decode_tree_text(snapshot)
     assert "score=0.000" in correlation_text(snapshot)
+
+
+def test_malformed_timeline_values_do_not_crash_timeline_view():
+    # Non-list timeline sources previously raised TypeError from the
+    # snapshot property, crashing the workbench Timeline view outright.
+    for report in (
+        {"timeline": 42},
+        {"timeline": True},
+        {"evidence": {"events": 99}},
+        {"evidence": {"events": {"invalid": "shape"}}, "timeline": "invalid"},
+    ):
+        text = timeline_text(AnalysisSnapshot(report=report))
+        assert text == "No timeline events recorded in the active report."

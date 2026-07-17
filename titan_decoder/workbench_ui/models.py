@@ -69,6 +69,8 @@ class AnalysisSnapshot:
             or self.report.get("evidence_timeline")
             or []
         )
+        if not isinstance(source, list):
+            return []
         return [item for item in source if isinstance(item, dict)]
 
     @property
