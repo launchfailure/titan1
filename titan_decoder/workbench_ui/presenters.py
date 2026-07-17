@@ -62,7 +62,16 @@ def findings_text(snapshot: AnalysisSnapshot) -> str:
         lines.append(f"[b]Detections[/b]  {len(snapshot.detections)}")
     if snapshot.relationships:
         lines.append(f"[b]Relationships[/b]  {len(snapshot.relationships)}")
-    return "\n".join(lines) if lines else "No findings loaded."
+    if lines:
+        return "\n".join(lines)
+    if snapshot.report:
+        # An analysis ran but surfaced no indicators; without this hint the
+        # empty card reads as if decoding itself failed.
+        return (
+            "No indicators or detections extracted.\n"
+            "Decoded content is in the DECODE TREE tab."
+        )
+    return "No findings loaded."
 
 
 def decode_tree_text(snapshot: AnalysisSnapshot) -> str:
@@ -80,6 +89,11 @@ def decode_tree_text(snapshot: AnalysisSnapshot) -> str:
         lines.append(
             f"{'  ' * depth}• {markup_escape(method)} [{markup_escape(ctype)}]"
         )
+        # Show each node's bounded content preview so the decoded payload is
+        # actually readable here — the report does not retain raw bytes.
+        preview = str(node.get("content_preview") or "").strip()
+        if preview:
+            lines.append(f"{'  ' * depth}    [dim]{short(preview, 160)}[/dim]")
     return "\n".join(lines)
 
 
@@ -110,9 +124,13 @@ def iocs_text(snapshot: AnalysisSnapshot) -> str:
     return "\n".join(lines)
 
 
-def hex_preview(data: bytes | None, limit: int = 1024) -> str:
+def hex_preview(
+    data: bytes | None,
+    limit: int = 1024,
+    empty: str = "No binary output.",
+) -> str:
     if not data:
-        return "No binary output."
+        return empty
     rows = []
     view = data[:limit]
     for offset in range(0, len(view), 16):

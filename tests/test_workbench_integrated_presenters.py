@@ -3,6 +3,7 @@ from titan_decoder.workbench_ui.presenters import (
     correlation_text,
     decode_tree_text,
     decoded_text,
+    findings_text,
     hex_preview,
     iocs_text,
     strings_text,
@@ -23,6 +24,47 @@ def test_summary_uses_real_snapshot_counts():
     text = summary_text(snapshot)
     assert "Decode nodes" in text
     assert "IOCs extracted" in text
+
+
+def test_findings_distinguish_no_indicators_from_no_analysis():
+    # Before any analysis there is nothing to report.
+    assert findings_text(AnalysisSnapshot()) == "No findings loaded."
+
+    # A completed analysis with no indicators must not read like a failure.
+    decoded_but_clean = AnalysisSnapshot(
+        report={"nodes": [{"depth": 0}, {"depth": 1}], "iocs": {"urls": []}}
+    )
+    text = findings_text(decoded_but_clean)
+    assert "No indicators or detections extracted." in text
+    assert "DECODE TREE" in text
+
+    # Indicators still render as counts.
+    with_iocs = AnalysisSnapshot(report={"iocs": {"urls": ["http://x"]}})
+    assert "urls" in findings_text(with_iocs)
+
+
+def test_decode_tree_shows_content_previews():
+    snapshot = AnalysisSnapshot(
+        report={
+            "nodes": [
+                {
+                    "depth": 0,
+                    "method": "DECODE_Base64",
+                    "content_type": "Text",
+                    "content_preview": "SGVsbG8gVGl0YW4=",
+                },
+                {
+                    "depth": 1,
+                    "method": "ANALYZE",
+                    "content_type": "Text",
+                    "content_preview": "Hello Titan",
+                },
+            ]
+        }
+    )
+    text = decode_tree_text(snapshot)
+    assert "DECODE_Base64" in text
+    assert "Hello Titan" in text, "decoded payload preview must be readable"
 
 
 def test_untrusted_evidence_is_escaped_for_textual_markup():
