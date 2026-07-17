@@ -1147,6 +1147,7 @@ class URLDecoder(Decoder):
             # only past the first '?', or throughout a bare k=v&k=v body
             # ('&' never occurs in base64, so that shape is a safe signal).
             qpos = text.find("?")
+            plus_from: int | None
             if qpos != -1:
                 plus_from = qpos
             elif "=" in text and "&" in text:
@@ -1238,8 +1239,8 @@ class HTMLEntityDecoder(Decoder):
                         return chr(code)
                     except (ValueError, OverflowError):
                         return m.group(0)
-                code = self._NAMED.get(name.lower())
-                return chr(code) if code is not None else m.group(0)
+                named = self._NAMED.get(name.lower())
+                return chr(named) if named is not None else m.group(0)
 
             decoded = self._ENTITY_RE.sub(_sub, text).encode("utf-8")
             return decoded, decoded != data
