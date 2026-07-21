@@ -111,9 +111,12 @@ The bridge translates ordinary drive paths such as
 input are transferred as encoded data instead of being written to a temporary
 file.
 
-The **Analyze** actions use the Debian bridge. A manually selected decoder in
-the right-hand Decoder Workbench runs in the native process against the data
-already loaded into the UI.
+Analyze actions, manually selected decoders, and Deep Scan all use the Debian
+bridge. Before the first operation, the Windows side checks the backend protocol
+major version and exact manual-decoder inventory. A mismatch fails with an
+update instruction instead of silently running different code. Progress is
+streamed back as JSON-lines, and Escape requests cancellation of the active
+backend process.
 
 ## Drag and drop
 
@@ -147,6 +150,10 @@ bracketed pasted text, but that behavior depends on the terminal.
   find more candidates and also produce more noise.
 - **Recent samples** retains archived sample records independently of whether
   an item is hidden from **Latest Analysis Results**.
+- **File Analysis** offers an individual file or a recursive **Deep Scan**.
+  Scan Only leaves all files untouched. Scan + Quarantine copies only
+  `MALICIOUS` verdicts into the Debian-side recoverable vault and never deletes
+  the originals.
 
 ## Choose another Debian distribution
 

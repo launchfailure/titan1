@@ -39,6 +39,77 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--batch-pattern", default="*", help="Glob pattern for batch mode (default: *)"
     )
+    parser.add_argument(
+        "--deep-scan",
+        type=Path,
+        help="Recursively analyze a file or directory without executing samples",
+    )
+    parser.add_argument(
+        "--deep-scan-pattern",
+        default="*",
+        help="Glob pattern for recursive deep scanning (default: *)",
+    )
+    parser.add_argument(
+        "--deep-scan-reports",
+        type=Path,
+        help="Directory for per-file deep-scan reports",
+    )
+    parser.add_argument(
+        "--deep-scan-out",
+        type=Path,
+        help="Write the deep-scan summary JSON to this file",
+    )
+    parser.add_argument(
+        "--quarantine-dir",
+        type=Path,
+        help="Recoverable quarantine vault (default: ~/.titan_decoder/quarantine)",
+    )
+    parser.add_argument(
+        "--quarantine-verdict",
+        action="append",
+        choices=["malicious", "suspicious"],
+        help=(
+            "Quarantine matching deep-scan verdicts; repeat to include both. "
+            "No files are quarantined unless this option is supplied."
+        ),
+    )
+    parser.add_argument(
+        "--quarantine-action",
+        choices=["copy", "move"],
+        default="copy",
+        help="Copy to quarantine (default) or move after a verified vault copy",
+    )
+    parser.add_argument(
+        "--quarantine-list",
+        action="store_true",
+        help="List recoverable quarantine records as JSON and exit",
+    )
+    parser.add_argument(
+        "--quarantine-restore",
+        metavar="RECORD_ID",
+        help="Restore one quarantine record and exit",
+    )
+    parser.add_argument(
+        "--quarantine-destination",
+        type=Path,
+        help="Destination for --quarantine-restore (default: original path)",
+    )
+    parser.add_argument(
+        "--quarantine-overwrite",
+        action="store_true",
+        help="Allow an explicit quarantine restore to replace its destination",
+    )
+    parser.add_argument(
+        "--calibrate",
+        type=Path,
+        metavar="CORPUS_JSON",
+        help="Evaluate decoder/analyzer precision and recall on a labeled corpus",
+    )
+    parser.add_argument(
+        "--calibration-out",
+        type=Path,
+        help="Write the calibration report to this JSON file",
+    )
     parser.add_argument("--out", "-o", type=Path, help="Output JSON report file")
     parser.add_argument(
         "--trace",
@@ -454,6 +525,55 @@ def handle_info_commands(args, config) -> "int | None":
         print(json.dumps({"schema_version": SCHEMA_VERSION}))
         return 0
 
+    if args.quarantine_list or args.quarantine_restore:
+        from .core.quarantine import QuarantineVault
+
+        configured = args.quarantine_dir or config.get("quarantine_dir")
+        vault = QuarantineVault(Path(str(configured)) if configured else None)
+        if args.quarantine_list:
+            print(
+                json.dumps(
+                    {"root": str(vault.root), "records": [r.to_dict() for r in vault.records()]},
+                    indent=2,
+                )
+            )
+            return 0
+        try:
+            destination = vault.restore(
+                args.quarantine_restore,
+                args.quarantine_destination,
+                overwrite=bool(args.quarantine_overwrite),
+            )
+        except (OSError, KeyError, RuntimeError, ValueError) as exc:
+            print(f"Error: quarantine restore failed: {exc}", file=sys.stderr)
+            return 1
+        print(
+            json.dumps(
+                {
+                    "restored": True,
+                    "record_id": args.quarantine_restore,
+                    "destination": str(destination),
+                },
+                indent=2,
+            )
+        )
+        return 0
+
+    if args.calibrate:
+        from .core.calibration import CalibrationRunner
+
+        try:
+            report = CalibrationRunner(config).run(args.calibrate)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            print(f"Error: calibration failed: {exc}", file=sys.stderr)
+            return 1
+        encoded = json.dumps(report, indent=2, sort_keys=True)
+        if args.calibration_out:
+            args.calibration_out.parent.mkdir(parents=True, exist_ok=True)
+            args.calibration_out.write_text(encoded + "\n", encoding="utf-8")
+        print(encoded)
+        return 0 if report["quality_gate"]["passed"] else 1
+
     # List rule packs and exit.
     if args.list_rule_packs:
         packs = []
@@ -568,6 +688,7 @@ def apply_runtime_config(args, config) -> None:
     """Apply offline override, analysis profiles, depth/artifact overrides, and
     set up logging. Runs after early-exit commands, before analysis."""
     # Hard offline override: disable all outbound enrichment regardless of config.
+    config.set("plugin_offline", bool(args.offline))
     if args.offline:
         config.set("enable_geo_enrichment", False)
         config.set("enable_whois", False)
@@ -973,7 +1094,13 @@ def attach_intelligence_stage(
 
 
 def attach_assurance_stage(
-    config, report, titan_engine=None, evidence_result=None
+    config,
+    report,
+    titan_engine=None,
+    evidence_result=None,
+    source_path: Path | None = None,
+    *,
+    allow_external_providers: bool = False,
 ) -> None:
     """Run offline static controls and attach a fail-closed assurance verdict."""
     if not config.get("enable_assurance", True):
@@ -982,6 +1109,14 @@ def attach_assurance_stage(
     from .core.ioc_export import build_ioc_summary
 
     engine = AssuranceEngine(config._config)
+    if source_path is not None:
+        from .core.assurance_providers import AssuranceProviderRunner
+
+        AssuranceProviderRunner(config._config).collect(
+            source_path,
+            report,
+            allow_external=allow_external_providers,
+        )
     artifacts = titan_engine.artifact_payloads() if titan_engine is not None else None
     iocs = build_ioc_summary(report, None)
     _merge_evidence_iocs(iocs, evidence_result)
@@ -1493,6 +1628,57 @@ def write_outputs_stage(
     return exit_code
 
 
+def run_deep_scan(args, config) -> int:
+    """Run the recursive static scanner and optional recoverable quarantine."""
+    from .core.deep_scan import DeepScanner
+    from .core.quarantine import QuarantineVault
+
+    configured = args.quarantine_dir or config.get("quarantine_dir")
+    verdicts = {
+        str(value).upper() for value in (args.quarantine_verdict or [])
+    }
+    vault = (
+        QuarantineVault(Path(str(configured)) if configured else None)
+        if verdicts
+        else None
+    )
+
+    def progress(event: dict) -> None:
+        if args.progress and not args.quiet:
+            current = event.get("current", 0)
+            total = event.get("total", 0)
+            print(
+                f"[{current}/{total}] {event.get('message', 'Scanning')}",
+                file=sys.stderr,
+            )
+
+    try:
+        summary = DeepScanner(
+            config,
+            progress_callback=progress,
+            offline=bool(args.offline),
+        ).scan(
+            args.deep_scan,
+            pattern=args.deep_scan_pattern,
+            reports_dir=args.deep_scan_reports,
+            quarantine=vault,
+            quarantine_verdicts=verdicts,
+            quarantine_move=args.quarantine_action == "move",
+            allow_external_providers=not args.offline,
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"Error: deep scan failed: {exc}", file=sys.stderr)
+        return 1
+
+    encoded = json.dumps(summary, indent=2, sort_keys=True)
+    if args.deep_scan_out:
+        args.deep_scan_out.parent.mkdir(parents=True, exist_ok=True)
+        args.deep_scan_out.write_text(encoded + "\n", encoding="utf-8")
+    if args.stdout == "json":
+        print(encoded)
+    return 0 if summary.get("analyzed_count", 0) else 1
+
+
 def main():
     """Thin dispatcher: parse args, then drive the analysis stages.
 
@@ -1524,6 +1710,9 @@ def main():
 
     apply_runtime_config(args, config)
 
+    if args.deep_scan:
+        sys.exit(run_deep_scan(args, config))
+
     # Batch mode (sys.exit so the status code survives `python -m` invocation,
     # not just the console-script wrapper).
     if args.batch:
@@ -1539,7 +1728,14 @@ def main():
     detections, risk_assessment = run_detections_stage(
         args, config, report, evidence_result, engine=engine
     )
-    attach_assurance_stage(config, report, engine, evidence_result)
+    attach_assurance_stage(
+        config,
+        report,
+        engine,
+        evidence_result,
+        args.file,
+        allow_external_providers=not args.offline,
+    )
     detections = report.get("detections") or detections
     risk_assessment = report.get("risk_assessment") or risk_assessment
     attach_intelligence_stage(
@@ -1859,6 +2055,13 @@ def run_batch_analysis(args, config):
                 "network_blocked", bool(getattr(args, "offline", False))
             )
             if assurance_engine is not None:
+                from .core.assurance_providers import AssuranceProviderRunner
+
+                AssuranceProviderRunner(config._config).collect(
+                    file_path,
+                    report,
+                    allow_external=not getattr(args, "offline", False),
+                )
                 assurance_engine.run_static_checks(report, engine.artifact_payloads())
                 report["assurance"] = assurance_engine.evaluate(report)
 

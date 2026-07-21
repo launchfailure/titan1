@@ -54,8 +54,31 @@ class LoadedPlugin:
 class PluginManager:
     """Manages loading and registration of plugins."""
 
-    def __init__(self, plugin_dirs: list[Path] | None = None):
+    def __init__(
+        self,
+        plugin_dirs: list[Path] | None = None,
+        *,
+        execution_mode: str = "isolated",
+        offline: bool = True,
+        timeout_seconds: int = 10,
+        max_input_bytes: int = 100 * 1024 * 1024,
+        max_output_bytes: int = 16 * 1024 * 1024,
+        max_memory_mb: int = 512,
+        max_children: int = 100,
+    ):
         self.plugin_dirs = plugin_dirs or []
+        if execution_mode not in {"isolated", "in_process"}:
+            raise ValueError("plugin execution_mode must be isolated or in_process")
+        self.execution_mode = execution_mode
+        self.offline = bool(offline)
+        self.isolation_limits = {
+            "offline": self.offline,
+            "timeout_seconds": timeout_seconds,
+            "max_input_bytes": max_input_bytes,
+            "max_output_bytes": max_output_bytes,
+            "max_memory_mb": max_memory_mb,
+            "max_children": max_children,
+        }
         self.decoders: list[PluginDecoder] = []
         self.analyzers: list[PluginAnalyzer] = []
         self.detections: list[DetectionPlugin] = []
@@ -97,6 +120,8 @@ class PluginManager:
             "registry.py",
             "semver.py",
             "validation.py",
+            "isolation.py",
+            "worker.py",
         }
     )
 
@@ -252,29 +277,37 @@ class PluginManager:
                         f"{loaded.manifest.version} does not satisfy {requirement!r}"
                     )
 
-            instance = _instantiate_entry_point(path, manifest)
+            if self.execution_mode == "isolated":
+                from .isolation import build_isolated_proxies
+
+                instances, _metadata = build_isolated_proxies(
+                    path, manifest, **self.isolation_limits
+                )
+            else:
+                instances = [_instantiate_entry_point(path, manifest)]
 
             registered = False
-            if isinstance(instance, PluginDecoder):
-                self.decoders.append(instance)
-                registered = True
-            if isinstance(instance, PluginAnalyzer):
-                self.analyzers.append(instance)
-                registered = True
-            if isinstance(instance, DetectionPlugin):
-                self._check_rule_ids(instance)
-                self.detections.append(instance)
-                registered = True
-            if isinstance(instance, ReportPlugin):
-                self.reports.append(instance)
-                registered = True
+            for instance in instances:
+                if isinstance(instance, PluginDecoder):
+                    self.decoders.append(instance)
+                    registered = True
+                if isinstance(instance, PluginAnalyzer):
+                    self.analyzers.append(instance)
+                    registered = True
+                if isinstance(instance, DetectionPlugin):
+                    self._check_rule_ids(instance)
+                    self.detections.append(instance)
+                    registered = True
+                if isinstance(instance, ReportPlugin):
+                    self.reports.append(instance)
+                    registered = True
             if not registered:
                 raise TypeError(
                     "entry point class implements no supported plugin base class"
                 )
 
             self.manifest_plugins[manifest.plugin_id] = LoadedPlugin(
-                manifest, instance, path
+                manifest, instances[0], path
             )
             logger.info(
                 "Loaded manifest plugin: %s %s", manifest.plugin_id, manifest.version
@@ -325,6 +358,8 @@ class PluginManager:
         """Get information about loaded plugins."""
         return {
             "api_version": PLUGIN_API_VERSION,
+            "execution_mode": self.execution_mode,
+            "legacy_plugins_in_process": bool(self.loaded_plugins),
             "plugin_dirs": [str(d) for d in self.plugin_dirs],
             "loaded_plugins": list(self.loaded_plugins.keys()),
             "manifest_plugins": [

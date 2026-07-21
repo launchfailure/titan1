@@ -48,6 +48,7 @@ Thumbs.db
 htmlcov/
 coverage.xml
 .pytest_cache/
+.test-tmp-*/
 
 # Ruff/format caches
 .ruff_cache/

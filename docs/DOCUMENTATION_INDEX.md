@@ -14,6 +14,8 @@
 - [SECURITY_MODEL.md](SECURITY_MODEL.md) — threat model and operational guidance.
 
 - [ASSURANCE_PIPELINE.md](ASSURANCE_PIPELINE.md) — six-control verdicts and provider contracts.
+- [DEEP_SCAN_AND_QUARANTINE.md](DEEP_SCAN_AND_QUARANTINE.md) — recursive static scanning and recoverable quarantine.
+- [CALIBRATION.md](CALIBRATION.md) — decoder/analyzer precision and recall gates.
 
 ## Developers
 

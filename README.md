@@ -42,12 +42,12 @@ Titan is designed for repeatable analysis rather than opaque “best guess” de
 
 | Area | Capabilities |
 |---|---|
-| Recursive decoding | Base64, recursive Base64, Base64URL, PEM, Hex, ROT13, URL, HTML entities, Unicode escapes, UTF-16, XOR |
-| Compression | Gzip, Bz2, LZMA, Zlib with bounded decompression |
+| Recursive decoding | Base64 variants, ASCII85, Base58, Base91, PEM, Hex, ROT13, PowerShell EncodedCommand, JavaScript/URL/HTML/Unicode escapes, UTF-16, XOR |
+| Compression | Gzip, Bz2, LZMA, Zlib, raw Deflate, and optional Brotli/Zstandard with bounded output |
 | Opt-in decoders | Base32, UUEncode, ASN.1, Quoted-Printable |
-| Structural formats | PDF object graph, OLE/CFB streams and VBA extraction |
-| Archive analysis | ZIP and TAR with file-count, size, and compression-ratio limits |
-| Executables | PE and ELF metadata analysis |
+| Structural formats | PDF, OLE/CFB, RFC/MIME email, OOXML, scripts, Windows LNK, and image/media steganography artifacts |
+| Archive analysis | ZIP/TAR plus optional 7z, RAR, ISO, and CAB extraction with count/size/ratio limits |
+| Executables | Deeper PE/ELF section, entropy, import, entry-point, overlay, interpreter, and anomaly analysis |
 | Indicators | URLs, domains, IPs, emails, hashes, and normalized evidence indicators |
 | Detection | Built-in correlation rules and optional rule packs |
 | Risk | Deterministic 0–100 risk assessment |
@@ -55,7 +55,9 @@ Titan is designed for repeatable analysis rather than opaque “best guess” de
 | Threat intelligence | MITRE ATT&CK technique mapping, LOLBin identification, behavioral malware tags, node relationships |
 | Evidence | DNS, proxy, firewall, VPN, auth, DHCP, and generic CSV/JSONL ingestion |
 | Exports | JSON, JSONL, IOC formats, Markdown/HTML case reports, timelines, JSON/DOT/Mermaid graphs |
-| Operations | Interactive UI, batch mode, doctor check, local vault, offline guard |
+| Operations | Native/terminal UI, batch and deep scan, recoverable quarantine, calibration gates, local vault, offline guard |
+| Assurance | Six fail-closed controls, VM/provenance adapters, and optional Authenticode verification |
+| Extensions | Out-of-process manifest plugins with time/output/memory bounds; legacy plugins remain in-process |
 
 ## Architecture
 
@@ -106,6 +108,9 @@ source .venv/bin/activate
 pip install -e '.[dev,workbench-ui]'
 ```
 
+Install optional Brotli, Zstandard, 7z, RAR, ISO, and CAB support with
+`pip install -e '.[formats]'`.
+
 On Debian-derived systems, use a virtual environment rather than installing into the externally managed system Python.
 
 The install provides:
@@ -134,6 +139,21 @@ On Windows, the supported native configuration uses a PySide6 front end and a
 Debian analysis backend through WSL. Follow the one-time setup in the
 [Windows Desktop Workbench guide](docs/WINDOWS_DESKTOP_UI.md), then launch
 `Titan-Windows.cmd`. Native Explorer drag-and-drop is available in this build.
+
+Deep-scan a folder without executing samples and copy only confirmed malicious
+verdicts into recoverable quarantine:
+
+```bash
+titan-decoder --deep-scan ./incoming --offline \
+  --quarantine-verdict malicious --quarantine-action copy \
+  --deep-scan-out scan-summary.json
+```
+
+Run the labeled decoder/analyzer quality gate:
+
+```bash
+titan-decoder --calibrate tests/fixtures/calibration/decoder-analyzer-v1.json
+```
 
 For the separate terminal version, install `.[workbench-ui]` and run
 `titan-tui` or `titan-workbench-ui`.
@@ -278,6 +298,11 @@ Titan loads decoders and analyzers from configured plugin directories, the user 
 
 See [docs/PLUGIN_API.md](docs/PLUGIN_API.md).
 
+Manifest plugins execute in short-lived worker processes by default. Process,
+time, memory, output, offline-network, and configuration-disclosure controls
+reduce extension risk, but they are not a substitute for an operating-system
+sandbox. Legacy single-file plugins retain their in-process compatibility mode.
+
 ## Report contracts
 
 The primary report includes metadata, a run manifest, nodes, IOCs, optional evidence, detections, risk, Intelligence, and enrichment.
@@ -323,6 +348,8 @@ See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 | [Windows desktop workbench](docs/WINDOWS_DESKTOP_UI.md) | Native setup, Debian bridge, drag-and-drop, and troubleshooting |
 | [Integrated workbench](docs/WORKBENCH_INTEGRATED_BUILD.md) | Native and Textual interface commands, operation, and safety behavior |
 | [Assurance pipeline](docs/ASSURANCE_PIPELINE.md) | Six fail-closed controls, verdict policy, VM and provenance attestations |
+| [Deep scan and quarantine](docs/DEEP_SCAN_AND_QUARANTINE.md) | Recursive static scanning, quarantine policy, and restoration |
+| [Calibration](docs/CALIBRATION.md) | Labeled decoder/analyzer quality metrics and gates |
 | [Pipelines](docs/PIPELINES.md) | End-to-end execution, decoder engine, and analyzer pipeline |
 | [Developer guide](docs/DEVELOPER_GUIDE.md) | Repository layout and implementation workflow |
 | [Intelligence Layer](docs/INTELLIGENCE_LAYER.md) | Signals, classification, ranking, and compatibility |

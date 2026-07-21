@@ -60,7 +60,12 @@ flowchart TD
 
 ### Built-in transformations
 
-The default set includes Base64 variants, PEM armor, common compression formats, Hex, ROT13, URL decoding, HTML entities, Unicode escapes, UTF-16, XOR, PDF, and OLE processing. Base32, UUEncode, ASN.1, and Quoted-Printable are opt-in or smart-detected because they can create noisy candidates on arbitrary data.
+The default set includes Base64 variants, ASCII85, Base58, Base91, PEM armor,
+common compression formats (including raw Deflate and optional
+Brotli/Zstandard), Hex, ROT13, PowerShell EncodedCommand, JavaScript/URL/HTML
+and Unicode escapes, UTF-16, XOR, PDF, and OLE processing. Base32, UUEncode,
+ASN.1, and Quoted-Printable are opt-in or smart-detected because they can
+create noisy candidates on arbitrary data.
 
 ### Decoder requirements
 
@@ -83,7 +88,13 @@ A decoder should cheaply determine whether it applies, transform bytes, reject m
 ### Built-in analyzers
 
 - ZIP and TAR analyzers enumerate bounded members and reject unsafe expansion.
-- PE and ELF analyzers extract executable structure and metadata.
+- Optional 7z, RAR, ISO, and CAB libraries extend the same bounded archive path.
+- RFC/MIME email, OOXML, script, and Windows LNK analyzers expose delivery
+  metadata, decoded bodies, active content, relationships, and embedded objects.
+- The steganography analyzer extracts bounded PNG/JPEG/GIF/WebP/TIFF metadata,
+  MP3 tags, MP4/MOV atoms, appended data, and conservative LSB candidates.
+- PE and ELF analyzers extract sections, imports/interpreters, entry points,
+  overlays, entropy, permissions, and structural anomalies.
 - PDF and OLE support in the decoding layer performs structural extraction for embedded objects and streams.
 
 ### Artifact contract

@@ -38,6 +38,35 @@ titan-decoder --file sample.bin --trace --seed 1234
 
 Profiles select coherent presets. Explicit flags override configuration where supported. Decision traces increase report size and are intended for debugging or reproducibility work.
 
+## Deep scan and quarantine
+
+```bash
+titan-decoder --deep-scan ./incoming --offline --deep-scan-out summary.json
+titan-decoder --deep-scan ./incoming --offline \
+  --quarantine-verdict malicious --quarantine-action copy
+titan-decoder --quarantine-list
+titan-decoder --quarantine-restore RECORD_ID --quarantine-destination restored.bin
+```
+
+Deep Scan recursively performs static analysis and writes one report per file;
+it never executes a sample. Quarantine is disabled unless a verdict is named.
+`copy` is the default, while `move` removes an original only after a verified
+vault copy. `suspicious` must be explicitly requested and should not be treated
+as a confirmed-malware verdict. See
+[DEEP_SCAN_AND_QUARANTINE.md](DEEP_SCAN_AND_QUARANTINE.md).
+
+## Decoder/analyzer calibration
+
+```bash
+titan-decoder \
+  --calibrate tests/fixtures/calibration/decoder-analyzer-v1.json \
+  --calibration-out calibration.json
+```
+
+The report contains a confusion matrix, precision, recall, F1, specificity,
+accuracy, per-component results, and the configured quality gate. The command
+exits non-zero when the gate fails. See [CALIBRATION.md](CALIBRATION.md).
+
 ## Detections, Intelligence, and policy exits
 
 ```bash
@@ -141,7 +170,9 @@ titan-decoder --file sample.bin --plugin-dir ~/my-plugins --enable-detections
 `--plugin-validate` deep-validates a manifest plugin (manifest contract, API
 compatibility, entry point, capabilities, and a bounded runtime probe) and
 exits non-zero on failure; the probe executes plugin code in-process.
-`--plugin-list` prints every discovered plugin, including load errors.
+`--plugin-list` prints every discovered plugin, including load errors and the
+active execution mode. Manifest plugins are isolated by default; legacy
+single-file plugins and the explicit validation probe remain in-process.
 `--plugin-dir` adds plugin search directories (repeatable) for both
 standalone modes and analysis runs. See [PLUGIN_API.md](PLUGIN_API.md).
 

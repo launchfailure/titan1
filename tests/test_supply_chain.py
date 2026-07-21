@@ -30,6 +30,15 @@ def test_sbom_is_valid_cyclonedx():
         assert comp["name"] and comp["purl"].startswith("pkg:pypi/")
     component_names = {component["name"].lower() for component in sbom["components"]}
     assert "textual" in component_names
+    assert "pyside6" in component_names
+    assert {
+        "brotli",
+        "zstandard",
+        "py7zr",
+        "rarfile",
+        "pycdlib",
+        "cabarchive",
+    } <= component_names
     assert "google-re2" not in component_names
 
 

@@ -11,7 +11,10 @@ Supported carriers:
 * BMP: trailing data and uncompressed 24/32-bit pixel LSB payloads
 * WAV: RIFF trailing data and PCM sample LSB payloads
 * JPEG/GIF: trailing data and suspicious comment/application metadata
-* AVI/other RIFF containers: bytes beyond the declared RIFF boundary
+* WebP/AVI/other RIFF containers: metadata chunks and trailing data
+* TIFF: suspicious ASCII/undefined IFD values
+* MP3: suspicious ID3 metadata frames
+* MP4/MOV: suspicious metadata/UUID atoms and trailing data
 
 LSB recovery accepts a length-framed ``TITANSTEG\0`` stream, a recognized file
 signature near the start of the bitstream, or suspicious NUL-terminated text.
@@ -28,7 +31,7 @@ import math
 import re
 import struct
 import zlib
-from typing import Any, Iterable, List, Tuple
+from typing import Any, Iterable, List, Literal, Tuple
 
 from .base import Analyzer
 from ...decoders.base import Decoder
@@ -250,6 +253,8 @@ class SteganographyAnalyzer(Analyzer):
         return bool(
             data.startswith(_PNG_SIGNATURE)
             or data.startswith((b"BM", b"\xff\xd8", b"GIF87a", b"GIF89a"))
+            or data.startswith((b"II*\x00", b"MM\x00*", b"ID3"))
+            or (len(data) >= 12 and data[4:8] == b"ftyp")
             or (len(data) >= 12 and data[:4] == b"RIFF")
         )
 
@@ -263,6 +268,12 @@ class SteganographyAnalyzer(Analyzer):
             candidates = self._analyze_jpeg(data)
         elif data.startswith((b"GIF87a", b"GIF89a")):
             candidates = self._analyze_gif(data)
+        elif data.startswith((b"II*\x00", b"MM\x00*")):
+            candidates = self._analyze_tiff(data)
+        elif data.startswith(b"ID3"):
+            candidates = self._analyze_mp3(data)
+        elif len(data) >= 12 and data[4:8] == b"ftyp":
+            candidates = self._analyze_mp4(data)
         elif len(data) >= 12 and data[:4] == b"RIFF":
             candidates = self._analyze_riff(data)
         else:
@@ -495,6 +506,21 @@ class SteganographyAnalyzer(Analyzer):
         found = self._trailer(
             data, declared_end if declared_end >= 12 else None, carrier or "riff"
         )
+        position = 12
+        while position + 8 <= min(declared_end, len(data)):
+            chunk_type = data[position : position + 4]
+            length = int.from_bytes(data[position + 4 : position + 8], "little")
+            payload_at = position + 8
+            chunk_end = payload_at + length
+            if chunk_end > min(declared_end, len(data)):
+                break
+            payload = data[payload_at:chunk_end]
+            if chunk_type in {b"EXIF", b"XMP ", b"ICCP", b"LIST", b"INFO"} and _is_suspicious(payload):
+                label = chunk_type.decode("ascii", errors="replace").strip().lower()
+                found.append(
+                    (f"steg_{carrier}_{label}{_payload_extension(payload)}", payload)
+                )
+            position = chunk_end + (length & 1)
         if data[8:12] != b"WAVE":
             return found
 
@@ -645,6 +671,117 @@ class SteganographyAnalyzer(Analyzer):
             break
         comments.extend(self._trailer(data, end, "gif"))
         return comments
+
+    def _analyze_tiff(self, data: bytes) -> list[tuple[str, bytes]]:
+        endian: Literal["little", "big"] = (
+            "little" if data[:2] == b"II" else "big"
+        )
+        if len(data) < 8:
+            return []
+        ifd = int.from_bytes(data[4:8], endian)
+        found: list[tuple[str, bytes]] = []
+        visited: set[int] = set()
+        directories = 0
+        type_sizes = {1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1}
+        while ifd and ifd not in visited and directories < 16:
+            visited.add(ifd)
+            directories += 1
+            if ifd + 2 > len(data):
+                break
+            count = int.from_bytes(data[ifd : ifd + 2], endian)
+            if count > 4096 or ifd + 2 + count * 12 + 4 > len(data):
+                break
+            for index in range(count):
+                at = ifd + 2 + index * 12
+                tag = int.from_bytes(data[at : at + 2], endian)
+                kind = int.from_bytes(data[at + 2 : at + 4], endian)
+                values = int.from_bytes(data[at + 4 : at + 8], endian)
+                size = type_sizes.get(kind, 0) * values
+                if not size or size > self.max_artifact_size:
+                    continue
+                if size <= 4:
+                    payload = data[at + 8 : at + 8 + size]
+                else:
+                    offset = int.from_bytes(data[at + 8 : at + 12], endian)
+                    if offset > len(data) or size > len(data) - offset:
+                        continue
+                    payload = data[offset : offset + size]
+                if kind in {2, 7} and _is_suspicious(payload):
+                    found.append(
+                        (
+                            f"steg_tiff_tag_{tag:04x}{_payload_extension(payload)}",
+                            payload,
+                        )
+                    )
+            next_at = ifd + 2 + count * 12
+            ifd = int.from_bytes(data[next_at : next_at + 4], endian)
+        return found
+
+    @staticmethod
+    def _synchsafe(value: bytes) -> int:
+        if len(value) != 4 or any(byte & 0x80 for byte in value):
+            return 0
+        return (value[0] << 21) | (value[1] << 14) | (value[2] << 7) | value[3]
+
+    def _analyze_mp3(self, data: bytes) -> list[tuple[str, bytes]]:
+        if len(data) < 10 or data[:3] != b"ID3" or data[3] not in {2, 3, 4}:
+            return []
+        tag_size = self._synchsafe(data[6:10])
+        end = min(len(data), 10 + tag_size)
+        position = 10
+        found: list[tuple[str, bytes]] = []
+        frame_count = 0
+        while position + 10 <= end and frame_count < 1024:
+            frame_id = data[position : position + 4]
+            if not re.fullmatch(rb"[A-Z0-9]{4}", frame_id):
+                break
+            raw_size = data[position + 4 : position + 8]
+            size = (
+                self._synchsafe(raw_size)
+                if data[3] == 4
+                else int.from_bytes(raw_size, "big")
+            )
+            payload_at = position + 10
+            frame_end = payload_at + size
+            if size <= 0 or frame_end > end:
+                break
+            payload = data[payload_at:frame_end]
+            if frame_id in {b"APIC", b"GEOB", b"COMM", b"TXXX", b"PRIV"} and _is_suspicious(payload):
+                label = frame_id.decode("ascii").lower()
+                found.append(
+                    (f"steg_mp3_{label}{_payload_extension(payload)}", payload)
+                )
+            position = frame_end
+            frame_count += 1
+        return found
+
+    def _analyze_mp4(self, data: bytes) -> list[tuple[str, bytes]]:
+        position = 0
+        found: list[tuple[str, bytes]] = []
+        atoms = 0
+        while position + 8 <= len(data) and atoms < 4096:
+            size = int.from_bytes(data[position : position + 4], "big")
+            atom_type = data[position + 4 : position + 8]
+            header = 8
+            if size == 1:
+                if position + 16 > len(data):
+                    break
+                size = int.from_bytes(data[position + 8 : position + 16], "big")
+                header = 16
+            elif size == 0:
+                size = len(data) - position
+            if size < header or size > len(data) - position:
+                break
+            payload = data[position + header : position + size]
+            if atom_type in {b"uuid", b"udta", b"meta", b"ilst", b"free", b"XMP_"} and _is_suspicious(payload):
+                label = re.sub(rb"[^A-Za-z0-9]", b"_", atom_type).decode("ascii")
+                found.append(
+                    (f"steg_mp4_{label}{_payload_extension(payload)}", payload)
+                )
+            position += size
+            atoms += 1
+        found.extend(self._trailer(data, position if position else None, "mp4"))
+        return found
 
 
 class MediaPayloadDecoder(Decoder):

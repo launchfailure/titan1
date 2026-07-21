@@ -67,7 +67,7 @@ The native Windows interface is deliberately separated from Debian analysis:
 ```mermaid
 flowchart LR
     Explorer["Windows Explorer / input dialogs"] --> Qt["Native PySide6 workbench"]
-    Qt -->|"JSON over stdin/stdout via wsl.exe"| Bridge["Debian WSL bridge"]
+    Qt -->|"versioned JSON-lines + progress via wsl.exe"| Bridge["Debian WSL bridge"]
     Bridge --> Services["Workbench services"]
     Services --> Engine["TitanEngine"]
     Engine --> Report["Deterministic report"]
@@ -77,7 +77,9 @@ flowchart LR
 `titan_decoder.desktop_ui.debian_services` translates Windows paths to `/mnt`
 paths and invokes `titan_decoder.desktop_ui.debian_bridge` inside the selected
 Debian distribution. The bridge transfers report state back to the native UI;
-it does not create a detonation or VM isolation boundary. See
+it verifies protocol and decoder-inventory compatibility, routes analysis,
+manual decoders, and deep scans through the same backend, and supports bounded
+timeouts plus cancellation. It does not create a detonation or VM isolation boundary. See
 [WINDOWS_DESKTOP_UI.md](WINDOWS_DESKTOP_UI.md) for setup and operation.
 
 ## Key design rules
@@ -101,12 +103,19 @@ it does not create a detonation or VM isolation boundary. See
 - `titan_decoder/core/case_report.py` — Markdown/HTML reports.
 - `titan_decoder/desktop_ui/` — native PySide6 frontend and Debian WSL bridge.
 - `titan_decoder/workbench_ui/` — Textual terminal frontend and shared workbench services.
-- `titan_decoder/plugins.py` — plugin discovery and loading.
+- `titan_decoder/plugins/` — plugin contracts, discovery, isolated workers, and validation.
+- `titan_decoder/core/deep_scan.py` — recursive static scan orchestration.
+- `titan_decoder/core/quarantine.py` — hash-addressed recoverable quarantine.
+- `titan_decoder/core/calibration.py` — labeled decoder/analyzer quality metrics.
 - `tests/` — unit, contract, corpus, safety, and regression suites.
 
 ## Trust boundaries
 
-Input bytes, artifact names, previews, rule-pack content, evidence fields, and plugin output are untrusted. Renderers must escape text. Decoders and analyzers must cap expansion. Plugins run in-process and therefore inherit the process trust level.
+Input bytes, artifact names, previews, rule-pack content, evidence fields, and
+plugin output are untrusted. Renderers must escape text. Decoders and analyzers
+must cap expansion. Manifest plugins run in short-lived child processes by
+default; legacy single-file plugins and explicit plugin validation remain
+in-process compatibility/developer boundaries.
 
 ## Data ownership
 

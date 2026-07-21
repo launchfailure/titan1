@@ -16,6 +16,17 @@ from titan_decoder.interactive import build_decoder_registry
 from titan_decoder.workbench_ui.services import WorkbenchServices
 
 
+def _synchsafe(value: int) -> bytes:
+    return bytes(
+        (
+            (value >> 21) & 0x7F,
+            (value >> 14) & 0x7F,
+            (value >> 7) & 0x7F,
+            value & 0x7F,
+        )
+    )
+
+
 def _png_chunk(kind: bytes, payload: bytes) -> bytes:
     body = kind + payload
     return (
@@ -120,6 +131,44 @@ def test_hidden_media_rule_and_workbench_assurance(tmp_path):
         snapshot.report, snapshot.report["iocs"]
     )
     assert any(item["attack_ids"] == ["T1027.003"] for item in direct)
+
+
+def test_webp_xmp_metadata_payload_is_extracted():
+    payload = b"powershell http://webp.example/stage"
+    chunk = b"XMP " + len(payload).to_bytes(4, "little") + payload
+    if len(payload) & 1:
+        chunk += b"\x00"
+    body = b"WEBP" + chunk
+    carrier = b"RIFF" + len(body).to_bytes(4, "little") + body
+    extracted = SteganographyAnalyzer().analyze(carrier)
+    assert any(name.startswith("steg_webp_xmp") and data == payload for name, data in extracted)
+
+
+def test_tiff_ascii_tag_payload_is_extracted():
+    payload = b"https://tiff.example/payload\x00"
+    ifd_offset = 8
+    payload_offset = ifd_offset + 2 + 12 + 4
+    entry = struct.pack("<HHII", 0x010E, 2, len(payload), payload_offset)
+    carrier = b"II*\x00" + struct.pack("<I", ifd_offset)
+    carrier += struct.pack("<H", 1) + entry + b"\x00\x00\x00\x00" + payload
+    extracted = SteganographyAnalyzer().analyze(carrier)
+    assert any(name.startswith("steg_tiff_tag_010e") for name, _ in extracted)
+
+
+def test_mp3_id3_private_payload_is_extracted():
+    payload = b"MZ http://mp3.example/dropper"
+    frame = b"PRIV" + len(payload).to_bytes(4, "big") + b"\x00\x00" + payload
+    carrier = b"ID3\x03\x00\x00" + _synchsafe(len(frame)) + frame
+    extracted = SteganographyAnalyzer().analyze(carrier)
+    assert any(name.startswith("steg_mp3_priv") and data == payload for name, data in extracted)
+
+
+def test_mp4_uuid_payload_is_extracted():
+    ftyp = (12).to_bytes(4, "big") + b"ftyp" + b"isom"
+    payload = b"PK\x03\x04 http://mp4.example/archive"
+    uuid = (8 + len(payload)).to_bytes(4, "big") + b"uuid" + payload
+    extracted = SteganographyAnalyzer().analyze(ftyp + uuid)
+    assert any(name.startswith("steg_mp4_uuid") and data == payload for name, data in extracted)
 
 
 def test_malformed_media_never_raises_or_extracts():
