@@ -140,7 +140,13 @@ def test_analysis_reveals_results_on_short_terminals(monkeypatch):
             assert column.scroll_offset.y == 0
             worker = app.start_analysis()
             await app.workers.wait_for_complete([worker])
-            await pilot.pause()
+            # The reveal is scheduled via call_after_refresh, which under
+            # Textual 8's frame scheduling may take more than one pause to
+            # land; wait for the scroll instead of sampling a single frame.
+            for _ in range(20):
+                await pilot.pause()
+                if column.scroll_offset.y > 0:
+                    break
             assert column.scroll_offset.y > 0, (
                 "results panel was not scrolled into view"
             )
