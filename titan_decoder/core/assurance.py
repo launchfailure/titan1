@@ -45,17 +45,20 @@ class AssuranceEngine:
             if value
         ]
         rules = CorrelationRulesEngine(pack_paths)
-        effective_iocs = iocs
-        if effective_iocs is None:
+        effective_iocs: dict[str, Any]
+        if iocs is None:
             value = report.get("iocs")
-            effective_iocs = value if isinstance(value, dict) else {}
-        builtin = rules.evaluate_all(report, effective_iocs)
+            effective_iocs = dict(value) if isinstance(value, Mapping) else {}
+        else:
+            effective_iocs = dict(iocs)
+        report_view = dict(report)
+        builtin = rules.evaluate_all(report_view, effective_iocs)
         existing = report.get("detections")
         detections = self._merge_detections(
             existing if isinstance(existing, list) else [], builtin
         )
         risk = RiskScoringEngine().compute_risk_score(
-            report, effective_iocs, detections
+            report_view, effective_iocs, detections
         )
         payloads = list(artifact_payloads or [])
         extracted_strings = self._extract_strings(payloads)
@@ -108,9 +111,7 @@ class AssuranceEngine:
             self._provenance_control(root_hash),
         ]
 
-        dispositions = {
-            str(control.get("disposition") or "") for control in controls
-        }
+        dispositions = {str(control.get("disposition") or "") for control in controls}
         if "malicious" in dispositions:
             verdict = "MALICIOUS"
             summary = "A high-confidence malicious indicator was confirmed."
@@ -120,8 +121,7 @@ class AssuranceEngine:
             summary = "One or more security controls found suspicious evidence."
             confidence = 0.8
         elif all(
-            control["state"] in {"pass", "not_applicable"}
-            for control in controls
+            control["state"] in {"pass", "not_applicable"} for control in controls
         ):
             verdict = "NO_MALICIOUS_EVIDENCE"
             summary = (
@@ -147,8 +147,7 @@ class AssuranceEngine:
             if control["state"] in {"fail", "unavailable"}
         ]
         satisfied = sum(
-            control["state"] in {"pass", "not_applicable"}
-            for control in controls
+            control["state"] in {"pass", "not_applicable"} for control in controls
         )
         return {
             "version": ASSURANCE_VERSION,
@@ -215,7 +214,8 @@ class AssuranceEngine:
             )
         opaque = outcome.get("opaque_terminal_node_ids") or []
         terminal_ids = set(outcome.get("terminal_node_ids") or [])
-        nodes = report.get("nodes") if isinstance(report.get("nodes"), list) else []
+        raw_nodes = report.get("nodes")
+        nodes: list[Any] = raw_nodes if isinstance(raw_nodes, list) else []
         terminals = [
             node
             for node in nodes
@@ -569,7 +569,9 @@ class AssuranceEngine:
         return False
 
     @staticmethod
-    def _hash_list_match(root_hash: str | None, configured_path: Any) -> dict[str, Any] | None:
+    def _hash_list_match(
+        root_hash: str | None, configured_path: Any
+    ) -> dict[str, Any] | None:
         if not root_hash or not configured_path:
             return None
         path = Path(str(configured_path)).expanduser()

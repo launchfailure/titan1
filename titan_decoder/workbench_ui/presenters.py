@@ -74,7 +74,9 @@ def summary_text(snapshot: AnalysisSnapshot) -> str:
         if isinstance(satisfied, int) and isinstance(total, int)
         else "not available"
     )
-    detail = f"\n[b]Explanation[/b]     {markup_escape(explanation)}" if explanation else ""
+    detail = (
+        f"\n[b]Explanation[/b]     {markup_escape(explanation)}" if explanation else ""
+    )
     return (
         f"[b]Verdict[/b]         {markup_escape(verdict)}\n"
         f"[b]Assurance[/b]       {markup_escape(coverage)}\n"

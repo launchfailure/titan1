@@ -268,9 +268,7 @@ class TitanDesktopWindow(QMainWindow):
         )
         for key, route in route_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self)
-            shortcut.activated.connect(
-                lambda value=route: self._route_selected(value)
-            )
+            shortcut.activated.connect(lambda value=route: self._route_selected(value))
             self.keyboard_shortcuts[key] = shortcut
         paste_shortcut = QShortcut(QKeySequence("Ctrl+V"), self)
         paste_shortcut.activated.connect(self._paste_clipboard_evidence)
@@ -368,13 +366,16 @@ class TitanDesktopWindow(QMainWindow):
             "settings": self._show_settings,
             "help": self._show_help,
             "refresh": self._refresh_workspace,
-            "quit": self.close,
+            "quit": self._quit,
         }
         callback = routes.get(route)
         if callback is None:
             self._show_error(f"Unknown workspace route: {route}")
             return
         callback()
+
+    def _quit(self) -> None:
+        self.close()
 
     def _show_dashboard(self) -> None:
         self.results.tabs.setCurrentIndex(0)
@@ -573,10 +574,7 @@ NAVIGATION
     def _paste_clipboard_evidence(self) -> None:
         clipboard = QApplication.clipboard()
         mime = clipboard.mimeData()
-        candidates = [
-            url.toLocalFile() or url.toString()
-            for url in mime.urls()
-        ]
+        candidates = [url.toLocalFile() or url.toString() for url in mime.urls()]
         if mime.hasText():
             candidates.extend(mime.text().splitlines())
         for candidate in candidates:
@@ -810,7 +808,9 @@ NAVIGATION
                 source_path=source_path,
             )
         except Exception as exc:
-            self._show_error(f"The evidence could not be added to Recent Samples: {exc}")
+            self._show_error(
+                f"The evidence could not be added to Recent Samples: {exc}"
+            )
             return None
         self.current_sample_id = record.id
         self._refresh_sample_history()
@@ -841,7 +841,9 @@ NAVIGATION
             else:
                 self.archive.attach_snapshot(sample_id, snapshot)
         except Exception as exc:
-            self._show_error(f"The analysis completed but history could not be saved: {exc}")
+            self._show_error(
+                f"The analysis completed but history could not be saved: {exc}"
+            )
         self._apply_snapshot(snapshot, sample_id=sample_id)
         self.footer.set_activity(None)
 
@@ -937,7 +939,8 @@ NAVIGATION
 
 
 def main() -> None:
-    app = QApplication.instance() or QApplication(sys.argv)
+    existing = QApplication.instance()
+    app = existing if isinstance(existing, QApplication) else QApplication(sys.argv)
     app.setApplicationName(TitanDesktopWindow.TITLE)
     app.setWindowIcon(icon("shield", "#25b7ff"))
     window = TitanDesktopWindow()

@@ -76,7 +76,9 @@ class DebianWorkbenchServices(WorkbenchServices):
         try:
             response = json.loads(completed.stdout)
         except json.JSONDecodeError as exc:
-            raise RuntimeError("The Debian backend returned an invalid response.") from exc
+            raise RuntimeError(
+                "The Debian backend returned an invalid response."
+            ) from exc
 
         decoded = response.pop("decoded_output_base64", None)
         if decoded is not None:

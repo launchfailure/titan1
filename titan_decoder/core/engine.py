@@ -444,9 +444,7 @@ class TitanEngine:
                     if extracted:  # Only proceed if extraction succeeded
                         node.method = f"ANALYZE_{analyzer.name}"
                         node.analysis_state = "extracted"
-                        node.termination_reason = (
-                            f"Extracted {len(extracted)} artifact(s) with {analyzer.name}."
-                        )
+                        node.termination_reason = f"Extracted {len(extracted)} artifact(s) with {analyzer.name}."
 
                         # Calculate score for archive extraction
                         archive_score = self.scoring_engine.calculate_decode_score(
@@ -668,9 +666,9 @@ class TitanEngine:
         preview = node.content_preview.strip()
         if not preview:
             return True
-        printable_ratio = sum(
-            ch.isprintable() or ch.isspace() for ch in preview
-        ) / len(preview)
+        printable_ratio = sum(ch.isprintable() or ch.isspace() for ch in preview) / len(
+            preview
+        )
         if printable_ratio < 0.85:
             return True
         longest_token = max(preview.split(), key=len, default="")
@@ -711,9 +709,7 @@ class TitanEngine:
             if node.analysis_state in {"decoded", "extracted"}
         ]
 
-        weak_threshold = max(
-            float(self.pruning_engine.min_score_threshold) * 8.0, 0.05
-        )
+        weak_threshold = max(float(self.pruning_engine.min_score_threshold) * 8.0, 0.05)
         weak_decodes = [
             {
                 "node_id": node.id,
@@ -721,8 +717,7 @@ class TitanEngine:
                 "score": node.decode_score,
             }
             for node in transformed_nodes
-            if node.decoder_used
-            and 0.0 < float(node.decode_score) < weak_threshold
+            if node.decoder_used and 0.0 < float(node.decode_score) < weak_threshold
         ]
 
         limitations = sorted(self._analysis_limitations)
@@ -752,7 +747,9 @@ class TitanEngine:
             )
         else:
             status = "analyzed"
-            summary = "Input was analyzed directly; no decoding transformation was needed."
+            summary = (
+                "Input was analyzed directly; no decoding transformation was needed."
+            )
 
         return {
             "status": status,

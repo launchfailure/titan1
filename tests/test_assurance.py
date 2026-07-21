@@ -191,9 +191,7 @@ def test_hash_bound_provenance_attestation_can_satisfy_trust(tmp_path):
         ),
         encoding="utf-8",
     )
-    assurance = AssuranceEngine(
-        {"provenance_attestations_dir": str(provenance)}
-    )
+    assurance = AssuranceEngine({"provenance_attestations_dir": str(provenance)})
     assurance.run_static_checks(report)
 
     result = assurance.evaluate(report)
@@ -286,9 +284,7 @@ def test_cli_assurance_static_checks_include_evidence_iocs(tmp_path):
 
     attach_assurance_stage(config, report, engine, evidence)
 
-    codes = {
-        item["code"] for item in report["intelligence"]["signals"]
-    }
+    codes = {item["code"] for item in report["intelligence"]["signals"]}
     assert "network_urls" in codes
     assert report["assurance"]["verdict"] == "SUSPICIOUS"
 

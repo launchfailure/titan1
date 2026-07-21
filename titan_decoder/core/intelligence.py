@@ -174,9 +174,7 @@ class IntelligenceEngine:
             )
 
         score = max(0, min(score, 100))
-        outcome_status = str(
-            (report.get("analysis_outcome") or {}).get("status") or ""
-        )
+        outcome_status = str((report.get("analysis_outcome") or {}).get("status") or "")
         incomplete_without_signals = score == 0 and outcome_status in {
             "empty_input",
             "partial_decode",

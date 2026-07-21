@@ -42,13 +42,12 @@ def _png(width: int, height: int, pixels: bytes) -> bytes:
 
 def _lsb_carrier(payload: bytes, carrier_size: int) -> bytes:
     framed = b"TITANSTEG\x00" + len(payload).to_bytes(4, "big") + payload
-    bits = [
-        (value >> shift) & 1
-        for value in framed
-        for shift in range(7, -1, -1)
-    ]
+    bits = [(value >> shift) & 1 for value in framed for shift in range(7, -1, -1)]
     assert len(bits) <= carrier_size
-    return bytes(0x80 | (bits[index] if index < len(bits) else 0) for index in range(carrier_size))
+    return bytes(
+        0x80 | (bits[index] if index < len(bits) else 0)
+        for index in range(carrier_size)
+    )
 
 
 def _wav_with_lsb(payload: bytes) -> bytes:
@@ -117,7 +116,9 @@ def test_hidden_media_rule_and_workbench_assurance(tmp_path):
     snapshot = WorkbenchServices(cfg).analyze(carrier, "carrier.png")
     detections = snapshot.report.get("detections", [])
     assert any(item.get("rule_id") == "TITAN-008" for item in detections)
-    direct = CorrelationRulesEngine().evaluate_all(snapshot.report, snapshot.report["iocs"])
+    direct = CorrelationRulesEngine().evaluate_all(
+        snapshot.report, snapshot.report["iocs"]
+    )
     assert any(item["attack_ids"] == ["T1027.003"] for item in direct)
 
 
@@ -132,4 +133,6 @@ def test_config_can_disable_steganography_analyzer(tmp_path):
     analyzers = dict(cfg.get("analyzers"))
     analyzers["steganography"] = False
     cfg.set("analyzers", analyzers)
-    assert all(analyzer.name != "Steganography" for analyzer in TitanEngine(cfg).analyzers)
+    assert all(
+        analyzer.name != "Steganography" for analyzer in TitanEngine(cfg).analyzers
+    )

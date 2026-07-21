@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 
-from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtCore import QPoint, Qt, QTimer, Signal
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QMouseEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QLayout,
     QListWidget,
     QListWidgetItem,
     QPlainTextEdit,
@@ -56,13 +57,18 @@ def _label(
     return value
 
 
-def _clear_layout(layout: QHBoxLayout | QVBoxLayout) -> None:
+def _clear_layout(layout: QLayout) -> None:
     while layout.count():
         item = layout.takeAt(0)
-        if item.widget() is not None:
-            item.widget().deleteLater()
-        elif item.layout() is not None:
-            _clear_layout(item.layout())  # type: ignore[arg-type]
+        if item is None:
+            continue
+        widget = item.widget()
+        if widget is not None:
+            widget.deleteLater()
+            continue
+        child_layout = item.layout()
+        if child_layout is not None:
+            _clear_layout(child_layout)
 
 
 class Panel(QFrame):
@@ -71,9 +77,9 @@ class Panel(QFrame):
     def __init__(self, title: str, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("panel")
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
+        self.panel_layout = QVBoxLayout(self)
+        self.panel_layout.setContentsMargins(0, 0, 0, 0)
+        self.panel_layout.setSpacing(0)
         self.header = _title_rail(
             title,
             frame_object="panelHeader",
@@ -81,7 +87,7 @@ class Panel(QFrame):
             height=36,
             left_margin=12,
         )
-        self.layout.addWidget(self.header)
+        self.panel_layout.addWidget(self.header)
 
 
 def _title_rail(
@@ -361,7 +367,9 @@ class RecentSamplesDialog(QDialog):
             if record.id == selected:
                 self.samples.setCurrentItem(item)
         if self.samples.currentItem() is None and self.samples.topLevelItemCount():
-            self.samples.setCurrentItem(self.samples.topLevelItem(0))
+            first_item = self.samples.topLevelItem(0)
+            if first_item is not None:
+                self.samples.setCurrentItem(first_item)
         self._selection_changed()
 
     def selected_id(self) -> str | None:
@@ -405,7 +413,7 @@ class WorkbenchHeader(QFrame):
         super().__init__(parent)
         self.state = state
         self.session_id = session_id
-        self._drag_origin = None
+        self._drag_origin: QPoint | None = None
         self.setObjectName("header")
         self.setFixedHeight(48)
 
@@ -436,7 +444,9 @@ class WorkbenchHeader(QFrame):
         self.network_chip = QPushButton()
         self.network_chip.setObjectName("chipBlue")
         self.network_chip.setFixedWidth(154)
-        self.network_chip.setToolTip("Click to enable or disable analysis network access")
+        self.network_chip.setToolTip(
+            "Click to enable or disable analysis network access"
+        )
         self.network_chip.clicked.connect(self.network_requested.emit)
         self.aggressive_chip = QPushButton()
         self.aggressive_chip.setObjectName("chipYellow")
@@ -450,7 +460,10 @@ class WorkbenchHeader(QFrame):
         row.addWidget(self.aggressive_chip)
         row.addStretch(1)
 
-        self.clock = _label(object_name="sessionClock", alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.clock = _label(
+            object_name="sessionClock",
+            alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+        )
         self.clock.setMinimumWidth(252)
         row.addWidget(self.clock)
         row.addSpacing(8)
@@ -481,8 +494,12 @@ class WorkbenchHeader(QFrame):
     def refresh_state(self, state: WorkbenchState) -> None:
         self.state = state
         self.profile_chip.setText(f"PROFILE:  {state.profile.upper()}")
-        self.network_chip.setText(f"NETWORK:  {'OFFLINE' if state.offline else 'ONLINE'}")
-        self.aggressive_chip.setText(f"AGGRESSIVE:  {'ON' if state.aggressive else 'OFF'}")
+        self.network_chip.setText(
+            f"NETWORK:  {'OFFLINE' if state.offline else 'ONLINE'}"
+        )
+        self.aggressive_chip.setText(
+            f"AGGRESSIVE:  {'ON' if state.aggressive else 'OFF'}"
+        )
 
     def _refresh_clock(self) -> None:
         self.clock.setText(
@@ -495,7 +512,10 @@ class WorkbenchHeader(QFrame):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:  # noqa: N802
-        if self._drag_origin is not None and event.buttons() & Qt.MouseButton.LeftButton:
+        if (
+            self._drag_origin is not None
+            and event.buttons() & Qt.MouseButton.LeftButton
+        ):
             self.window().move(event.globalPosition().toPoint() - self._drag_origin)
         super().mouseMoveEvent(event)
 
@@ -555,13 +575,15 @@ class NavigationColumn(QWidget):
             button.setCheckable(True)
             button.setIcon(icon(icon_name, "#a8b8c9"))
             button.setIconSize(pixmap(icon_name, size=18).size())
-            button.clicked.connect(lambda _checked=False, value=route: self.route_selected.emit(value))
+            button.clicked.connect(
+                lambda _checked=False, value=route: self.route_selected.emit(value)
+            )
             if offset == 0:
                 button.setChecked(True)
             group.addButton(button)
             self.nav_buttons[route] = button
             nav_layout.addWidget(button)
-        nav.layout.addWidget(nav_body)
+        nav.panel_layout.addWidget(nav_body)
         column.addWidget(nav)
         column.addSpacing(14)
 
@@ -587,24 +609,30 @@ class NavigationColumn(QWidget):
             line.setSpacing(10 if key == "Ctrl+L" else 14)
             key_label = _label(key, "shortcutKey")
             key_label.setFixedWidth(40 if key == "Ctrl+L" else 25)
-            key_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+            key_label.setAttribute(
+                Qt.WidgetAttribute.WA_TransparentForMouseEvents, True
+            )
             line.addWidget(key_label)
             text_label = _label(label, "shortcutText")
-            text_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+            text_label.setAttribute(
+                Qt.WidgetAttribute.WA_TransparentForMouseEvents, True
+            )
             line.addWidget(text_label, 1)
             self.shortcut_key_labels[route] = key_label
             self.shortcut_text_labels[route] = text_label
             self.shortcut_buttons[route] = line_widget
             shortcut_layout.addWidget(line_widget)
         shortcut_layout.addStretch(1)
-        shortcuts.layout.addWidget(shortcut_body)
+        shortcuts.panel_layout.addWidget(shortcut_body)
         column.addWidget(shortcuts)
         column.addSpacing(10)
 
         brand = QFrame()
         brand.setObjectName("brandCard")
         brand.setFixedHeight(147)
-        brand_logo = _label(alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        brand_logo = _label(
+            alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         brand_logo.setParent(brand)
         brand_logo.setPixmap(asset_pixmap("titan-wordmark.png", width=183))
         brand_logo.setGeometry(8, 19, 206, 73)
@@ -645,7 +673,11 @@ class DropZone(QFrame):
         upload.setPixmap(pixmap("upload", "#a8b9c9", size=57))
         body.addWidget(upload)
         body.addSpacing(5)
-        body.addWidget(_label("DROP FILES HERE", "dropTitle", alignment=Qt.AlignmentFlag.AlignCenter))
+        body.addWidget(
+            _label(
+                "DROP FILES HERE", "dropTitle", alignment=Qt.AlignmentFlag.AlignCenter
+            )
+        )
         hint = QHBoxLayout()
         hint.setSpacing(4)
         hint.addStretch(1)
@@ -673,8 +705,7 @@ class DropZone(QFrame):
     def dropEvent(self, event: QDropEvent) -> None:  # noqa: N802
         self._set_drag_active(False)
         candidates = [
-            url.toLocalFile() or url.toString()
-            for url in event.mimeData().urls()
+            url.toLocalFile() or url.toString() for url in event.mimeData().urls()
         ]
         if event.mimeData().hasText():
             candidates.extend(event.mimeData().text().splitlines())
@@ -766,7 +797,7 @@ class InvestigationPanel(Panel):
             quick_layout.addWidget(button)
         quick_layout.addStretch(1)
         row.addWidget(quick)
-        self.layout.addWidget(body)
+        self.panel_layout.addWidget(body)
 
 
 class MetricCard(QFrame):
@@ -798,13 +829,19 @@ class MetricCard(QFrame):
             line.setSpacing(6)
             line.addWidget(_label(name, "metricName"))
             line.addStretch(1)
-            line.addWidget(_label(value, "metricValue", alignment=Qt.AlignmentFlag.AlignRight))
+            line.addWidget(
+                _label(value, "metricValue", alignment=Qt.AlignmentFlag.AlignRight)
+            )
             self.body.addLayout(line)
         self.body.addStretch(1)
 
     def set_resource_rows(self, metrics: dict[str, str]) -> None:
         _clear_layout(self.body)
-        for name, key in (("CPU", "cpu_percent"), ("Memory", "memory_percent"), ("Disk I/O", "disk_percent")):
+        for name, key in (
+            ("CPU", "cpu_percent"),
+            ("Memory", "memory_percent"),
+            ("Disk I/O", "disk_percent"),
+        ):
             try:
                 value = int(float(metrics.get(key, "0")))
             except ValueError:
@@ -817,7 +854,11 @@ class MetricCard(QFrame):
             bar.setValue(value)
             bar.setTextVisible(False)
             line.addWidget(bar, 1)
-            line.addWidget(_label(f"{value}%", "metricValue", alignment=Qt.AlignmentFlag.AlignRight))
+            line.addWidget(
+                _label(
+                    f"{value}%", "metricValue", alignment=Qt.AlignmentFlag.AlignRight
+                )
+            )
             self.body.addLayout(line)
         workers = QHBoxLayout()
         workers.addWidget(_label("Workers", "metricName"))
@@ -860,43 +901,49 @@ class StatusCards(QWidget):
         row.addWidget(self.system)
         row.addWidget(self.engine)
         row.addWidget(self.resources, 1)
-        self.system.set_rows((
-            ("Decoders", str(decoder_count)),
-            ("Plugins", str(plugin_count)),
-            ("Rules", "312"),
-            ("Signatures", "18,746"),
-            ("YARA Rules", "1,284"),
-        ))
+        self.system.set_rows(
+            (
+                ("Decoders", str(decoder_count)),
+                ("Plugins", str(plugin_count)),
+                ("Rules", "312"),
+                ("Signatures", "18,746"),
+                ("YARA Rules", "1,284"),
+            )
+        )
         self.resources.set_resource_rows(metrics)
         self.refresh_state(state)
         self.refresh_snapshot(snapshot)
 
     def refresh_state(self, state: WorkbenchState) -> None:
         self.state = state
-        self.engine.set_rows((
-            ("Engine", f"v{self.engine_version}"),
-            ("Profile", state.profile.upper()),
-            ("Aggressive", "ON" if state.aggressive else "OFF"),
-            ("Network", "OFFLINE" if state.offline else "ONLINE"),
-            ("Uptime", "00:04:21"),
-        ))
+        self.engine.set_rows(
+            (
+                ("Engine", f"v{self.engine_version}"),
+                ("Profile", state.profile.upper()),
+                ("Aggressive", "ON" if state.aggressive else "OFF"),
+                ("Network", "OFFLINE" if state.offline else "ONLINE"),
+                ("Uptime", "00:04:21"),
+            )
+        )
 
     def refresh_snapshot(self, snapshot: AnalysisSnapshot) -> None:
-        self.session.set_rows((
-            ("ID", self.session_id),
-            ("Started", self.started_at),
-            ("Artifacts", str(snapshot.artifact_count)),
-            ("Analyses", "1" if snapshot.report else "0"),
-            ("Decodes", str(snapshot.decode_count)),
-        ))
+        self.session.set_rows(
+            (
+                ("ID", self.session_id),
+                ("Started", self.started_at),
+                ("Artifacts", str(snapshot.artifact_count)),
+                ("Analyses", "1" if snapshot.report else "0"),
+                ("Decodes", str(snapshot.decode_count)),
+            )
+        )
 
 
 class SummaryGrid(QWidget):
     def __init__(self):
         super().__init__()
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(10, 10, 10, 10)
-        self.layout.setSpacing(10)
+        self.content_layout = QVBoxLayout(self)
+        self.content_layout.setContentsMargins(10, 10, 10, 10)
+        self.content_layout.setSpacing(10)
 
     @staticmethod
     def _data_card(title: str, rows: Iterable[tuple[str, str, str]]) -> QFrame:
@@ -921,7 +968,7 @@ class SummaryGrid(QWidget):
         return card
 
     def refresh(self, snapshot: AnalysisSnapshot, state: WorkbenchState) -> None:
-        _clear_layout(self.layout)
+        _clear_layout(self.content_layout)
         grid = QHBoxLayout()
         grid.setSpacing(10)
         status = str(snapshot.analysis_outcome.get("status") or "waiting")
@@ -931,26 +978,64 @@ class SummaryGrid(QWidget):
             "partial_decode": "Partial Decode",
             "unrecognized": "Unrecognized",
         }.get(status, status.replace("_", " ").title())
-        grid.addWidget(self._data_card("ANALYSIS OVERVIEW", (
-            ("Status", status_label, "summaryGood"),
-            ("Profile", state.profile.upper(), "summaryValue"),
-            ("Duration", f"{snapshot.duration_seconds:.2f}s", "summaryValue"),
-            ("Decoders Used", str(snapshot.decode_count), "summaryValue"),
-            ("Artifacts Found", str(snapshot.artifact_count), "summaryValue"),
-            ("IOC Extracted", str(snapshot.ioc_count), "summaryValue"),
-        )), 1)
+        grid.addWidget(
+            self._data_card(
+                "ANALYSIS OVERVIEW",
+                (
+                    ("Status", status_label, "summaryGood"),
+                    ("Profile", state.profile.upper(), "summaryValue"),
+                    ("Duration", f"{snapshot.duration_seconds:.2f}s", "summaryValue"),
+                    ("Decoders Used", str(snapshot.decode_count), "summaryValue"),
+                    ("Artifacts Found", str(snapshot.artifact_count), "summaryValue"),
+                    ("IOC Extracted", str(snapshot.ioc_count), "summaryValue"),
+                ),
+            ),
+            1,
+        )
         iocs = snapshot.iocs
         public_ips = len(iocs.get("ipv4_public", [])) + len(iocs.get("ipv4", []))
-        high_entropy = sum(float(node.get("entropy", 0) or 0) >= 7.5 for node in snapshot.nodes)
-        grid.addWidget(self._data_card("TOP FINDINGS", (
-            ("<span style='color:#df69ba'>◆</span>  URLs", str(len(iocs.get("urls", []))), "summaryValue"),
-            ("<span style='color:#ff6b2f'>◆</span>  IP Addresses", str(public_ips), "summaryValue"),
-            ("<span style='color:#ffbb20'>●</span>  Email Addresses", str(len(iocs.get("emails", []))), "summaryValue"),
-            ("<span style='color:#f4d02b'>●</span>  File Hashes", str(len(iocs.get("hashes", []))), "summaryValue"),
-            ("<span style='color:#5ccdd0'>●</span>  Interesting Strings", str(len(snapshot.strings)), "summaryValue"),
-            ("<span style='color:#8f9cff'>◆</span>  Entropy High Regions", str(high_entropy), "summaryValue"),
-        )), 1)
-        self.layout.addLayout(grid, 1)
+        high_entropy = sum(
+            float(node.get("entropy", 0) or 0) >= 7.5 for node in snapshot.nodes
+        )
+        grid.addWidget(
+            self._data_card(
+                "TOP FINDINGS",
+                (
+                    (
+                        "<span style='color:#df69ba'>◆</span>  URLs",
+                        str(len(iocs.get("urls", []))),
+                        "summaryValue",
+                    ),
+                    (
+                        "<span style='color:#ff6b2f'>◆</span>  IP Addresses",
+                        str(public_ips),
+                        "summaryValue",
+                    ),
+                    (
+                        "<span style='color:#ffbb20'>●</span>  Email Addresses",
+                        str(len(iocs.get("emails", []))),
+                        "summaryValue",
+                    ),
+                    (
+                        "<span style='color:#f4d02b'>●</span>  File Hashes",
+                        str(len(iocs.get("hashes", []))),
+                        "summaryValue",
+                    ),
+                    (
+                        "<span style='color:#5ccdd0'>●</span>  Interesting Strings",
+                        str(len(snapshot.strings)),
+                        "summaryValue",
+                    ),
+                    (
+                        "<span style='color:#8f9cff'>◆</span>  Entropy High Regions",
+                        str(high_entropy),
+                        "summaryValue",
+                    ),
+                ),
+            ),
+            1,
+        )
+        self.content_layout.addLayout(grid, 1)
 
         highlights = QFrame()
         highlights.setObjectName("summaryCard")
@@ -999,7 +1084,7 @@ class SummaryGrid(QWidget):
         chips.addStretch(1)
         highlight_body_layout.addLayout(chips)
         highlight_column.addWidget(highlight_body, 1)
-        self.layout.addWidget(highlights)
+        self.content_layout.addWidget(highlights)
 
 
 class ResultsPanel(Panel):
@@ -1073,7 +1158,7 @@ class ResultsPanel(Panel):
         self.tabs.addTab(self.iocs, "IOC (0)")
         self.tabs.addTab(self.hex_view, "HEX VIEW")
         row.addWidget(self.tabs, 1)
-        self.layout.addWidget(body, 1)
+        self.panel_layout.addWidget(body, 1)
         self.refresh(snapshot, state)
 
     def selected_sample_id(self) -> str | None:
@@ -1154,7 +1239,11 @@ class ResultsPanel(Panel):
         self.detections.setPlainText(detections_text(snapshot))
         self.strings.setPlainText(strings_text(snapshot))
         self.iocs.setPlainText(iocs_text(snapshot))
-        self.hex_view.setPlainText(hex_preview(snapshot.decoded_output, empty="No raw decoder output captured."))
+        self.hex_view.setPlainText(
+            hex_preview(
+                snapshot.decoded_output, empty="No raw decoder output captured."
+            )
+        )
 
 
 class DecoderWorkbench(Panel):
@@ -1179,7 +1268,7 @@ class DecoderWorkbench(Panel):
         )
         count.setFixedWidth(142)
         toolbar_layout.addWidget(count)
-        self.layout.addWidget(toolbar)
+        self.panel_layout.addWidget(toolbar)
 
         list_wrap = QWidget()
         list_layout = QVBoxLayout(list_wrap)
@@ -1200,12 +1289,14 @@ class DecoderWorkbench(Panel):
         self.list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.list.currentItemChanged.connect(self._selection_changed)
         list_layout.addWidget(self.list, 1)
-        footer = QPushButton("…   View all decoders                                                       ›")
+        footer = QPushButton(
+            "…   View all decoders                                                       ›"
+        )
         footer.setObjectName("secondaryButton")
         footer.setFixedHeight(35)
         footer.setStyleSheet("text-align:left; padding-left:10px;")
         list_layout.addWidget(footer)
-        self.layout.addWidget(list_wrap, 1)
+        self.panel_layout.addWidget(list_wrap, 1)
         self._populate(decoder_rows)
 
     def _populate(self, rows: list[tuple[int, str, str]]) -> None:
@@ -1222,11 +1313,17 @@ class DecoderWorkbench(Panel):
             )
             self.list.setItemWidget(item, 2, indicator)
         if self.list.topLevelItemCount():
-            self.list.setCurrentItem(self.list.topLevelItem(0))
+            first_item = self.list.topLevelItem(0)
+            if first_item is not None:
+                self.list.setCurrentItem(first_item)
 
     def _filter(self, text: str) -> None:
         needle = text.strip().lower()
-        rows = [row for row in self.decoder_rows if not needle or needle in row[1].lower() or needle in row[2].lower()]
+        rows = [
+            row
+            for row in self.decoder_rows
+            if not needle or needle in row[1].lower() or needle in row[2].lower()
+        ]
         self._populate(rows)
 
     def _selection_changed(self, current: QTreeWidgetItem | None) -> None:
@@ -1251,7 +1348,7 @@ class DecoderDetails(Panel):
         self.decoder_description.setWordWrap(True)
         description_layout.addWidget(self.decoder_name)
         description_layout.addWidget(self.decoder_description)
-        self.layout.addWidget(self.description)
+        self.panel_layout.addWidget(self.description)
 
         self.input_text, self.input_meta = self._section("INPUT")
         self.output_text, self.output_meta = self._section("OUTPUT")
@@ -1268,7 +1365,7 @@ class DecoderDetails(Panel):
         status_line.addStretch(1)
         status_line.addWidget(self.confidence)
         status_layout.addLayout(status_line)
-        self.layout.addWidget(status)
+        self.panel_layout.addWidget(status)
 
         actions = QWidget()
         action_layout = QVBoxLayout(actions)
@@ -1287,8 +1384,8 @@ class DecoderDetails(Panel):
         buttons.addWidget(save)
         buttons.addWidget(run)
         action_layout.addLayout(buttons)
-        self.layout.addWidget(actions)
-        self.layout.addStretch(1)
+        self.panel_layout.addWidget(actions)
+        self.panel_layout.addStretch(1)
         self.refresh_decoder(label, description)
         self.refresh_snapshot(snapshot)
 
@@ -1304,11 +1401,13 @@ class DecoderDetails(Panel):
         meta = _label(object_name="detailMeta", alignment=Qt.AlignmentFlag.AlignRight)
         layout.addWidget(text)
         layout.addWidget(meta)
-        self.layout.addWidget(frame)
+        self.panel_layout.addWidget(frame)
         return text, meta
 
     @staticmethod
-    def _action_button(icon_name: str, text: str, style: str, color: str = "#a9b8c8") -> QPushButton:
+    def _action_button(
+        icon_name: str, text: str, style: str, color: str = "#a9b8c8"
+    ) -> QPushButton:
         button = QPushButton(text)
         button.setObjectName(style)
         button.setIcon(icon(icon_name, color))

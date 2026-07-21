@@ -63,9 +63,7 @@ def test_partial_decode_summary_is_explicit_and_not_a_benign_verdict():
                     "unrecognized terminal payload(s)."
                 ),
                 "opaque_terminal_node_ids": [1],
-                "weak_decodes": [
-                    {"node_id": 0, "decoder": "ROT13", "score": 0.07}
-                ],
+                "weak_decodes": [{"node_id": 0, "decoder": "ROT13", "score": 0.07}],
             },
         }
     )

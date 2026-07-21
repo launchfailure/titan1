@@ -94,7 +94,9 @@ class SampleArchive:
     @staticmethod
     def _record(value: dict[str, Any]) -> SampleRecord:
         allowed = {item.name for item in fields(SampleRecord)}
-        return SampleRecord(**{key: value for key, value in value.items() if key in allowed})
+        return SampleRecord(
+            **{key: value for key, value in value.items() if key in allowed}
+        )
 
     def records(self, *, include_hidden: bool = True) -> list[SampleRecord]:
         values = [

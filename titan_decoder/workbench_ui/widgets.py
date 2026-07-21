@@ -245,10 +245,7 @@ class StatusCards(HorizontalScroll):
         filled = min(8, round(percent / 12.5))
         active = "━" * filled
         idle = "━" * (8 - filled)
-        return (
-            f"[#b8b84a]{active}[/#b8b84a]"
-            f"[#34414b]{idle}[/#34414b]  {percent:>3}%"
-        )
+        return f"[#b8b84a]{active}[/#b8b84a][#34414b]{idle}[/#34414b]  {percent:>3}%"
 
     def _session_text(self) -> str:
         analyzed = 1 if self.snapshot.report else 0
@@ -385,7 +382,9 @@ class ResultsPanel(Vertical):
             rows.append((str(label), "orange-highlight"))
         if self.snapshot.ioc_count:
             rows.append(("IOC Detected", "blue-highlight"))
-        if any(float(node.get("entropy", 0) or 0) >= 7.5 for node in self.snapshot.nodes):
+        if any(
+            float(node.get("entropy", 0) or 0) >= 7.5 for node in self.snapshot.nodes
+        ):
             rows.append(("High Entropy", "yellow-highlight"))
         if self.snapshot.assurance.get("verdict") == "SUSPICIOUS":
             rows.append(("Suspicious", "violet-highlight"))
@@ -406,7 +405,9 @@ class ResultsPanel(Vertical):
                     with Vertical(id="summary-content"):
                         with Horizontal(id="analysis-summary-grid"):
                             yield Static(self._overview_text(), classes="result-card")
-                            yield Static(self._top_findings_text(), classes="result-card")
+                            yield Static(
+                                self._top_findings_text(), classes="result-card"
+                            )
                         with Vertical(id="detection-highlights"):
                             yield Label(
                                 "DETECTION HIGHLIGHTS", classes="subsection-heading"
@@ -458,17 +459,16 @@ class DecoderPanel(Vertical):
     def compose(self) -> ComposeResult:
         yield Label("DECODER WORKBENCH", classes="panel-heading")
         with Horizontal(id="decoder-toolbar"):
-            yield Input(placeholder=f"{icons.SEARCH}  Search decoders…", id="decoder-search")
+            yield Input(
+                placeholder=f"{icons.SEARCH}  Search decoders…", id="decoder-search"
+            )
             yield Label(
                 f"{len(self.decoder_rows)} Decoders Available",
                 id="decoder-count",
                 classes="count-label",
             )
         yield OptionList(
-            *[
-                self.option(index, label)
-                for index, label, _ in self.decoder_rows
-            ],
+            *[self.option(index, label) for index, label, _ in self.decoder_rows],
             id="decoder-list",
         )
         yield Static(

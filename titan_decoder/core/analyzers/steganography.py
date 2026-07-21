@@ -92,9 +92,7 @@ def _entropy(data: bytes) -> float:
     for value in data:
         counts[value] += 1
     size = len(data)
-    return -sum(
-        (count / size) * math.log2(count / size) for count in counts if count
-    )
+    return -sum((count / size) * math.log2(count / size) for count in counts if count)
 
 
 def _bounded_zlib(data: bytes, limit: int) -> bytes | None:
@@ -150,9 +148,11 @@ def _payload_extension(data: bytes) -> str:
     for magic, extension in _MAGICS:
         if data.startswith(magic):
             return extension
-    if data and sum(32 <= value < 127 or value in (9, 10, 13) for value in data) / len(
+    if (
         data
-    ) >= 0.9:
+        and sum(32 <= value < 127 or value in (9, 10, 13) for value in data) / len(data)
+        >= 0.9
+    ):
         return ".txt"
     return ".bin"
 
@@ -191,8 +191,9 @@ def _recover_lsb_payload(streams: Iterable[bytes], limit: int) -> bytes:
                 for byte_order in ("big", "little"):
                     payload_length = int.from_bytes(raw_length, byte_order)
                     payload_at = length_at + 4
-                    if 0 < payload_length <= limit and payload_at + payload_length <= len(
-                        stream
+                    if (
+                        0 < payload_length <= limit
+                        and payload_at + payload_length <= len(stream)
                     ):
                         return stream[payload_at : payload_at + payload_length]
 
@@ -232,18 +233,14 @@ class SteganographyAnalyzer(Analyzer):
     def __init__(self, config: dict[str, Any] | None = None):
         config = config or {}
         self.max_artifacts = int(config.get("max_media_artifacts", 8))
-        self.max_total_size = int(
-            config.get("max_media_total_size", 8 * 1024 * 1024)
-        )
+        self.max_total_size = int(config.get("max_media_total_size", 8 * 1024 * 1024))
         self.max_artifact_size = int(
             config.get("max_media_artifact_size", 4 * 1024 * 1024)
         )
         self.max_lsb_carrier_bytes = int(
             config.get("max_lsb_carrier_bytes", 4 * 1024 * 1024)
         )
-        self.max_lsb_output_size = int(
-            config.get("max_lsb_output_size", 1024 * 1024)
-        )
+        self.max_lsb_output_size = int(config.get("max_lsb_output_size", 1024 * 1024))
 
     @property
     def name(self) -> str:
@@ -315,7 +312,10 @@ class SteganographyAnalyzer(Analyzer):
 
             if chunk_type == b"IHDR":
                 ihdr = payload
-            elif chunk_type == b"IDAT" and len(idat) + length <= self.max_lsb_carrier_bytes:
+            elif (
+                chunk_type == b"IDAT"
+                and len(idat) + length <= self.max_lsb_carrier_bytes
+            ):
                 idat.extend(payload)
             elif chunk_type in {b"tEXt", b"zTXt", b"iTXt"}:
                 decoded = self._decode_png_text(chunk_type, payload)
@@ -530,7 +530,8 @@ class SteganographyAnalyzer(Analyzer):
         ):
             return found
         carrier_values = (
-            samples[index] for index in range(0, len(samples) - sample_width + 1, sample_width)
+            samples[index]
+            for index in range(0, len(samples) - sample_width + 1, sample_width)
         )
         streams = _pack_lsb_stream(carrier_values, self.max_lsb_output_size + 526)
         lsb = _recover_lsb_payload(streams, self.max_lsb_output_size)

@@ -62,8 +62,8 @@ def test_approved_titan_wordmark_asset_loads(qt_app):
 
 def test_upload_arrow_is_drawn_inside_cloud():
     artwork = svg("upload").decode("utf-8")
-    assert 'M12 18.5V10m-3.5 3.5L12 10l3.5 3.5' in artwork
-    assert 'M6 21C3.8 21 2 19.2 2 17' in artwork
+    assert "M12 18.5V10m-3.5 3.5L12 10l3.5 3.5" in artwork
+    assert "M6 21C3.8 21 2 19.2 2 17" in artwork
     assert "M12 16V4" not in artwork
 
 
@@ -121,18 +121,25 @@ def test_windows_drop_paths_follow_the_host_platform():
         if os.name == "nt"
         else Path("/mnt/c/Users/Analyst/Desktop/sample evidence.bin")
     )
-    assert TitanDesktopWindow._normalize_external_path(
-        r'"C:\Users\Analyst\Desktop\sample evidence.bin"'
-    ) == expected
-    assert TitanDesktopWindow._normalize_external_path(
-        "file:///C:/Users/Analyst/Desktop/sample%20evidence.bin"
-    ) == expected
+    assert (
+        TitanDesktopWindow._normalize_external_path(
+            r'"C:\Users\Analyst\Desktop\sample evidence.bin"'
+        )
+        == expected
+    )
+    assert (
+        TitanDesktopWindow._normalize_external_path(
+            "file:///C:/Users/Analyst/Desktop/sample%20evidence.bin"
+        )
+        == expected
+    )
 
 
 def test_windows_path_translates_for_debian_backend():
-    assert windows_path_to_wsl(
-        r"C:\Users\Analyst\Desktop\sample evidence.bin"
-    ) == "/mnt/c/Users/Analyst/Desktop/sample evidence.bin"
+    assert (
+        windows_path_to_wsl(r"C:\Users\Analyst\Desktop\sample evidence.bin")
+        == "/mnt/c/Users/Analyst/Desktop/sample evidence.bin"
+    )
 
 
 def test_decoder_selection_updates_details(qt_app):
@@ -153,17 +160,13 @@ def test_decoder_status_uses_red_for_inactive_and_failed(qt_app):
     assert status.property("statusState") == "inactive"
     assert status.palette().color(status.foregroundRole()).name() == "#ff6b5c"
 
-    window.decoder_details.refresh_snapshot(
-        AnalysisSnapshot(decoder_success=False)
-    )
+    window.decoder_details.refresh_snapshot(AnalysisSnapshot(decoder_success=False))
     qt_app.processEvents()
     assert status.text() == "Decode Failed"
     assert status.property("statusState") == "failure"
     assert status.palette().color(status.foregroundRole()).name() == "#ff6b5c"
 
-    window.decoder_details.refresh_snapshot(
-        AnalysisSnapshot(decoder_success=True)
-    )
+    window.decoder_details.refresh_snapshot(AnalysisSnapshot(decoder_success=True))
     qt_app.processEvents()
     assert status.text() == "Successfully Decoded!"
     assert status.property("statusState") == "success"
