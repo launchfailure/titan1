@@ -145,8 +145,10 @@ def test_analysis_reveals_results_on_short_terminals(monkeypatch):
                 "results panel was not scrolled into view"
             )
             # the busy indicator must be back to Ready once the worker finishes
+            # str(render()) works on both old Textual (returns .renderable)
+            # and Textual >=8, where Static.renderable was removed.
             footer = app.query_one("#footer-state", Static)
-            assert "Ready" in str(footer.renderable)
+            assert "Ready" in str(footer.render())
 
     asyncio.run(exercise())
 
