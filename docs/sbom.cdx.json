@@ -2,12 +2,68 @@
   "bomFormat": "CycloneDX",
   "components": [
     {
+      "bom-ref": "component:PySide6",
+      "name": "PySide6",
+      "purl": "pkg:pypi/PySide6@6.6",
+      "scope": "optional",
+      "type": "library",
+      "version": "6.6"
+    },
+    {
       "bom-ref": "component:psutil",
       "name": "psutil",
       "purl": "pkg:pypi/psutil@7.2.2",
       "scope": "optional",
       "type": "library",
       "version": "7.2.2"
+    },
+    {
+      "bom-ref": "component:brotli",
+      "name": "brotli",
+      "purl": "pkg:pypi/brotli@1.1",
+      "scope": "optional",
+      "type": "library",
+      "version": "1.1"
+    },
+    {
+      "bom-ref": "component:zstandard",
+      "name": "zstandard",
+      "purl": "pkg:pypi/zstandard@0.23",
+      "scope": "optional",
+      "type": "library",
+      "version": "0.23"
+    },
+    {
+      "bom-ref": "component:py7zr",
+      "name": "py7zr",
+      "purl": "pkg:pypi/py7zr@1",
+      "scope": "optional",
+      "type": "library",
+      "version": "1"
+    },
+    {
+      "bom-ref": "component:rarfile",
+      "name": "rarfile",
+      "purl": "pkg:pypi/rarfile@4.2",
+      "scope": "optional",
+      "type": "library",
+      "version": "4.2"
+    },
+    {
+      "bom-ref": "component:pycdlib",
+      "name": "pycdlib",
+      "purl": "pkg:pypi/pycdlib@1.14",
+      "scope": "optional",
+      "type": "library",
+      "version": "1.14"
+    },
+    {
+      "bom-ref": "component:cabarchive",
+      "name": "cabarchive",
+      "purl": "pkg:pypi/cabarchive@0.2.5",
+      "scope": "optional",
+      "type": "library",
+      "version": "0.2.5"
     },
     {
       "bom-ref": "component:geoip2",

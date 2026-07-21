@@ -49,6 +49,14 @@ desktop-ui = [
     "PySide6>=6.6,<7",
     "psutil>=5,<8",
 ]
+formats = [
+    "brotli>=1.1,<2",
+    "zstandard>=0.23,<1",
+    "py7zr>=1,<2",
+    "rarfile>=4.2,<5",
+    "pycdlib>=1.14,<2",
+    "cabarchive>=0.2.5,<1",
+]
 dev = [
     "pytest>=9.1.1",
     "ruff>=0.15.20",

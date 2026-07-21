@@ -3,9 +3,10 @@ from typing import Dict, Any, List, Tuple
 import zipfile
 import tarfile
 import io
+import re
 import struct
 
-from ...utils.helpers import looks_like_zip
+from ...utils.helpers import entropy, looks_like_zip
 
 
 class Analyzer(ABC):
@@ -414,6 +415,137 @@ class PEAnalyzer(Analyzer):
                         )[0]
                         metadata["image_base"] = f"0x{image_base:016x}"
 
+                    section_offset = opt_offset + size_of_opt_header
+                    sections: list[dict[str, Any]] = []
+                    raw_end = 0
+                    entry_section = None
+                    anomalies: list[str] = []
+                    for index in range(min(num_sections, 96)):
+                        at = section_offset + index * 40
+                        if at + 40 > len(data):
+                            anomalies.append("truncated_section_table")
+                            break
+                        name = (
+                            data[at : at + 8]
+                            .split(b"\x00", 1)[0]
+                            .decode("ascii", errors="replace")
+                        )
+                        (
+                            virtual_size,
+                            virtual_address,
+                            raw_size,
+                            raw_pointer,
+                            _relocations,
+                            _line_numbers,
+                            _relocation_count,
+                            _line_count,
+                            section_flags,
+                        ) = struct.unpack("<IIIIIIHHI", data[at + 8 : at + 40])
+                        raw = (
+                            data[raw_pointer : raw_pointer + raw_size]
+                            if raw_pointer <= len(data)
+                            and raw_size <= len(data) - raw_pointer
+                            else b""
+                        )
+                        executable = bool(section_flags & 0x20000000)
+                        writable = bool(section_flags & 0x80000000)
+                        if executable and writable:
+                            anomalies.append(f"writable_executable_section:{name}")
+                        section_entropy = round(entropy(raw), 4) if raw else 0.0
+                        if executable and len(raw) >= 256 and section_entropy >= 7.2:
+                            anomalies.append(f"high_entropy_executable_section:{name}")
+                        if (
+                            virtual_address
+                            <= entry_point
+                            < virtual_address + max(virtual_size, raw_size, 1)
+                        ):
+                            entry_section = name
+                        raw_end = max(raw_end, raw_pointer + raw_size)
+                        sections.append(
+                            {
+                                "name": name,
+                                "virtual_address": f"0x{virtual_address:08x}",
+                                "virtual_size": virtual_size,
+                                "raw_offset": raw_pointer,
+                                "raw_size": raw_size,
+                                "entropy": section_entropy,
+                                "executable": executable,
+                                "writable": writable,
+                                "characteristics": f"0x{section_flags:08x}",
+                            }
+                        )
+
+                    def rva_offset(rva: int) -> int | None:
+                        for section in sections:
+                            start = int(str(section["virtual_address"]), 16)
+                            span = max(
+                                int(section["virtual_size"]),
+                                int(section["raw_size"]),
+                                1,
+                            )
+                            if start <= rva < start + span:
+                                offset = int(section["raw_offset"]) + rva - start
+                                return offset if offset < len(data) else None
+                        return rva if 0 <= rva < len(data) else None
+
+                    directories_at = 96 if magic == 0x10B else 112
+                    imports: list[str] = []
+                    signature = {"present": False, "offset": 0, "size": 0}
+                    if opt_offset + directories_at + 40 <= min(
+                        section_offset, len(data)
+                    ):
+                        import_rva, import_size = struct.unpack_from(
+                            "<II", data, opt_offset + directories_at + 8
+                        )
+                        import_at = rva_offset(import_rva) if import_size else None
+                        for descriptor_index in range(256):
+                            if import_at is None:
+                                break
+                            descriptor = import_at + descriptor_index * 20
+                            if descriptor + 20 > len(data):
+                                break
+                            values = struct.unpack_from("<IIIII", data, descriptor)
+                            if not any(values):
+                                break
+                            name_at = rva_offset(values[3])
+                            if name_at is None:
+                                continue
+                            end = data.find(
+                                b"\x00", name_at, min(len(data), name_at + 512)
+                            )
+                            if end < 0:
+                                continue
+                            library = data[name_at:end].decode(
+                                "ascii", errors="replace"
+                            )
+                            if library:
+                                imports.append(library)
+                        certificate_at, certificate_size = struct.unpack_from(
+                            "<II", data, opt_offset + directories_at + 32
+                        )
+                        signature = {
+                            "present": bool(
+                                certificate_size
+                                and certificate_at < len(data)
+                                and certificate_size <= len(data) - certificate_at
+                            ),
+                            "offset": certificate_at,
+                            "size": certificate_size,
+                        }
+
+                    metadata.update(
+                        {
+                            "entry_point_section": entry_section,
+                            "sections": sections,
+                            "imports": sorted(set(imports), key=str.lower),
+                            "authenticode": signature,
+                            "overlay_size": max(0, len(data) - raw_end)
+                            if raw_end
+                            else 0,
+                            "anomalies": sorted(set(anomalies)),
+                        }
+                    )
+
             return metadata
 
         except Exception as e:
@@ -545,6 +677,126 @@ class ELFAnalyzer(Analyzer):
                 "num_section_headers": e_shnum,
                 "flags": f"0x{e_flags:08x}",
             }
+
+            sections: list[dict[str, Any]] = []
+            anomalies: list[str] = []
+            section_names = b""
+            section_records: list[tuple[int, ...]] = []
+            section_fmt = endian + ("IIQQQQIIQQ" if ei_class == 2 else "IIIIIIIIII")
+            expected_section_size = struct.calcsize(section_fmt)
+            if (
+                e_shoff
+                and e_shentsize >= expected_section_size
+                and e_shnum <= 4096
+                and e_shoff + e_shentsize * e_shnum <= len(data)
+            ):
+                for index in range(min(e_shnum, 256)):
+                    at = e_shoff + index * e_shentsize
+                    section_records.append(
+                        struct.unpack(
+                            section_fmt, data[at : at + expected_section_size]
+                        )
+                    )
+                if 0 <= e_shstrndx < len(section_records):
+                    names_record = section_records[e_shstrndx]
+                    names_offset = names_record[4]
+                    names_size = names_record[5]
+                    if (
+                        names_offset <= len(data)
+                        and names_size <= len(data) - names_offset
+                    ):
+                        section_names = data[names_offset : names_offset + names_size]
+
+            def section_name(offset: int) -> str:
+                if offset < 0 or offset >= len(section_names):
+                    return ""
+                end = section_names.find(b"\x00", offset)
+                if end < 0:
+                    end = len(section_names)
+                return section_names[offset:end].decode("utf-8", errors="replace")
+
+            entry_section = None
+            for record in section_records:
+                name_at, section_type, section_flags, address, offset, size = record[:6]
+                name = section_name(name_at)
+                raw = (
+                    data[offset : offset + size]
+                    if offset <= len(data) and size <= len(data) - offset
+                    else b""
+                )
+                writable = bool(section_flags & 0x1)
+                executable = bool(section_flags & 0x4)
+                section_entropy = round(entropy(raw), 4) if raw else 0.0
+                if writable and executable:
+                    anomalies.append(f"writable_executable_section:{name}")
+                if executable and len(raw) >= 256 and section_entropy >= 7.2:
+                    anomalies.append(f"high_entropy_executable_section:{name}")
+                if address <= e_entry < address + max(size, 1):
+                    entry_section = name
+                sections.append(
+                    {
+                        "name": name,
+                        "type": section_type,
+                        "address": f"0x{address:x}",
+                        "offset": offset,
+                        "size": size,
+                        "entropy": section_entropy,
+                        "writable": writable,
+                        "executable": executable,
+                    }
+                )
+
+            interpreter = None
+            program_fmt = endian + ("IIQQQQQQ" if ei_class == 2 else "IIIIIIII")
+            expected_program_size = struct.calcsize(program_fmt)
+            if (
+                e_phoff
+                and e_phentsize >= expected_program_size
+                and e_phnum <= 4096
+                and e_phoff + e_phentsize * e_phnum <= len(data)
+            ):
+                for index in range(min(e_phnum, 256)):
+                    at = e_phoff + index * e_phentsize
+                    record = struct.unpack(
+                        program_fmt, data[at : at + expected_program_size]
+                    )
+                    program_type = record[0]
+                    file_offset = record[2] if ei_class == 2 else record[1]
+                    file_size = record[5] if ei_class == 2 else record[4]
+                    if (
+                        program_type == 3
+                        and file_offset <= len(data)
+                        and file_size <= len(data) - file_offset
+                    ):
+                        interpreter = (
+                            data[file_offset : file_offset + min(file_size, 4096)]
+                            .split(b"\x00", 1)[0]
+                            .decode("utf-8", errors="replace")
+                        )
+                        break
+
+            libraries = sorted(
+                {
+                    match.decode("ascii", errors="replace")
+                    for match in re.findall(
+                        rb"(?:lib[\w.+-]{1,128}\.so(?:\.[\w.+-]{1,64})*)",
+                        data[: 32 * 1024 * 1024],
+                    )
+                }
+            )[:256]
+            if sections and not any(
+                section["name"] == ".symtab" for section in sections
+            ):
+                anomalies.append("symbol_table_absent")
+            metadata.update(
+                {
+                    "entry_point_section": entry_section,
+                    "interpreter": interpreter,
+                    "needed_libraries": libraries,
+                    "sections": sections,
+                    "anomalies": sorted(set(anomalies)),
+                }
+            )
 
             return metadata
 

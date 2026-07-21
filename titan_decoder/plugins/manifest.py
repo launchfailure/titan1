@@ -5,8 +5,9 @@ entry-point module. The manifest declares identity, versions, capabilities,
 permissions, and dependencies; the JSON Schema contract lives in
 ``schemas/titan-plugin-manifest-v1.0.schema.json``.
 
-Permission declarations are policy metadata for operators and reviewers, not
-a sandbox: plugins execute in-process (see docs/PLUGIN_API.md).
+Manifest plugins execute through an isolated worker by default. Permission
+declarations drive offline network refusal and configuration disclosure, but
+they are not a complete operating-system sandbox (see docs/PLUGIN_API.md).
 """
 
 from __future__ import annotations

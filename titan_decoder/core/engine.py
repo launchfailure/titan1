@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 import logging
 from pathlib import Path
 import time
@@ -32,8 +32,25 @@ from ..decoders.base import (
     UnicodeEscapeDecoder,
     Utf16Decoder,
 )
+from ..decoders.advanced import (
+    Ascii85Decoder,
+    Base58Decoder,
+    Base91Decoder,
+    BrotliDecoder,
+    JavaScriptEscapeDecoder,
+    PowerShellEncodedCommandDecoder,
+    RawDeflateDecoder,
+    ZstandardDecoder,
+)
 from .analyzers.base import Analyzer, ZipAnalyzer, TarAnalyzer, PEAnalyzer, ELFAnalyzer
 from .analyzers.steganography import SteganographyAnalyzer
+from .analyzers.structured import (
+    EmailAnalyzer,
+    LnkAnalyzer,
+    OfficeAnalyzer,
+    OptionalArchiveAnalyzer,
+    ScriptAnalyzer,
+)
 from ..utils.helpers import sha256, entropy, looks_like_text, extract_iocs
 from ..config import Config
 from .scoring import ScoringEngine, PruningEngine
@@ -108,8 +125,16 @@ class AnalysisNode:
 class TitanEngine:
     """Main decoding and analysis engine."""
 
-    def __init__(self, config: Config = None):
+    def __init__(
+        self,
+        config: Config = None,
+        *,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+        cancel_event: Any = None,
+    ):
         self.config = config or Config()
+        self.progress_callback = progress_callback
+        self.cancel_event = cancel_event
         self.MAX_RECURSION_DEPTH = self.config.get("max_recursion_depth", 5)
 
         # Run-level bounds / telemetry
@@ -195,6 +220,22 @@ class TitanEngine:
             self.decoders.append(UnicodeEscapeDecoder())
         if self.config.get("decoders", {}).get("utf16", True):
             self.decoders.append(Utf16Decoder())
+        if self.config.get("decoders", {}).get("ascii85", True):
+            self.decoders.append(Ascii85Decoder())
+        if self.config.get("decoders", {}).get("raw_deflate", True):
+            self.decoders.append(RawDeflateDecoder(max_decompressed))
+        if self.config.get("decoders", {}).get("powershell_encoded_command", True):
+            self.decoders.append(PowerShellEncodedCommandDecoder())
+        if self.config.get("decoders", {}).get("javascript_escape", True):
+            self.decoders.append(JavaScriptEscapeDecoder())
+        if self.config.get("decoders", {}).get("base58", True):
+            self.decoders.append(Base58Decoder())
+        if self.config.get("decoders", {}).get("base91", True):
+            self.decoders.append(Base91Decoder())
+        if self.config.get("decoders", {}).get("brotli", True):
+            self.decoders.append(BrotliDecoder(max_decompressed))
+        if self.config.get("decoders", {}).get("zstandard", True):
+            self.decoders.append(ZstandardDecoder(max_decompressed))
 
         # Initialize off-by-default decoders (will be enabled by smart detection)
         self.uuencoder = UUDecoder(
@@ -226,6 +267,26 @@ class TitanEngine:
 
         # Initialize analyzers
         self.analyzers: List[Analyzer] = []
+        structured_config = {
+            "max_structured_artifacts": self.config.get("max_structured_artifacts", 32),
+            "max_structured_total_size": self.config.get(
+                "max_structured_total_size", 16 * 1024 * 1024
+            ),
+            "max_structured_artifact_size": self.config.get(
+                "max_structured_artifact_size", 4 * 1024 * 1024
+            ),
+            "max_compression_ratio": self.config.get("max_compression_ratio", 100),
+        }
+        if self.config.get("analyzers", {}).get("email", True):
+            self.analyzers.append(EmailAnalyzer(structured_config))
+        if self.config.get("analyzers", {}).get("office", True):
+            self.analyzers.append(OfficeAnalyzer(structured_config))
+        if self.config.get("analyzers", {}).get("script", True):
+            self.analyzers.append(ScriptAnalyzer(structured_config))
+        if self.config.get("analyzers", {}).get("lnk", True):
+            self.analyzers.append(LnkAnalyzer())
+        if self.config.get("analyzers", {}).get("optional_archives", True):
+            self.analyzers.append(OptionalArchiveAnalyzer(structured_config))
         if self.config.get("analyzers", {}).get("zip", True):
             zip_config = {
                 "max_zip_files": self.config.get("max_zip_files", 25),
@@ -273,7 +334,19 @@ class TitanEngine:
             self.analyzers.append(SteganographyAnalyzer(media_config))
 
         # Load plugins
-        self.plugin_manager = PluginManager()
+        self.plugin_manager = PluginManager(
+            execution_mode=str(self.config.get("plugin_execution_mode", "isolated")),
+            offline=bool(self.config.get("plugin_offline", True)),
+            timeout_seconds=int(self.config.get("plugin_timeout_seconds", 10)),
+            max_input_bytes=int(
+                self.config.get("plugin_max_input_bytes", 100 * 1024 * 1024)
+            ),
+            max_output_bytes=int(
+                self.config.get("plugin_max_output_bytes", 16 * 1024 * 1024)
+            ),
+            max_memory_mb=int(self.config.get("plugin_max_memory_mb", 512)),
+            max_children=int(self.config.get("plugin_max_children", 100)),
+        )
         plugin_dirs = self.config.get("plugin_dirs", [])
         for plugin_dir in plugin_dirs:
             self.plugin_manager.add_plugin_dir(Path(plugin_dir))
@@ -312,6 +385,32 @@ class TitanEngine:
         self._node_cap_reached: bool = False
         self._analysis_limitations: set[str] = set()
 
+    def _emit_progress(
+        self,
+        stage: str,
+        percent: int,
+        message: str,
+        **details: Any,
+    ) -> None:
+        if self.progress_callback is None:
+            return
+        event = {
+            "stage": stage,
+            "percent": max(0, min(100, int(percent))),
+            "message": message,
+            **details,
+        }
+        try:
+            self.progress_callback(event)
+        except Exception:
+            logger.debug("Progress callback failed", exc_info=True)
+
+    def _cancelled(self) -> bool:
+        try:
+            return bool(self.cancel_event is not None and self.cancel_event.is_set())
+        except Exception:
+            return False
+
     def analyze_blob(
         self,
         data: bytes,
@@ -321,6 +420,9 @@ class TitanEngine:
         artifact_name: Optional[str] = None,
     ) -> None:
         """Recursively analyze a blob of data with intelligent scoring and pruning."""
+        if self._cancelled():
+            self._analysis_limitations.add("analysis_cancelled")
+            return
         # Global safety checks: wall-clock and memory bounds.
         if self._analysis_deadline_monotonic is not None:
             if time.monotonic() > self._analysis_deadline_monotonic:
@@ -380,6 +482,13 @@ class TitanEngine:
         node.id = len(self.nodes)
         node.artifact_name = artifact_name
         self.nodes.append(node)
+        self._emit_progress(
+            "analysis",
+            min(85, 5 + int(80 * len(self.nodes) / self.pruning_engine.max_nodes)),
+            f"Analyzing node {node.id}",
+            node_id=node.id,
+            depth=depth,
+        )
 
         # Check for duplicate content (hash deduplication), O(1) via running set.
         if node.sha256 in self._seen_hashes:
@@ -432,6 +541,9 @@ class TitanEngine:
         # This avoids cases where a container format (e.g., ZIP) is "successfully"
         # decoded by something like XOR/ROT13, preventing extraction of embedded artifacts.
         for analyzer in self.analyzers:
+            if self._cancelled():
+                self._analysis_limitations.add("analysis_cancelled")
+                return
             if analyzer.can_analyze(data):
                 logger.info(f"Using analyzer: {analyzer.name}")
                 started = time.monotonic()
@@ -504,6 +616,9 @@ class TitanEngine:
         best_decoded = None
 
         for decoder in self.decoders:
+            if self._cancelled():
+                self._analysis_limitations.add("analysis_cancelled")
+                return
             can_decode_result = decoder.can_decode(data)
             if can_decode_result:
                 logger.debug(f"Trying decoder: {decoder.name}")
@@ -763,6 +878,7 @@ class TitanEngine:
 
     def run_analysis(self, input_data: bytes) -> Dict[str, Any]:
         """Run full analysis on input data."""
+        self._emit_progress("initializing", 1, "Initializing analysis")
         analysis_id = str(uuid.uuid4())
         started_wall = datetime.now(timezone.utc)
         self._analysis_started_monotonic = time.monotonic()
@@ -779,6 +895,7 @@ class TitanEngine:
         self.decision_trace = []
         self._reset_optional_decoders()
         self.analyze_blob(input_data, None, 0)
+        self._emit_progress("provenance", 88, "Finalizing artifact provenance")
         self._finalize_provenance()
 
         finished_wall = datetime.now(timezone.utc)
@@ -818,6 +935,13 @@ class TitanEngine:
 
         if self.include_decision_trace:
             report["decision_trace"] = self.decision_trace
+
+        self._emit_progress(
+            "core_complete",
+            90,
+            "Core analysis complete" if not self._cancelled() else "Analysis cancelled",
+            node_count=len(self.nodes),
+        )
 
         return report
 

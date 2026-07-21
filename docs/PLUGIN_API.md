@@ -203,6 +203,9 @@ in-process — only validate plugins you would be willing to run.
 `--plugin-list` prints everything discovered, including per-plugin load
 errors.
 
+The validation command is an explicit developer operation and imports the
+plugin in-process. Only validate extensions you would be willing to run.
+
 ## Contract every plugin must uphold
 
 Enforced by the fuzz invariants and the validation probe:
@@ -235,13 +238,24 @@ over declared dependencies). A plugin that fails to load is recorded in the
 manager's error list — visible via `--plugin-list` — and never aborts
 discovery.
 
+By default, each manifest-plugin call uses a short-lived worker process and a
+bounded JSON protocol. The parent enforces a wall-clock timeout and output cap;
+POSIX workers also apply address-space and file-size resource limits. Offline
+mode refuses plugins that declare `network`, and a worker receives the run's
+configuration only when its manifest declares `configuration`. Set
+`plugin_execution_mode` to `in_process` only for trusted debugging or
+compatibility work. Single-file API 1.0 plugins remain in-process.
+
 ## Trust model
 
-Plugins execute in the Titan process and can access local resources.
-Manifest permissions are declarations for operators and reviewers, not an
-enforcement boundary. Only install reviewed plugins. A future out-of-process
-plugin boundary would require a separate protocol and is not implied by the
-current API.
+Process isolation contains ordinary crashes, exceptions, global mutations, and
+bounded resource abuse from manifest plugins. It is not a complete OS sandbox:
+filesystem permissions are still policy metadata, and a deliberately malicious
+plugin may bypass Python-level network controls through native code or child
+processes. Only install reviewed plugins and use an operating-system sandbox
+when the extension itself is untrusted. `--plugin-validate` imports and probes
+the plugin in-process by design, so it has the same trust requirement as a
+legacy plugin.
 
 ## Examples and testing
 

@@ -30,7 +30,14 @@ from titan_decoder import __version__  # noqa: E402
 # Optional dependencies (extras), declared for transparency. The runtime core
 # has an empty install_requires; these are only needed for optional features.
 OPTIONAL_DEPS = [
+    ("PySide6", ">=6.6"),
     ("psutil", ">=7.2.2"),
+    ("brotli", ">=1.1"),
+    ("zstandard", ">=0.23"),
+    ("py7zr", ">=1"),
+    ("rarfile", ">=4.2"),
+    ("pycdlib", ">=1.14"),
+    ("cabarchive", ">=0.2.5"),
     ("geoip2", ">=5.2.0"),
     ("python-whois", ">=0.9.6"),
     ("yara-python", ">=4.5.4"),

@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+Engine coverage, isolation, and response workflow:
+
+- Add ASCII85, Base58, Base91, raw Deflate, PowerShell EncodedCommand,
+  JavaScript escape, and optional Brotli/Zstandard decoders.
+- Add bounded RFC/MIME, OOXML, script, Windows LNK, optional 7z/RAR/ISO/CAB,
+  deeper PE/ELF, and expanded image/audio/video steganography analyzers.
+- Version the Windows/Debian workbench protocol; route analysis, manual
+  decoders, and Deep Scan through it with capability checks, progress,
+  cancellation, and real timeouts.
+- Add command-based VM/provenance assurance adapters and optional local
+  Authenticode verification with strict hash-bound attestation validation.
+- Run manifest plugins out of process by default with time, memory, input,
+  output, offline-network, and configuration-disclosure controls.
+- Add deterministic recursive Deep Scan and a recoverable, hash-addressed,
+  copy-by-default quarantine with verified restoration.
+- Add a 20-case decoder/analyzer calibration corpus with precision, recall,
+  F1, specificity, accuracy, and per-component quality gates.
+- Expose Deep Scan in the native Windows workbench and add CLI commands for
+  scanning, quarantine listing/restoration, and calibration.
+
 Integrated workbench interface redesign:
 
 - Replace the oversized stock application chrome with a compact live header and

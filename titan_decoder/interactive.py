@@ -50,6 +50,16 @@ from .decoders.base import (
     XorDecoder,
     ZlibDecoder,
 )
+from .decoders.advanced import (
+    Ascii85Decoder,
+    Base58Decoder,
+    Base91Decoder,
+    BrotliDecoder,
+    JavaScriptEscapeDecoder,
+    PowerShellEncodedCommandDecoder,
+    RawDeflateDecoder,
+    ZstandardDecoder,
+)
 from .utils.helpers import entropy, looks_like_text, sha256
 
 # ---------------------------------------------------------------------------
@@ -145,6 +155,13 @@ def build_decoder_registry() -> List[DecoderChoice]:
         DecoderChoice(
             "base32", "Base32", "RFC 4648 Base32", lambda: Base32Decoder(enabled=True)
         ),
+        DecoderChoice("ascii85", "ASCII85", "Adobe ASCII85 / Base85", Ascii85Decoder),
+        DecoderChoice(
+            "base58", "Base58", "Labeled or strongly recognized Base58", Base58Decoder
+        ),
+        DecoderChoice(
+            "base91", "Base91", "Labeled or strongly recognized Base91", Base91Decoder
+        ),
         DecoderChoice("hex", "Hex", "Hexadecimal (e.g. 48656c6c6f)", HexDecoder),
         DecoderChoice(
             "url", "URL / percent", "URL percent-encoding (%20 etc.)", URLDecoder
@@ -163,6 +180,18 @@ def build_decoder_registry() -> List[DecoderChoice]:
         ),
         DecoderChoice(
             "utf16", "UTF-16", "UTF-16 text (with or without BOM)", Utf16Decoder
+        ),
+        DecoderChoice(
+            "powershell_encoded_command",
+            "PowerShell EncodedCommand",
+            "Decode a PowerShell -EncodedCommand argument",
+            PowerShellEncodedCommandDecoder,
+        ),
+        DecoderChoice(
+            "javascript_escape",
+            "JavaScript escapes",
+            "Decode %uXXXX, \\xXX, and fromCharCode",
+            JavaScriptEscapeDecoder,
         ),
         DecoderChoice("rot13", "ROT13", "Caesar/ROT13 letter rotation", Rot13Decoder),
         DecoderChoice(
@@ -197,6 +226,24 @@ def build_decoder_registry() -> List[DecoderChoice]:
             "Zlib",
             "Zlib/deflate-compressed data",
             lambda: ZlibDecoder(_MAX_DECOMPRESSED),
+        ),
+        DecoderChoice(
+            "raw_deflate",
+            "Raw DEFLATE",
+            "RFC 1951 DEFLATE without a zlib wrapper",
+            lambda: RawDeflateDecoder(_MAX_DECOMPRESSED),
+        ),
+        DecoderChoice(
+            "brotli",
+            "Brotli",
+            "Explicitly labeled Brotli stream (optional dependency)",
+            lambda: BrotliDecoder(_MAX_DECOMPRESSED),
+        ),
+        DecoderChoice(
+            "zstandard",
+            "Zstandard",
+            "Zstandard frame (optional dependency)",
+            lambda: ZstandardDecoder(_MAX_DECOMPRESSED),
         ),
         DecoderChoice(
             "bz2",

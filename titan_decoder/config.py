@@ -41,6 +41,13 @@ class Config:
         "enable_depth_based_limits": True,
         # Plugin system
         "plugin_dirs": [],
+        "plugin_execution_mode": "isolated",
+        "plugin_offline": True,
+        "plugin_timeout_seconds": 10,
+        "plugin_max_input_bytes": 100 * 1024 * 1024,
+        "plugin_max_output_bytes": 16 * 1024 * 1024,
+        "plugin_max_memory_mb": 512,
+        "plugin_max_children": 100,
         "enable_logging": True,
         "log_level": "INFO",
         "decoders": {
@@ -62,6 +69,14 @@ class Config:
             "html_entity": True,
             "unicode_escape": True,
             "utf16": True,
+            "ascii85": True,
+            "raw_deflate": True,
+            "powershell_encoded_command": True,
+            "javascript_escape": True,
+            "base58": True,
+            "base91": True,
+            "brotli": True,
+            "zstandard": True,
             # Off-by-default decoders (require smart detection)
             "uuencode": False,
             "asn1": False,
@@ -74,7 +89,17 @@ class Config:
             "pe": True,
             "elf": True,
             "steganography": True,
+            "email": True,
+            "office": True,
+            "script": True,
+            "lnk": True,
+            "optional_archives": True,
         },
+        # Structured artifact extraction bounds shared by email, Office,
+        # script, shortcut, and optional archive analyzers.
+        "max_structured_artifacts": 32,
+        "max_structured_total_size": 16 * 1024 * 1024,
+        "max_structured_artifact_size": 4 * 1024 * 1024,
         # Forensics / enrichment
         "enable_geo_enrichment": False,  # Optional MaxMind/GeoIP if available
         "geo_db_path": None,
@@ -93,6 +118,14 @@ class Config:
         "trusted_hashes_path": None,
         "sandbox_attestations_dir": None,
         "provenance_attestations_dir": None,
+        # Optional trusted provider commands. Each value must be a JSON array
+        # of argv tokens; Titan never invokes a shell. Supported placeholders
+        # are {sample} and {sha256}. Providers return one JSON attestation on
+        # stdout using the contracts documented in ASSURANCE_PIPELINE.md.
+        "sandbox_provider_command": None,
+        "provenance_provider_command": None,
+        "assurance_provider_timeout_seconds": 120,
+        "enable_authenticode_provider": False,
         # Reproducibility / strictness
         "seed": None,  # Optional deterministic seed recorded in run_manifest
         "strict": False,  # Optional CLI strict mode can enforce report contract
@@ -102,6 +135,14 @@ class Config:
         # Local vault (history/search)
         "vault_dir": None,  # default: ~/.titan_decoder/vault
         "vault_db_path": None,  # default: <vault_dir>/vault.db
+        # Recursive static scanning and recoverable quarantine.
+        "deep_scan_max_files": 10000,
+        "deep_scan_max_total_bytes": 10 * 1024 * 1024 * 1024,
+        "deep_scan_follow_symlinks": False,
+        "quarantine_dir": None,  # default: ~/.titan_decoder/quarantine
+        # Decoder/analyzer calibration quality gates.
+        "calibration_min_precision": 0.90,
+        "calibration_min_recall": 0.90,
     }
 
     def __init__(self, config_file: Path = None):

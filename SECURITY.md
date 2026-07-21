@@ -23,6 +23,14 @@ defenses against common analysis-time abuse:
   run; binary parsers (PE/ELF/TAR) fail closed on truncated/odd headers.
 - **Offline-first**: `--offline` additionally enables a best-effort
   process-local network kill switch.
+- **Extension containment**: manifest plugins run in short-lived worker
+  processes with time, memory, and output caps. Offline mode refuses plugins
+  declaring network access and workers hide configuration unless permission is
+  declared. Legacy single-file plugins and `--plugin-validate` remain trusted,
+  in-process operations.
+- **Recoverable quarantine**: Deep Scan can copy `MALICIOUS` (and only when
+  explicitly requested, `SUSPICIOUS`) results into a hash-addressed vault.
+  Copies and restores are SHA-256 verified; moving originals is explicit.
 
 ### Known trust boundary: rule-pack `content_regex`
 
@@ -39,6 +47,11 @@ quantifiers. This is a property of the stdlib regex engine, not a bug in Titan.
 These are mitigations, not guarantees. Always analyze unknown samples in a
 disposable VM or otherwise isolated environment, as a non-root user, with
 resource limits configured. See the Safety Recommendations in the README.
+
+Neither WSL, the plugin worker process, nor quarantine is a detonation sandbox.
+Titan never executes evidence during Deep Scan. A sandbox assurance adapter must
+point to a separately managed VM and its hash-bound output is validated before
+use.
 
 ## Reporting a Vulnerability
 

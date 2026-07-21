@@ -342,3 +342,28 @@ def test_brand_card_uses_aligned_reference_sizing(qt_app):
     assert power.y() == 113
     assert tag.contentsMargins().left() == power.contentsMargins().left() == 12
     window.close()
+
+
+def test_deep_scan_completion_summary_is_presented(qt_app, monkeypatch):
+    window = TitanDesktopWindow()
+    seen = {}
+    monkeypatch.setattr(
+        window,
+        "_show_tool_dialog",
+        lambda title, summary, content: seen.update(
+            {"title": title, "summary": summary, "content": content}
+        ),
+    )
+
+    window._deep_scan_finished(
+        {
+            "analyzed_count": 3,
+            "error_count": 1,
+            "results": [{"quarantine": {"id": "a"}}, {"quarantine": None}],
+        }
+    )
+
+    assert seen["title"] == "Deep Scan Results"
+    assert "3 analyzed" in seen["summary"]
+    assert "1 quarantined" in seen["summary"]
+    window.close()

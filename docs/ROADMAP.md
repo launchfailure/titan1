@@ -27,12 +27,31 @@ This roadmap separates shipped features from planned work.
 - Analyst Workbench (Milestone 7): `titan-workbench` terminal application — report library, decode-tree and interactive graph exploration with node navigation, IOC/detection/timeline/evidence browsers, correlation view, ranked cross-report search, investigation workspaces with notes/tags/status, and CSV/graph/ZIP-bundle exports
 - Local AI Analyst (Milestone 8): `titan-analyst` — report-grounded evidence ledger with stable citations, deterministic question planning, citation-enforced validation, a tested local OpenAI-compatible backend (loopback-only by default), and a deterministic no-model default that doubles as the guaranteed fallback
 
+Additional shipped engine expansion:
+
+- ASCII85, Base58, Base91, raw Deflate, PowerShell EncodedCommand,
+  JavaScript escape, and optional Brotli/Zstandard decoders.
+- RFC/MIME, OOXML, script, LNK, optional 7z/RAR/ISO/CAB, deeper PE/ELF, and
+  expanded image/audio/video steganography analyzers.
+- Versioned Windows/Debian capability handshake, manual decoder parity,
+  progress events, real timeouts, and cancellation.
+- Hash-bound assurance adapters for isolated VM and provenance providers plus
+  optional native Authenticode verification.
+- Out-of-process manifest-plugin execution with resource bounds, offline
+  network policy, and permission-scoped configuration disclosure.
+- Deterministic Deep Scan, per-file assurance reports, and hash-addressed,
+  recoverable, copy-by-default quarantine.
+- Decoder/analyzer calibration v1 with a labeled corpus, confusion matrices,
+  per-component metrics, and precision/recall gates.
+
 ## Highest-value next work
 
-The original milestone plan is complete. Future work is driven by usage:
-candidates include additional local model backends behind the existing
-backend interface, workbench/analyst integration, and persisted payload
-fingerprints for pre-v2 correlation databases.
+The original milestone plan and the engine-expansion pass are complete. Future
+work should be driven by measured misses: larger representative calibration
+corpora, OS-native sandbox adapters for plugin workers, additional signed-file
+formats, richer memory-image analysis, and provider-specific VM integrations.
+Any new parser or decoder should land with a labeled positive/negative corpus
+slice and resource-bound regression tests.
 
 ## Local AI assistant (shipped as Milestone 8)
 

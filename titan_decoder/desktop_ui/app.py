@@ -106,8 +106,9 @@ def _prepare_dark_windows_frame(widget: QWidget) -> None:
 class AnalysisThread(QThread):
     completed = Signal(object)
     failed = Signal(str)
+    progress = Signal(object)
 
-    def __init__(self, operation: Callable[[], AnalysisSnapshot]):
+    def __init__(self, operation: Callable[[], object]):
         super().__init__()
         self.operation = operation
 
@@ -274,7 +275,7 @@ class TitanDesktopWindow(QMainWindow):
         paste_shortcut.activated.connect(self._paste_clipboard_evidence)
         self.keyboard_shortcuts["Ctrl+V"] = paste_shortcut
         escape_shortcut = QShortcut(QKeySequence("Escape"), self)
-        escape_shortcut.activated.connect(self.close)
+        escape_shortcut.activated.connect(self._escape_action)
         self.keyboard_shortcuts["Escape"] = escape_shortcut
 
     def _toggle_maximized(self) -> None:
@@ -282,6 +283,14 @@ class TitanDesktopWindow(QMainWindow):
             self.showNormal()
         else:
             self.showMaximized()
+
+    def _escape_action(self) -> None:
+        if self.worker is not None and self.worker.isRunning():
+            self.worker.requestInterruption()
+            self.services.cancel_current()
+            self.footer.set_activity("Cancelling analysis…")
+            return
+        self.close()
 
     def _engine_controls_available(self) -> bool:
         if self.worker is not None and self.worker.isRunning():
@@ -412,7 +421,106 @@ class TitanDesktopWindow(QMainWindow):
         )
 
     def _show_file_analysis(self) -> None:
-        self._choose_path("Select file for analysis", "All files (*)")
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle("File Analysis")
+        dialog.setIcon(QMessageBox.Icon.Information)
+        dialog.setText("Choose an individual analysis or a recursive static scan.")
+        dialog.setInformativeText(
+            "Deep Scan walks a folder without executing its files and can copy "
+            "confirmed malicious results into recoverable quarantine."
+        )
+        file_button = dialog.addButton(
+            "Analyze File", QMessageBox.ButtonRole.ActionRole
+        )
+        folder_button = dialog.addButton(
+            "Deep Scan Folder", QMessageBox.ButtonRole.ActionRole
+        )
+        dialog.addButton(QMessageBox.StandardButton.Cancel)
+        dialog.setDefaultButton(file_button)
+        _prepare_dark_windows_frame(dialog)
+        dialog.exec()
+        if dialog.clickedButton() is file_button:
+            self._choose_path("Select file for analysis", "All files (*)")
+        elif dialog.clickedButton() is folder_button:
+            self._choose_deep_scan_folder()
+
+    def _choose_deep_scan_folder(self) -> None:
+        dialog = QFileDialog(
+            self,
+            "Select folder for deep scan",
+            str(self._default_evidence_directory()),
+        )
+        dialog.setOption(QFileDialog.Option.DontUseNativeDialog, True)
+        dialog.setOption(QFileDialog.Option.ShowDirsOnly, True)
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
+        dialog.resize(900, 600)
+        _prepare_dark_windows_frame(dialog)
+        if not dialog.exec() or not dialog.selectedFiles():
+            return
+        path = self._normalize_external_path(dialog.selectedFiles()[0])
+        choice = QMessageBox(self)
+        choice.setWindowTitle("Deep Scan Safety")
+        choice.setIcon(QMessageBox.Icon.Warning)
+        choice.setText("Deep Scan never executes samples.")
+        choice.setInformativeText(
+            "Scan Only leaves every source file untouched. Scan + Quarantine "
+            "copies only MALICIOUS verdicts into Titan's recoverable vault; it "
+            "does not delete or move the originals."
+        )
+        scan_only = choice.addButton("Scan Only", QMessageBox.ButtonRole.AcceptRole)
+        quarantine = choice.addButton(
+            "Scan + Quarantine", QMessageBox.ButtonRole.ActionRole
+        )
+        choice.addButton(QMessageBox.StandardButton.Cancel)
+        choice.setDefaultButton(scan_only)
+        _prepare_dark_windows_frame(choice)
+        choice.exec()
+        if choice.clickedButton() not in {scan_only, quarantine}:
+            return
+        self._start_deep_scan(
+            path,
+            quarantine_malicious=choice.clickedButton() is quarantine,
+        )
+
+    def _start_deep_scan(
+        self,
+        path: Path,
+        *,
+        quarantine_malicious: bool,
+    ) -> None:
+        if self.worker is not None and self.worker.isRunning():
+            return
+        self.footer.set_activity("Starting deep scan… (Esc to cancel)")
+        self.worker = AnalysisThread(
+            lambda: self.services.deep_scan_path(
+                path,
+                quarantine_malicious=quarantine_malicious,
+            )
+        )
+        self.services.set_progress_callback(self.worker.progress.emit)
+        self.worker.progress.connect(self._analysis_progress)
+        self.worker.completed.connect(self._deep_scan_finished)
+        self.worker.failed.connect(self._analysis_failed)
+        self.worker.finished.connect(self._worker_finished)
+        self.worker.start()
+
+    def _deep_scan_finished(self, summary: object) -> None:
+        if not isinstance(summary, dict):
+            self._analysis_failed("The deep-scan backend returned an invalid result.")
+            return
+        analyzed = int(summary.get("analyzed_count") or 0)
+        errors = int(summary.get("error_count") or 0)
+        quarantined = sum(
+            bool(item.get("quarantine"))
+            for item in summary.get("results") or []
+            if isinstance(item, dict)
+        )
+        self.footer.set_activity(None)
+        self._show_tool_dialog(
+            "Deep Scan Results",
+            f"{analyzed} analyzed · {errors} errors · {quarantined} quarantined",
+            json.dumps(summary, indent=2, ensure_ascii=False),
+        )
 
     def _show_tool_dialog(self, title: str, summary: str, content: str) -> None:
         dialog = TitanTextDialog(self, title, summary, content)
@@ -514,7 +622,8 @@ KEYBOARD SHORTCUTS
 
 NAVIGATION
   Memory Analysis loads a memory image for static inspection.
-  File Analysis loads an individual file.
+  File Analysis loads one file or starts a recursive static Deep Scan.
+  Deep Scan can copy MALICIOUS verdicts into recoverable quarantine.
   Correlation Engine displays relationships from the current report.
   IOC Manager displays indicators extracted from the current report.
 """
@@ -825,12 +934,23 @@ NAVIGATION
         if self.worker is not None and self.worker.isRunning():
             return
         self.analysis_sample_id = sample_id
-        self.footer.set_activity("Analyzing evidence…")
+        self.footer.set_activity("Analyzing evidence… (Esc to cancel)")
         self.worker = AnalysisThread(operation)
+        self.services.set_progress_callback(self.worker.progress.emit)
+        self.worker.progress.connect(self._analysis_progress)
         self.worker.completed.connect(self._analysis_finished)
         self.worker.failed.connect(self._analysis_failed)
         self.worker.finished.connect(self._worker_finished)
         self.worker.start()
+
+    def _analysis_progress(self, event: object) -> None:
+        if not isinstance(event, dict):
+            return
+        message = str(event.get("message") or "Analyzing evidence")
+        percent = event.get("percent")
+        if isinstance(percent, int):
+            message = f"{message} ({percent}%)"
+        self.footer.set_activity(f"{message} · Esc to cancel")
 
     def _analysis_finished(self, snapshot: AnalysisSnapshot) -> None:
         sample_id = self.analysis_sample_id
@@ -848,10 +968,14 @@ NAVIGATION
         self.footer.set_activity(None)
 
     def _analysis_failed(self, message: str) -> None:
-        self.footer.set_activity(None)
-        self._show_error(message)
+        if "cancelled" in message.lower():
+            self.footer.set_activity("Analysis cancelled")
+        else:
+            self.footer.set_activity(None)
+            self._show_error(message)
 
     def _worker_finished(self) -> None:
+        self.services.set_progress_callback(None)
         if self.worker is not None:
             self.worker.deleteLater()
             self.worker = None
@@ -880,20 +1004,30 @@ NAVIGATION
         if not self.current_data:
             self._show_error("Load or paste evidence before running a decoder.")
             return
-        try:
-            snapshot = self.services.run_decoder(
+        if self.worker is not None and self.worker.isRunning():
+            return
+        self.footer.set_activity("Running decoder… (Esc to cancel)")
+        self.worker = AnalysisThread(
+            lambda: self.services.run_decoder(
                 self.selected_decoder,
                 self.current_data,
                 self.snapshot.source_name,
             )
-        except Exception as exc:
-            self._show_error(str(exc))
-            return
+        )
+        self.services.set_progress_callback(self.worker.progress.emit)
+        self.worker.progress.connect(self._analysis_progress)
+        self.worker.completed.connect(self._decoder_finished)
+        self.worker.failed.connect(self._analysis_failed)
+        self.worker.finished.connect(self._worker_finished)
+        self.worker.start()
+
+    def _decoder_finished(self, snapshot: AnalysisSnapshot) -> None:
         self.snapshot.decoded_output = snapshot.decoded_output
         self.snapshot.input_preview = snapshot.input_preview
         self.snapshot.decoder_label = snapshot.decoder_label
         self.snapshot.decoder_success = snapshot.decoder_success
         self.decoder_details.refresh_snapshot(self.snapshot)
+        self.footer.set_activity(None)
 
     def _copy_output(self) -> None:
         if self.snapshot.decoded_output is None:

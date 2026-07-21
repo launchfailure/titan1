@@ -45,7 +45,11 @@ keys:
   "malicious_hashes_path": "/opt/titan/trust/malicious-sha256.txt",
   "trusted_hashes_path": "/opt/titan/trust/known-good-sha256.txt",
   "sandbox_attestations_dir": "/opt/titan/attestations/sandbox",
-  "provenance_attestations_dir": "/opt/titan/attestations/provenance"
+  "provenance_attestations_dir": "/opt/titan/attestations/provenance",
+  "sandbox_provider_command": ["/opt/titan/bin/submit-vm", "{sample}"],
+  "provenance_provider_command": ["/opt/titan/bin/verify-source", "{sample}"],
+  "assurance_provider_timeout_seconds": 120,
+  "enable_authenticode_provider": false
 }
 ```
 
@@ -54,6 +58,25 @@ Blank lines and lines beginning with `#` are ignored. These files and the
 attestation directories are trust roots: protect them from untrusted writers.
 If YARA is explicitly enabled but the library or rules are unavailable, the
 static control becomes `unavailable` and the assessment fails closed.
+
+## Provider adapters
+
+Provider commands are JSON arrays of argument tokens; shell command strings are
+rejected. `{sample}` and `{sha256}` placeholders are substituted as individual
+argv values. Titan also sends a JSON request on stdin containing
+`schema_version`, `provider_kind`, `sample_path`, and `sample_sha256`. The
+provider prints exactly one attestation JSON object on stdout. Titan enforces a
+timeout, caps output at 1 MiB, validates the embedded hash and contract, and
+writes the accepted attestation atomically.
+
+Configured command providers are disabled while the workbench or CLI is in
+offline mode. The built-in Authenticode adapter is local: on Windows it uses
+`Get-AuthenticodeSignature`; on Linux it uses `osslsigncode` when installed. It
+creates trusted provenance only when the platform verifier accepts the
+signature and returns a signer identity.
+
+Provider executables and attestation directories are trust roots. The adapter
+does not make an untrusted provider safe and never executes the sample itself.
 
 ## VM attestation contract
 

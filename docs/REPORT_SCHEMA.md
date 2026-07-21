@@ -17,7 +17,9 @@ Titan's primary JSON report is the contract between analysis, interpretation, ex
 
 The additive `analysis_outcome` section records decoding coverage and opaque
 terminal payloads. `static_analysis` records offline provider/rule coverage,
-and `assurance` contains the six-control fail-closed verdict and blockers.
+`assurance_providers` records bounded, hash-bound adapter outcomes, and
+`assurance` contains the six-control fail-closed verdict and blockers. Provider
+errors remain explicit status entries; they never become an implicit pass.
 
 ## Versioning
 

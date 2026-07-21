@@ -1,0 +1,156 @@
+{
+  "schema_version": "1.0",
+  "name": "Titan decoder and structured-analyzer calibration v1",
+  "cases": [
+    {
+      "id": "ascii85-positive",
+      "kind": "decoder",
+      "component": "ASCII85",
+      "data_text": "<~87cURD_*#1Blmd$+T~>",
+      "expected_match": true,
+      "expected_output_sha256": "76047422c639e6685da351084dd4ee7e509e4148d04cc157819aac5bcbe47b37"
+    },
+    {
+      "id": "ascii85-negative",
+      "kind": "decoder",
+      "component": "ASCII85",
+      "data_text": "ordinary prose is not ascii85",
+      "expected_match": false
+    },
+    {
+      "id": "raw-deflate-positive",
+      "kind": "decoder",
+      "component": "RawDeflate",
+      "data_base64": "S07MyUwqSizJzM9TKEiszMlPTAEA",
+      "expected_match": true,
+      "expected_output_sha256": "18b1d16c2c8a3bc86a05d7e9bcdedcd642035dca7bdcc42f4dce828086062725"
+    },
+    {
+      "id": "raw-deflate-negative",
+      "kind": "decoder",
+      "component": "RawDeflate",
+      "data_text": "not a deflate stream",
+      "expected_match": false
+    },
+    {
+      "id": "powershell-encoded-positive",
+      "kind": "decoder",
+      "component": "PowerShellEncodedCommand",
+      "data_text": "powershell.exe -NoProfile -EncodedCommand VwByAGkAdABlAC0ASABvAHMAdAAgAGMAYQBsAGkAYgByAGEAdABpAG8AbgA=",
+      "expected_match": true,
+      "expected_output_sha256": "1a94177e7e0ce4320c5e5cf59fdb2ead87dc889ca6b68212f61804cf8749f757"
+    },
+    {
+      "id": "powershell-encoded-negative",
+      "kind": "decoder",
+      "component": "PowerShellEncodedCommand",
+      "data_text": "Write-Host ordinary",
+      "expected_match": false
+    },
+    {
+      "id": "javascript-escape-positive",
+      "kind": "decoder",
+      "component": "JavaScriptEscape",
+      "data_text": "\\x48\\x65\\x6c\\x6c\\x6f",
+      "expected_match": true,
+      "expected_output_sha256": "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969"
+    },
+    {
+      "id": "javascript-escape-negative",
+      "kind": "decoder",
+      "component": "JavaScriptEscape",
+      "data_text": "ordinary javascript-free prose",
+      "expected_match": false
+    },
+    {
+      "id": "base58-positive",
+      "kind": "decoder",
+      "component": "Base58",
+      "data_text": "JxF12TrwUP45BMd",
+      "expected_match": true,
+      "expected_output_sha256": "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e"
+    },
+    {
+      "id": "base58-negative",
+      "kind": "decoder",
+      "component": "Base58",
+      "data_text": "not base58: 0OIl",
+      "expected_match": false
+    },
+    {
+      "id": "base91-positive",
+      "kind": "decoder",
+      "component": "Base91",
+      "data_text": ">OwJh>Io0Tv!8PE",
+      "expected_match": true,
+      "expected_output_sha256": "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+    },
+    {
+      "id": "base91-negative",
+      "kind": "decoder",
+      "component": "Base91",
+      "data_text": "short",
+      "expected_match": false
+    },
+    {
+      "id": "email-positive",
+      "kind": "analyzer",
+      "component": "Email",
+      "data_text": "From: sender@example.org\r\nTo: analyst@example.org\r\nSubject: Calibration\r\nContent-Type: text/plain\r\n\r\nCalibration body\r\n",
+      "expected_match": true,
+      "expected_artifacts": ["email_summary.json", "email_body_1.txt"]
+    },
+    {
+      "id": "email-negative",
+      "kind": "analyzer",
+      "component": "Email",
+      "data_text": "This is not an RFC email message.",
+      "expected_match": false
+    },
+    {
+      "id": "script-positive",
+      "kind": "analyzer",
+      "component": "Script",
+      "data_text": "powershell.exe -NoProfile -EncodedCommand VwByAGkAdABlAC0ASABvAHMAdAAgAGMAYQBsAGkAYgByAGEAdABpAG8AbgA=",
+      "expected_match": true,
+      "expected_artifacts": ["script_summary.json", "powershell_decoded.txt"]
+    },
+    {
+      "id": "script-negative",
+      "kind": "analyzer",
+      "component": "Script",
+      "data_text": "ordinary prose with no script markers",
+      "expected_match": false
+    },
+    {
+      "id": "lnk-positive",
+      "kind": "analyzer",
+      "component": "WindowsLNK",
+      "data_base64": "TAAAAAEUAgAAAAAAwAAAAAAAAEYgAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANIEAAAAAAAAAQAAAAAAAAAAAAAAAAAAAEM6XFVzZXJzXFB1YmxpY1xwYXlsb2FkLmV4ZQA=",
+      "expected_match": true,
+      "expected_artifacts": ["lnk_metadata.json"]
+    },
+    {
+      "id": "lnk-negative",
+      "kind": "analyzer",
+      "component": "WindowsLNK",
+      "data_text": "not a shell link",
+      "expected_match": false
+    },
+    {
+      "id": "office-positive",
+      "kind": "analyzer",
+      "component": "OfficeOOXML",
+      "data_base64": "UEsDBBQAAAAAAINh9VzqpRaoaQAAAGkAAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbDw/eG1sIHZlcnNpb249IjEuMCI/PjxUeXBlcyB4bWxucz0iaHR0cDovL3NjaGVtYXMub3BlbnhtbGZvcm1hdHMub3JnL3BhY2thZ2UvMjAwNi9jb250ZW50LXR5cGVzIj48L1R5cGVzPlBLAwQUAAAAAACDYfVcJ3D4dVYAAABWAAAAEQAAAHdvcmQvZG9jdW1lbnQueG1sPHc6ZG9jdW1lbnQgeG1sbnM6dz0idXJuOnRlc3QiPjx3OnA+PHc6dD5DYWxpYnJhdGlvbiBkb2N1bWVudDwvdzp0PjwvdzpwPjwvdzpkb2N1bWVudD5QSwECFAAUAAAAAACDYfVc6qUWqGkAAABpAAAAEwAAAAAAAAAAAAAAgAEAAAAAW0NvbnRlbnRfVHlwZXNdLnhtbFBLAQIUABQAAAAAAINh9VwncPh1VgAAAFYAAAARAAAAAAAAAAAAAACAAZoAAAB3b3JkL2RvY3VtZW50LnhtbFBLBQYAAAAAAgACAIAAAAAfAQAAAAA=",
+      "expected_match": true,
+      "expected_artifacts": ["office_summary.json", "office_document_text.txt"]
+    },
+    {
+      "id": "office-negative",
+      "kind": "analyzer",
+      "component": "OfficeOOXML",
+      "data_text": "not an OOXML package",
+      "expected_match": false
+    }
+  ]
+}

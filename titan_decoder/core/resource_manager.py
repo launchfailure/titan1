@@ -34,9 +34,12 @@ class ResourceManager:
         operation unguarded instead. The run-level wall-clock deadline and
         memory checks in the engine still bound the overall analysis.
         """
+        sigalrm = getattr(signal, "SIGALRM", None)
+        alarm = getattr(signal, "alarm", None)
         can_use_alarm = (
-            hasattr(signal, "SIGALRM")
-            and threading.current_thread() is threading.main_thread()
+            sigalrm is not None
+            and callable(alarm)
+            and (threading.current_thread() is threading.main_thread())
         )
         if not can_use_alarm or seconds <= 0:
             if not can_use_alarm:
@@ -48,19 +51,22 @@ class ResourceManager:
             yield
             return
 
+        assert sigalrm is not None
+        assert callable(alarm)
+
         def timeout_handler(signum, frame):
             raise TimeoutError(f"{operation_name} exceeded {seconds}s timeout")
 
         # Set up the timeout
-        old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(seconds)
+        old_handler = signal.signal(sigalrm, timeout_handler)
+        alarm(seconds)
 
         try:
             yield
         finally:
             # Restore original handler and cancel alarm
-            signal.alarm(0)
-            signal.signal(signal.SIGALRM, old_handler)
+            alarm(0)
+            signal.signal(sigalrm, old_handler)
 
     def check_memory_usage(self) -> float:
         """Check current memory usage in MB."""
