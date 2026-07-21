@@ -20,6 +20,7 @@ class AnalysisSnapshot:
     duration_seconds: float = 0.0
     report: dict[str, Any] = field(default_factory=dict)
     decoded_output: bytes | None = None
+    input_preview: str = ""
     decoder_label: str | None = None
     decoder_success: bool | None = None
     batch_total: int = 1
@@ -84,7 +85,29 @@ class AnalysisSnapshot:
         return [item for item in values if isinstance(item, dict)]
 
     @property
+    def analysis_outcome(self) -> dict[str, Any]:
+        value = self.report.get("analysis_outcome")
+        return value if isinstance(value, dict) else {}
+
+    @property
+    def assurance(self) -> dict[str, Any]:
+        value = self.report.get("assurance")
+        return value if isinstance(value, dict) else {}
+
+    @property
     def ioc_count(self) -> int:
         return sum(
             len(values) for values in self.iocs.values() if isinstance(values, list)
+        )
+
+    @property
+    def artifact_count(self) -> int:
+        return max(len(self.nodes) - 1, 0)
+
+    @property
+    def decode_count(self) -> int:
+        return sum(
+            bool(node.get("decoder_used"))
+            for node in self.nodes
+            if isinstance(node, dict)
         )

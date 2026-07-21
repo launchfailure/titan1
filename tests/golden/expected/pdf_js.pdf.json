@@ -1,4 +1,15 @@
 {
+  "analysis_outcome": {
+    "complete": true,
+    "limitations": [],
+    "opaque_terminal_node_ids": [],
+    "status": "decoded",
+    "summary": "Completed 1 transformation(s) and reached readable or recognized terminal content.",
+    "terminal_node_ids": [
+      1
+    ],
+    "weak_decodes": []
+  },
   "iocs": {
     "domains": [
       "app.alert",
@@ -20,6 +31,7 @@
   "node_count": 2,
   "nodes": [
     {
+      "analysis_state": "decoded",
       "artifact_name": null,
       "content_preview": "%PDF-1.7\n%\n1 0 obj\n<< /Type /Catalog /OpenAction 3 0 R >>\nendobj\n3 0 obj\n<< /S /JavaScript /JS 5 0 R >>\nendobj\n5 0 obj\n<< /Length 45 /Filter /FlateDecode  >>\nstream\nxK,(KI-*P())O-KH-I/HIS\u05f4\u0006\u0000\f\nendstream\nendobj\nxref\n0 1\n0000000000 65535 f \ntrailer\n<< /Root 1 0 R >>\nstartxref\n232\n%%EOF\n",
       "content_type": "Binary",
@@ -42,9 +54,11 @@
       },
       "pruned": false,
       "sha256": "76e773459dda63e7a475c5e3419f4534b46e6c10cce40ad68cf6d9c8a09a65de",
-      "source_length": 307
+      "source_length": 307,
+      "termination_reason": "Applied PDF with confidence 0.212."
     },
     {
+      "analysis_state": "terminal",
       "artifact_name": null,
       "content_preview": "=== obj 5 0 stream ===\n\napp.alert('http://evil.example/pdf');\n=== /OpenAction /JS ===\n\napp.alert('http://evil.example/pdf');\n=== /JS action ===\n\napp.alert('http://evil.example/pdf');",
       "content_type": "Text",
@@ -67,7 +81,8 @@
       },
       "pruned": true,
       "sha256": "2e198da57781dfffebb13496ece83f27e1875d247aa6f06e1e44f64caa2832ab",
-      "source_length": 182
+      "source_length": 182,
+      "termination_reason": "No supported analyzer or decoder accepted the remaining payload."
     }
   ],
   "run_manifest": {
@@ -75,6 +90,7 @@
       "analyzers": [
         "ELF",
         "PE",
+        "Steganography",
         "TAR",
         "ZIP"
       ],
@@ -114,6 +130,7 @@
       "analyzers": {
         "elf": true,
         "pe": true,
+        "steganography": true,
         "tar": true,
         "zip": true
       },
@@ -143,6 +160,7 @@
         "zlib": true
       },
       "detection_rule_packs": [],
+      "enable_assurance": true,
       "enable_correlation": false,
       "enable_depth_based_limits": true,
       "enable_enrichment_cache": true,
@@ -156,8 +174,14 @@
       "geo_db_path": null,
       "include_decision_trace": false,
       "log_level": "INFO",
+      "malicious_hashes_path": null,
       "max_compression_ratio": 100,
       "max_data_size": 52428800,
+      "max_lsb_carrier_bytes": 4194304,
+      "max_lsb_output_size": 1048576,
+      "max_media_artifact_size": 4194304,
+      "max_media_artifacts": 8,
+      "max_media_total_size": 8388608,
       "max_memory_mb": 1024,
       "max_node_count": 100,
       "max_recursion_depth": 5,
@@ -170,8 +194,11 @@
       "max_zip_total_size": 10485760,
       "min_score_threshold": 0.01,
       "plugin_dirs": [],
+      "provenance_attestations_dir": null,
+      "sandbox_attestations_dir": null,
       "seed": null,
       "strict": false,
+      "trusted_hashes_path": null,
       "vault_db_path": null,
       "vault_dir": null,
       "yara_rules_path": null

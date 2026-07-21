@@ -33,6 +33,7 @@ from ..decoders.base import (
     Utf16Decoder,
 )
 from .analyzers.base import Analyzer, ZipAnalyzer, TarAnalyzer, PEAnalyzer, ELFAnalyzer
+from .analyzers.steganography import SteganographyAnalyzer
 from ..utils.helpers import sha256, entropy, looks_like_text, extract_iocs
 from ..config import Config
 from .scoring import ScoringEngine, PruningEngine
@@ -51,6 +52,9 @@ class AnalysisNode:
     """Represents a node in the analysis tree."""
 
     def __init__(self, data: bytes, parent_id: Optional[int], depth: int, method: str):
+        # Retain an in-memory reference for bounded post-analysis scanners. Raw
+        # bytes are deliberately excluded from the JSON report.
+        self._data = data
         self.id = None  # Set by engine
         self.parent = parent_id
         self.depth = depth
@@ -69,6 +73,8 @@ class AnalysisNode:
         self.decode_score = 0.0
         self.decoder_used = None
         self.pruned = False
+        self.analysis_state = "pending"
+        self.termination_reason: Optional[str] = None
 
         # Provenance: how this blob was produced. ``artifact_name`` is the label
         # the producing analyzer gave the extracted item (e.g. a CFB stream path
@@ -92,6 +98,8 @@ class AnalysisNode:
             "decode_score": self.decode_score,
             "decoder_used": self.decoder_used,
             "pruned": self.pruned,
+            "analysis_state": self.analysis_state,
+            "termination_reason": self.termination_reason,
             "artifact_name": self.artifact_name,
             "provenance": self.provenance,
         }
@@ -246,6 +254,23 @@ class TitanEngine:
             self.analyzers.append(PEAnalyzer())
         if self.config.get("analyzers", {}).get("elf", True):
             self.analyzers.append(ELFAnalyzer())
+        if self.config.get("analyzers", {}).get("steganography", True):
+            media_config = {
+                "max_media_artifacts": self.config.get("max_media_artifacts", 8),
+                "max_media_total_size": self.config.get(
+                    "max_media_total_size", 8 * 1024 * 1024
+                ),
+                "max_media_artifact_size": self.config.get(
+                    "max_media_artifact_size", 4 * 1024 * 1024
+                ),
+                "max_lsb_carrier_bytes": self.config.get(
+                    "max_lsb_carrier_bytes", 4 * 1024 * 1024
+                ),
+                "max_lsb_output_size": self.config.get(
+                    "max_lsb_output_size", 1024 * 1024
+                ),
+            }
+            self.analyzers.append(SteganographyAnalyzer(media_config))
 
         # Load plugins
         self.plugin_manager = PluginManager()
@@ -285,6 +310,7 @@ class TitanEngine:
         # from all prior nodes on every call was O(n^2)).
         self._seen_hashes: set = set()
         self._node_cap_reached: bool = False
+        self._analysis_limitations: set[str] = set()
 
     def analyze_blob(
         self,
@@ -298,11 +324,13 @@ class TitanEngine:
         # Global safety checks: wall-clock and memory bounds.
         if self._analysis_deadline_monotonic is not None:
             if time.monotonic() > self._analysis_deadline_monotonic:
+                self._analysis_limitations.add("analysis_timeout_reached")
                 logger.error("Analysis deadline exceeded; aborting further analysis")
                 return
         if self.max_memory_mb and self.resource_manager.should_abort_due_to_memory(
             self.max_memory_mb
         ):
+            self._analysis_limitations.add("memory_limit_reached")
             logger.error("Memory pressure; aborting further analysis")
             return
 
@@ -313,6 +341,7 @@ class TitanEngine:
 
         # Hard depth limit as safety net
         if depth > self.MAX_RECURSION_DEPTH:
+            self._analysis_limitations.add("depth_limit_reached")
             logger.warning(f"Max recursion depth reached at depth {depth}")
             return
 
@@ -324,6 +353,7 @@ class TitanEngine:
         if len(self.nodes) >= self.pruning_engine.max_nodes:
             if not self._node_cap_reached:
                 self._node_cap_reached = True
+                self._analysis_limitations.add("node_limit_reached")
                 logger.warning(
                     f"Max node count ({self.pruning_engine.max_nodes}) reached; "
                     "stopping further analysis"
@@ -355,6 +385,8 @@ class TitanEngine:
         if node.sha256 in self._seen_hashes:
             logger.info("Duplicate content detected, skipping analysis")
             node.pruned = True
+            node.analysis_state = "duplicate"
+            node.termination_reason = "Duplicate content already exists in the tree."
             return
         self._seen_hashes.add(node.sha256)
 
@@ -411,6 +443,8 @@ class TitanEngine:
                         extracted = analyzer.analyze(data)
                     if extracted:  # Only proceed if extraction succeeded
                         node.method = f"ANALYZE_{analyzer.name}"
+                        node.analysis_state = "extracted"
+                        node.termination_reason = f"Extracted {len(extracted)} artifact(s) with {analyzer.name}."
 
                         # Calculate score for archive extraction
                         archive_score = self.scoring_engine.calculate_decode_score(
@@ -530,6 +564,10 @@ class TitanEngine:
             node.decode_score = best_score
             node.decoder_used = best_decoder
             node.decoded_length = len(best_decoded)
+            node.analysis_state = "decoded"
+            node.termination_reason = (
+                f"Applied {best_decoder} with confidence {best_score:.3f}."
+            )
 
             # Continue analysis with decoded data
             self.analyze_blob(best_decoded, node.id, depth + 1, is_decoded_content=True)
@@ -537,6 +575,16 @@ class TitanEngine:
 
         # No successful decoding or analysis
         logger.info(f"Leaf node reached at depth {depth} (score: {best_score:.3f})")
+        node.analysis_state = "terminal"
+        if best_decoder is not None:
+            node.termination_reason = (
+                f"Best candidate {best_decoder} scored {best_score:.3f}, below the "
+                f"{self.pruning_engine.min_score_threshold:.3f} threshold."
+            )
+        else:
+            node.termination_reason = (
+                "No supported analyzer or decoder accepted the remaining payload."
+            )
         if best_score < self.pruning_engine.min_score_threshold:
             node.pruned = True
 
@@ -608,6 +656,111 @@ class TitanEngine:
             if not enabled and decoder in self.decoders:
                 self.decoders.remove(decoder)
 
+    @staticmethod
+    def _node_is_opaque(node: AnalysisNode) -> bool:
+        """Return whether a terminal node still resembles encoded/opaque data."""
+        if node.source_length == 0:
+            return False
+        if node.content_type != "Text":
+            return True
+        preview = node.content_preview.strip()
+        if not preview:
+            return True
+        printable_ratio = sum(ch.isprintable() or ch.isspace() for ch in preview) / len(
+            preview
+        )
+        if printable_ratio < 0.85:
+            return True
+        longest_token = max(preview.split(), key=len, default="")
+        if len(longest_token) < 80:
+            return False
+        encoded_alphabet = set(
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=_-<>"
+        )
+        encoded_ratio = sum(ch in encoded_alphabet for ch in longest_token) / len(
+            longest_token
+        )
+        return encoded_ratio >= 0.95
+
+    def _build_analysis_outcome(self, input_data: bytes) -> Dict[str, Any]:
+        """Summarize whether analysis interpreted or stalled on the payload."""
+        if not input_data:
+            return {
+                "status": "empty_input",
+                "complete": False,
+                "summary": "No input bytes were available for analysis.",
+                "terminal_node_ids": [],
+                "opaque_terminal_node_ids": [],
+                "weak_decodes": [],
+                "limitations": ["empty_input"],
+            }
+
+        parent_ids = {node.parent for node in self.nodes if node.parent is not None}
+        terminal_nodes = [node for node in self.nodes if node.id not in parent_ids]
+        opaque_nodes = [
+            node
+            for node in terminal_nodes
+            if node.analysis_state in {"terminal", "duplicate"}
+            and self._node_is_opaque(node)
+        ]
+        transformed_nodes = [
+            node
+            for node in self.nodes
+            if node.analysis_state in {"decoded", "extracted"}
+        ]
+
+        weak_threshold = max(float(self.pruning_engine.min_score_threshold) * 8.0, 0.05)
+        weak_decodes = [
+            {
+                "node_id": node.id,
+                "decoder": node.decoder_used,
+                "score": node.decode_score,
+            }
+            for node in transformed_nodes
+            if node.decoder_used and 0.0 < float(node.decode_score) < weak_threshold
+        ]
+
+        limitations = sorted(self._analysis_limitations)
+
+        if limitations:
+            status = "limited"
+            summary = (
+                "Analysis stopped at a configured safety limit; the payload may be "
+                "only partially interpreted."
+            )
+        elif opaque_nodes and transformed_nodes:
+            status = "partial_decode"
+            summary = (
+                f"Applied {len(transformed_nodes)} transformation(s), then stopped "
+                f"with {len(opaque_nodes)} unrecognized terminal payload(s)."
+            )
+        elif opaque_nodes:
+            status = "unrecognized"
+            summary = (
+                "No supported analyzer or decoder could interpret the terminal payload."
+            )
+        elif transformed_nodes:
+            status = "decoded"
+            summary = (
+                f"Completed {len(transformed_nodes)} transformation(s) and reached "
+                "readable or recognized terminal content."
+            )
+        else:
+            status = "analyzed"
+            summary = (
+                "Input was analyzed directly; no decoding transformation was needed."
+            )
+
+        return {
+            "status": status,
+            "complete": status in {"decoded", "analyzed"},
+            "summary": summary,
+            "terminal_node_ids": [node.id for node in terminal_nodes],
+            "opaque_terminal_node_ids": [node.id for node in opaque_nodes],
+            "weak_decodes": weak_decodes,
+            "limitations": limitations,
+        }
+
     def run_analysis(self, input_data: bytes) -> Dict[str, Any]:
         """Run full analysis on input data."""
         analysis_id = str(uuid.uuid4())
@@ -622,6 +775,7 @@ class TitanEngine:
         self.nodes = []
         self._seen_hashes = set()
         self._node_cap_reached = False
+        self._analysis_limitations = set()
         self.decision_trace = []
         self._reset_optional_decoders()
         self.analyze_blob(input_data, None, 0)
@@ -658,12 +812,22 @@ class TitanEngine:
             "iocs": extract_iocs(all_text),
         }
 
+        report["analysis_outcome"] = self._build_analysis_outcome(input_data)
+
         report["run_manifest"] = self._build_run_manifest()
 
         if self.include_decision_trace:
             report["decision_trace"] = self.decision_trace
 
         return report
+
+    def artifact_payloads(self) -> List[tuple[int, bytes]]:
+        """Return raw node payloads for in-process scanners, never serialization."""
+        return [
+            (int(node.id), node._data)
+            for node in self.nodes
+            if node.id is not None and isinstance(node._data, bytes)
+        ]
 
     def _build_run_manifest(self) -> Dict[str, Any]:
         """Build a reproducible manifest describing how the run was configured."""

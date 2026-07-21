@@ -13,6 +13,7 @@ import time
 
 from titan_decoder import __version__ as TITAN_VERSION
 from titan_decoder.config import Config
+from titan_decoder.core.assurance import AssuranceEngine
 from titan_decoder.core.engine import TitanEngine
 from titan_decoder.interactive import build_decoder_registry
 
@@ -90,11 +91,16 @@ class WorkbenchServices:
                 report = engine.run_analysis(data)
         else:
             report = engine.run_analysis(data)
+        if self.config.get("enable_assurance", True):
+            assurance = AssuranceEngine(self.config._config)
+            assurance.run_static_checks(report, engine.artifact_payloads())
+            report["assurance"] = assurance.evaluate(report)
         return AnalysisSnapshot(
             source_name=source_name,
             source_size=len(data),
             duration_seconds=time.monotonic() - started,
             report=report,
+            input_preview=self._input_preview(data),
         )
 
     def read_file(self, path: Path) -> bytes:
@@ -179,9 +185,17 @@ class WorkbenchServices:
             source_size=len(data),
             duration_seconds=time.monotonic() - started,
             decoded_output=decoded,
+            input_preview=self._input_preview(data),
             decoder_label=choice.label,
             decoder_success=bool(success),
         )
+
+    @staticmethod
+    def _input_preview(data: bytes, limit: int = 120) -> str:
+        if not data:
+            return ""
+        text = data[:limit].decode("utf-8", errors="replace")
+        return text.replace("\r", "\\r").replace("\n", "\\n")
 
     def reports(self) -> list[Path]:
         directory = self.state.reports_dir
@@ -274,9 +288,23 @@ class WorkbenchServices:
                 memory = f"{usage / divisor:.0f} MB"
             except Exception:
                 pass
+        cpu_percent = 0
+        memory_percent = 0
+        disk_percent = 0
+        try:
+            import psutil
+
+            cpu_percent = round(float(psutil.cpu_percent(interval=None)))
+            memory_percent = round(float(psutil.virtual_memory().percent))
+            disk_percent = round(float(psutil.disk_usage(str(Path.cwd())).percent))
+        except Exception:
+            pass
         return {
             "cpu": cpu,
             "memory": memory,
             "workers": "1",
             "disk": "local",
+            "cpu_percent": str(cpu_percent),
+            "memory_percent": str(memory_percent),
+            "disk_percent": str(disk_percent),
         }

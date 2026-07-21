@@ -23,6 +23,7 @@ wheels/
 # Virtual environments
 .env
 .venv
+.venv-windows/
 env/
 venv/
 ENV/

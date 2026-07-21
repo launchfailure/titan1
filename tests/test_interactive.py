@@ -35,7 +35,16 @@ def test_registry_has_expected_decoders():
     reg = build_decoder_registry()
     keys = {c.key for c in reg}
     # A representative spread across the decoder families.
-    for expected in ("base64", "hex", "url", "rot13", "xor", "gzip", "utf16"):
+    for expected in (
+        "base64",
+        "hex",
+        "url",
+        "rot13",
+        "xor",
+        "gzip",
+        "utf16",
+        "steganography_media",
+    ):
         assert expected in keys
     # Every entry's factory yields a working decoder instance.
     for choice in reg:

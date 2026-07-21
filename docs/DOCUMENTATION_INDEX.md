@@ -12,6 +12,8 @@
 - [EVIDENCE_AND_PROVENANCE.md](EVIDENCE_AND_PROVENANCE.md) — evidence ingestion and lineage.
 - [SECURITY_MODEL.md](SECURITY_MODEL.md) — threat model and operational guidance.
 
+- [ASSURANCE_PIPELINE.md](ASSURANCE_PIPELINE.md) — six-control verdicts and provider contracts.
+
 ## Developers
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — subsystem boundaries and repository map.

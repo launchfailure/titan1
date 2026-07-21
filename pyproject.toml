@@ -36,13 +36,18 @@ titan = "titan_decoder.interactive:main"
 titan-decoder = "titan_decoder.cli:main"
 titan-workbench = "titan_decoder.workbench.app:main"
 titan-workbench-ui = "titan_decoder.workbench_ui.app:main"
-titan-ui = "titan_decoder.workbench_ui.app:main"
+titan-tui = "titan_decoder.workbench_ui.app:main"
+titan-ui = "titan_decoder.desktop_ui.app:main"
 titan-analyst = "titan_decoder.analyst.cli:main"
 
 # Keep these lists in sync with requirements-dev.txt / requirements-optional.txt.
 [project.optional-dependencies]
 workbench-ui = [
     "textual>=0.89,<9",
+]
+desktop-ui = [
+    "PySide6>=6.6,<7",
+    "psutil>=5,<8",
 ]
 dev = [
     "pytest>=9.1.1",
@@ -74,6 +79,7 @@ include = ["titan_decoder*"]
 
 [tool.setuptools.package-data]
 "titan_decoder.threat_intel" = ["data/*.json"]
+"titan_decoder.desktop_ui" = ["assets/*.ico", "assets/*.png"]
 
 [tool.mypy]
 # Non-strict baseline (roadmap: "start non-strict, ratchet up"). Type errors

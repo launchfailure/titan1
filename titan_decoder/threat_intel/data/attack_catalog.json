@@ -1,5 +1,5 @@
 {
-  "catalog_version": "enterprise-2026.1-titan-subset-r3",
+  "catalog_version": "enterprise-2026.1-titan-subset-r4",
   "techniques": [
     {
       "id": "T1003",
@@ -25,6 +25,13 @@
     {
       "id": "T1027",
       "name": "Obfuscated Files or Information",
+      "tactics": [
+        "defense-evasion"
+      ]
+    },
+    {
+      "id": "T1027.003",
+      "name": "Obfuscated Files or Information: Steganography",
       "tactics": [
         "defense-evasion"
       ]

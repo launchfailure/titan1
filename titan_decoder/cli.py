@@ -972,6 +972,23 @@ def attach_intelligence_stage(
     )
 
 
+def attach_assurance_stage(
+    config, report, titan_engine=None, evidence_result=None
+) -> None:
+    """Run offline static controls and attach a fail-closed assurance verdict."""
+    if not config.get("enable_assurance", True):
+        return
+    from .core.assurance import AssuranceEngine
+    from .core.ioc_export import build_ioc_summary
+
+    engine = AssuranceEngine(config._config)
+    artifacts = titan_engine.artifact_payloads() if titan_engine is not None else None
+    iocs = build_ioc_summary(report, None)
+    _merge_evidence_iocs(iocs, evidence_result)
+    engine.run_static_checks(report, artifacts, iocs=iocs)
+    report["assurance"] = engine.evaluate(report)
+
+
 def attach_threat_intelligence_stage(args, report, detections, evidence_result) -> None:
     """Attach deterministic ATT&CK, LOLBin, and behavioral mappings."""
     from .core.ioc_export import build_ioc_summary
@@ -1243,9 +1260,9 @@ def write_outputs_stage(
         if args.report_out:
             case = build_case_report(report, forensics_summary, iocs)
             if args.report_format == "html":
-                args.report_out.write_text(to_html(case))
+                args.report_out.write_text(to_html(case), encoding="utf-8")
             else:
-                args.report_out.write_text(to_markdown(case))
+                args.report_out.write_text(to_markdown(case), encoding="utf-8")
             if not args.quiet:
                 print(
                     f"Case report saved to {args.report_out} ({args.report_format})",
@@ -1462,6 +1479,15 @@ def write_outputs_stage(
                     f"Top Risk Factors:  {', '.join(risk_assessment['top_reasons'][:3])}",
                     file=sys.stderr,
                 )
+        assurance = report.get("assurance") or {}
+        if assurance:
+            print(
+                "Assurance Verdict: "
+                f"{assurance.get('verdict', 'INDETERMINATE')} "
+                f"({assurance.get('controls_satisfied', 0)}/"
+                f"{assurance.get('controls_total', 6)} controls)",
+                file=sys.stderr,
+            )
         print("=" * 80, file=sys.stderr)
 
     return exit_code
@@ -1513,6 +1539,9 @@ def main():
     detections, risk_assessment = run_detections_stage(
         args, config, report, evidence_result, engine=engine
     )
+    attach_assurance_stage(config, report, engine, evidence_result)
+    detections = report.get("detections") or detections
+    risk_assessment = report.get("risk_assessment") or risk_assessment
     attach_intelligence_stage(
         args, report, detections, risk_assessment, evidence_result
     )
@@ -1798,6 +1827,11 @@ def run_batch_analysis(args, config):
     success_count = 0
     fail_count = 0
     engine = TitanEngine(config)
+    assurance_engine = None
+    if config.get("enable_assurance", True):
+        from .core.assurance import AssuranceEngine
+
+        assurance_engine = AssuranceEngine(config._config)
 
     for i, file_path in enumerate(files, 1):
         if not getattr(args, "quiet", False):
@@ -1824,6 +1858,9 @@ def run_batch_analysis(args, config):
             report["meta"].setdefault(
                 "network_blocked", bool(getattr(args, "offline", False))
             )
+            if assurance_engine is not None:
+                assurance_engine.run_static_checks(report, engine.artifact_payloads())
+                report["assurance"] = assurance_engine.evaluate(report)
 
             # Strict validation (contract enforcement)
             if bool(config.get("strict", False)):
@@ -1842,7 +1879,7 @@ def run_batch_analysis(args, config):
 
             # Save report
             report_path = output_dir / f"{file_path.stem}_report.json"
-            report_path.write_text(report_json)
+            report_path.write_text(report_json, encoding="utf-8")
 
             # Optional vault storage
             if getattr(args, "vault_store", False):

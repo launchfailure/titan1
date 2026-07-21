@@ -85,11 +85,42 @@ class Decoder(ABC):
         pass
 
 
+def _wrapped_base64_candidate(data: bytes) -> bytes | None:
+    """Return padded Base64 from a common one-character wrapper.
+
+    Forensic payloads are frequently copied as ``<...>`` or ``[...]`` and may
+    omit RFC 4648 padding. A long ``<BASE64`` prefix is also accepted because
+    truncated challenge/export formats sometimes lose the closing delimiter.
+    The explicit delimiter keeps this relaxed path narrow enough that ordinary
+    prose is not treated as Base64.
+    """
+    compact = b"".join(data.split())
+    if len(compact) < 18:
+        return None
+    wrappers = {b"<": b">", b"[": b"]", b"(": b")", b"{": b"}"}
+    if wrappers.get(compact[:1]) == compact[-1:]:
+        inner = compact[1:-1]
+    elif compact.startswith(b"<") and len(compact) >= 82:
+        inner = compact[1:]
+    else:
+        return None
+    if len(inner) < 16 or len(inner) % 4 == 1:
+        return None
+    if re.fullmatch(rb"[A-Za-z0-9+/]*={0,2}", inner) is None:
+        return None
+    padded = inner + (b"=" * (-len(inner) % 4))
+    try:
+        base64.b64decode(padded, validate=True)
+    except (binascii.Error, ValueError):
+        return None
+    return padded
+
+
 class Base64Decoder(Decoder):
     """Base64 decoder with multiline support."""
 
     def can_decode(self, data: bytes) -> bool:
-        return looks_like_base64(data)
+        return looks_like_base64(data) or _wrapped_base64_candidate(data) is not None
 
     def decode(self, data: bytes) -> Tuple[bytes, bool]:
         try:
@@ -101,9 +132,14 @@ class Base64Decoder(Decoder):
             # per-line decodes with ``b"\n"`` injected spurious newlines that
             # corrupted wrapped binary payloads.
             stripped = b"".join(data.split())
-            if not looks_like_base64(stripped):
+            candidate = (
+                stripped
+                if looks_like_base64(stripped)
+                else _wrapped_base64_candidate(stripped)
+            )
+            if candidate is None:
                 return data, False
-            return base64.b64decode(stripped), True
+            return base64.b64decode(candidate), True
         except Exception:
             return data, False
 
@@ -392,6 +428,8 @@ class Rot13Decoder(Decoder):
         # If it already looks like base64, prefer Base64/RecursiveBase64.
         # ROT13 on base64-like payloads is almost always a false-positive.
         if looks_like_base64(data):
+            return False
+        if _wrapped_base64_candidate(data) is not None:
             return False
 
         # Try to decode as ASCII

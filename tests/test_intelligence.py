@@ -10,6 +10,23 @@ def test_clean_report_stays_clean():
     assert result["signals"] == []
 
 
+def test_incomplete_analysis_without_signals_requires_manual_review():
+    result = IntelligenceEngine().analyze(
+        {
+            "nodes": [],
+            "iocs": {},
+            "analysis_outcome": {
+                "status": "partial_decode",
+                "complete": False,
+            },
+        }
+    )
+
+    assert result["intelligence_score"] == 0
+    assert result["classification"] == "NO_SIGNALS_DETECTED"
+    assert "Manual review required" in result["recommendation"]
+
+
 def test_suspicious_execution_and_url_are_explained():
     report = {
         "nodes": [

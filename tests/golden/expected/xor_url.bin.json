@@ -1,4 +1,21 @@
 {
+  "analysis_outcome": {
+    "complete": true,
+    "limitations": [],
+    "opaque_terminal_node_ids": [],
+    "status": "decoded",
+    "summary": "Completed 1 transformation(s) and reached readable or recognized terminal content.",
+    "terminal_node_ids": [
+      1
+    ],
+    "weak_decodes": [
+      {
+        "decoder": "XOR",
+        "node_id": 0,
+        "score": 0.04000000000000001
+      }
+    ]
+  },
   "iocs": {
     "domains": [
       "malware.example"
@@ -19,6 +36,7 @@
   "node_count": 2,
   "nodes": [
     {
+      "analysis_state": "decoded",
       "artifact_name": null,
       "content_preview": "954<3=z9hg2..*`uu7;6-;(?t?\";7*6?u9hu*;4?6z?4>*534.",
       "content_type": "Text",
@@ -41,9 +59,11 @@
       },
       "pruned": false,
       "sha256": "8ef77063d7c4beb2d7e08d97886714b521e386692c4f0bfeb4f1b1379cc8e307",
-      "source_length": 50
+      "source_length": 50,
+      "termination_reason": "Applied XOR with confidence 0.040."
     },
     {
+      "analysis_state": "terminal",
       "artifact_name": null,
       "content_preview": "config c2=http://malware.example/c2/panel endpoint",
       "content_type": "Text",
@@ -66,7 +86,8 @@
       },
       "pruned": true,
       "sha256": "cb53c989c511e290897d90d9c81d098b18d3edc7cbaa5b9c7cd382e5c9c35310",
-      "source_length": 50
+      "source_length": 50,
+      "termination_reason": "No supported analyzer or decoder accepted the remaining payload."
     }
   ],
   "run_manifest": {
@@ -74,6 +95,7 @@
       "analyzers": [
         "ELF",
         "PE",
+        "Steganography",
         "TAR",
         "ZIP"
       ],
@@ -113,6 +135,7 @@
       "analyzers": {
         "elf": true,
         "pe": true,
+        "steganography": true,
         "tar": true,
         "zip": true
       },
@@ -142,6 +165,7 @@
         "zlib": true
       },
       "detection_rule_packs": [],
+      "enable_assurance": true,
       "enable_correlation": false,
       "enable_depth_based_limits": true,
       "enable_enrichment_cache": true,
@@ -155,8 +179,14 @@
       "geo_db_path": null,
       "include_decision_trace": false,
       "log_level": "INFO",
+      "malicious_hashes_path": null,
       "max_compression_ratio": 100,
       "max_data_size": 52428800,
+      "max_lsb_carrier_bytes": 4194304,
+      "max_lsb_output_size": 1048576,
+      "max_media_artifact_size": 4194304,
+      "max_media_artifacts": 8,
+      "max_media_total_size": 8388608,
       "max_memory_mb": 1024,
       "max_node_count": 100,
       "max_recursion_depth": 5,
@@ -169,8 +199,11 @@
       "max_zip_total_size": 10485760,
       "min_score_threshold": 0.01,
       "plugin_dirs": [],
+      "provenance_attestations_dir": null,
+      "sandbox_attestations_dir": null,
       "seed": null,
       "strict": false,
+      "trusted_hashes_path": null,
       "vault_db_path": null,
       "vault_dir": null,
       "yara_rules_path": null

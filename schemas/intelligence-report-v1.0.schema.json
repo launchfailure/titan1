@@ -26,6 +26,7 @@
     "classification": {
       "type": "string",
       "enum": [
+        "NO_SIGNALS_DETECTED",
         "CLEAN",
         "LOW_RISK_ARTIFACT",
         "SUSPICIOUS_OBJECT",

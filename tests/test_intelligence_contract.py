@@ -39,6 +39,21 @@ def test_intelligence_output_matches_v1_schema():
     jsonschema.Draft202012Validator(schema).validate(sample)
 
 
+def test_incomplete_intelligence_output_matches_v1_schema():
+    jsonschema = pytest.importorskip("jsonschema")
+    schema = _load_json(SCHEMA_PATH)
+    sample = IntelligenceEngine().analyze(
+        {
+            "nodes": [],
+            "iocs": {},
+            "analysis_outcome": {"status": "unrecognized", "complete": False},
+        }
+    )
+
+    jsonschema.Draft202012Validator(schema).validate(sample)
+    assert sample["classification"] == "NO_SIGNALS_DETECTED"
+
+
 def test_intelligence_contract_is_deterministic():
     report = {
         "nodes": [

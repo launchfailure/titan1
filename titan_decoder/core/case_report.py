@@ -24,6 +24,7 @@ def build_case_report(
     artifact ranking across JSON, Markdown, and HTML outputs.
     """
     evidence = report.get("evidence") or {}
+    assurance = _normalize_assurance(report.get("assurance"))
     intelligence = _normalize_intelligence(report.get("intelligence"))
     threat_intelligence = _normalize_threat_intelligence(
         report.get("threat_intelligence")
@@ -37,6 +38,7 @@ def build_case_report(
     return {
         "meta": report.get("meta", {}),
         "node_count": report.get("node_count", 0),
+        "assurance": assurance,
         "intelligence": intelligence,
         "threat_intelligence": threat_intelligence,
         "iocs": iocs,
@@ -61,6 +63,10 @@ def to_markdown(case: Dict[str, Any]) -> str:
     meta = case.get("meta", {})
     lines.append("# Titan Case Report")
     lines.append("")
+
+    assurance = _normalize_assurance(case.get("assurance"))
+    if assurance:
+        lines.extend(_assurance_markdown(assurance))
 
     intelligence = _normalize_intelligence(case.get("intelligence"))
     if intelligence:
@@ -168,6 +174,7 @@ def to_html(case: Dict[str, Any]) -> str:
     forensics = case.get("forensics", {}) or {}
     recs = case.get("recommendations", [])
     ev = case.get("evidence") or {}
+    assurance = _normalize_assurance(case.get("assurance"))
     intelligence = _normalize_intelligence(case.get("intelligence"))
     threat = _normalize_threat_intelligence(case.get("threat_intelligence"))
 
@@ -209,6 +216,7 @@ def to_html(case: Dict[str, Any]) -> str:
             "</tr>"
         )
 
+    assurance_html = _assurance_html(assurance, esc) if assurance else ""
     intelligence_html = _intelligence_html(intelligence, esc) if intelligence else ""
     threat_html = _threat_html(threat, esc) if threat else ""
 
@@ -248,6 +256,7 @@ def to_html(case: Dict[str, Any]) -> str:
             "</head>",
             "<body>",
             "  <h1>Titan Case Report</h1>",
+            assurance_html,
             intelligence_html,
             threat_html,
             "  <h2>Meta</h2>",
@@ -268,6 +277,90 @@ def to_html(case: Dict[str, Any]) -> str:
             f"  <ul>{rec_items}</ul>",
             "</body>",
             "</html>",
+        ]
+    )
+
+
+def _normalize_assurance(value: Any) -> Dict[str, Any]:
+    """Return a renderer-safe copy of an Assurance v1-compatible object."""
+    if not isinstance(value, Mapping) or not value:
+        return {}
+    controls = value.get("controls")
+    blockers = value.get("blockers")
+    return {
+        "version": value.get("version"),
+        "verdict": value.get("verdict"),
+        "confidence": value.get("confidence"),
+        "summary": value.get("summary"),
+        "controls_satisfied": value.get("controls_satisfied"),
+        "controls_total": value.get("controls_total"),
+        "controls": list(controls)
+        if isinstance(controls, Sequence) and not isinstance(controls, (str, bytes))
+        else [],
+        "blockers": list(blockers)
+        if isinstance(blockers, Sequence) and not isinstance(blockers, (str, bytes))
+        else [],
+        "safety_claim": value.get("safety_claim"),
+    }
+
+
+def _assurance_markdown(assurance: Dict[str, Any]) -> List[str]:
+    lines = [
+        "## Assurance Verdict",
+        "",
+        f"- **Verdict:** {assurance.get('verdict') or 'NOT ASSESSED'}",
+        f"- **Confidence:** {_format_confidence(assurance.get('confidence'))}",
+        "- **Controls satisfied:** "
+        f"{assurance.get('controls_satisfied', 0)}/{assurance.get('controls_total', 6)}",
+        f"- **Summary:** {assurance.get('summary') or 'No summary available.'}",
+        f"- **Safety claim:** {assurance.get('safety_claim') or 'None'}",
+        "",
+        "### Assurance Controls",
+        "",
+        "| Control | State | Summary |",
+        "|---|---|---|",
+    ]
+    for control in assurance.get("controls") or []:
+        if not isinstance(control, Mapping):
+            continue
+        lines.append(
+            f"| {_md_cell(control.get('label') or control.get('id'))} | "
+            f"{_md_cell(control.get('state'))} | "
+            f"{_md_cell(control.get('summary'))} |"
+        )
+    lines.append("")
+    return lines
+
+
+def _assurance_html(assurance: Dict[str, Any], esc) -> str:
+    rows = []
+    for control in assurance.get("controls") or []:
+        if not isinstance(control, Mapping):
+            continue
+        rows.append(
+            "<tr>"
+            f"<td>{esc(control.get('label') or control.get('id'))}</td>"
+            f"<td>{esc(control.get('state'))}</td>"
+            f"<td>{esc(control.get('summary'))}</td>"
+            "</tr>"
+        )
+    return "\n".join(
+        [
+            "  <section id='assurance'>",
+            "    <h2>Assurance Verdict</h2>",
+            "    <div class='intelligence-summary'>",
+            "      <div class='metric'><span class='metric-label'>Verdict</span>"
+            f"<span class='metric-value'>{esc(assurance.get('verdict') or 'NOT ASSESSED')}</span></div>",
+            "      <div class='metric'><span class='metric-label'>Controls</span>"
+            f"<span class='metric-value'>{esc(assurance.get('controls_satisfied', 0))}/{esc(assurance.get('controls_total', 6))}</span></div>",
+            "    </div>",
+            f"    <p>{esc(assurance.get('summary') or '')}</p>",
+            f"    <p><strong>Safety claim:</strong> {esc(assurance.get('safety_claim') or 'None')}</p>",
+            "    <table>",
+            "      <thead><tr><th>Control</th><th>State</th><th>Summary</th></tr></thead>",
+            f"      <tbody>{''.join(rows)}</tbody>",
+            "    </table>",
+            "  </section>",
         ]
     )
 

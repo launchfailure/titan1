@@ -209,4 +209,80 @@ def test_dense_scrollable_shell_and_quick_start_actions():
 
 def test_short_integrated_ui_command_is_packaged():
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert 'titan-ui = "titan_decoder.workbench_ui.app:main"' in pyproject
+    assert 'titan-ui = "titan_decoder.desktop_ui.app:main"' in pyproject
+    assert 'titan-tui = "titan_decoder.workbench_ui.app:main"' in pyproject
+
+
+def test_terminal_drop_path_normalization():
+    import pytest
+
+    pytest.importorskip("textual")
+    from titan_decoder.workbench_ui.app import TitanWorkbenchApp
+
+    assert (
+        TitanWorkbenchApp._normalize_input_path(
+            r'"C:\Users\Analyst\Evidence Files\sample.bin"', posix=True
+        )
+        == "/mnt/c/Users/Analyst/Evidence Files/sample.bin"
+    )
+    assert (
+        TitanWorkbenchApp._normalize_input_path(
+            "file:///C:/Users/Analyst/sample.bin", posix=True
+        )
+        == "/mnt/c/Users/Analyst/sample.bin"
+    )
+    assert (
+        TitanWorkbenchApp._normalize_input_path(
+            "'/home/james/Evidence Files/sample.bin'", posix=True
+        )
+        == "/home/james/Evidence Files/sample.bin"
+    )
+
+
+def test_terminal_drop_loads_path_and_starts_analysis(tmp_path, monkeypatch):
+    import asyncio
+    import pytest
+
+    pytest.importorskip("textual")
+    from textual.events import Paste
+    from textual.widgets import Input, OptionList
+
+    from titan_decoder.workbench_ui.app import TitanWorkbenchApp
+
+    sample = tmp_path / "sample evidence.bin"
+    sample.write_bytes(b"evidence")
+    started = []
+    monkeypatch.setattr(
+        TitanWorkbenchApp,
+        "start_analysis",
+        lambda self: started.append(self.query_one("#evidence-input", Input).value),
+    )
+
+    async def exercise():
+        app = TitanWorkbenchApp()
+        async with app.run_test() as pilot:
+            field = app.query_one("#evidence-input", Input)
+            field.focus()
+            await pilot.pause()
+            app.post_message(Paste(f'"{sample}"'))
+            await pilot.pause()
+            assert field.value == str(sample)
+            assert field.has_focus
+            assert started == [str(sample)]
+
+            # Paste events bubble to the app when another control has focus,
+            # so dropping on the visual workbench still loads the evidence.
+            quick_start = app.query_one("#quick-start-list", OptionList)
+            quick_start.focus()
+            await pilot.pause()
+            app.post_message(Paste(str(sample)))
+            # Under a heavily loaded full-suite run, Textual can need one
+            # extra message-loop turn to deliver a paste posted directly to
+            # the app after focus changes.
+            for _ in range(3):
+                await pilot.pause()
+                if len(started) == 2:
+                    break
+            assert started == [str(sample), str(sample)]
+
+    asyncio.run(exercise())
