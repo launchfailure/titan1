@@ -113,8 +113,8 @@ The install provides:
 - `titan` — interactive menu-driven interface
 - `titan-decoder` — scriptable CLI
 - `titan-workbench` — dependency-free report explorer
-- `titan-workbench-ui` — integrated Textual forensic workbench (optional extra)
-- `titan-ui` — short alias for the integrated Textual forensic workbench
+- `titan-workbench-ui` / `titan-tui` — integrated Textual terminal workbench
+- `titan-ui` — native PySide6 desktop workbench using the reference pixel layout
 - `titan-analyst` — grounded local analyst
 
 ## Quick start
@@ -123,13 +123,15 @@ The install provides:
 titan-decoder --file suspicious.bin --out report.json
 ```
 
-Launch the integrated forensic workbench after installing its extra:
+Launch the native desktop workbench after installing its extra:
 
 ```bash
+pip install -e '.[desktop-ui]'
 titan-ui
 ```
 
-`titan-workbench-ui` remains available as the longer, backwards-compatible name.
+For the terminal version, install `.[workbench-ui]` and run `titan-tui` or
+`titan-workbench-ui`.
 
 Add detections, risk, a readable explanation, and a separate Intelligence object:
 
@@ -314,6 +316,7 @@ See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 | [Architecture](docs/ARCHITECTURE.md) | Components, boundaries, and system diagrams |
 | [CLI reference](docs/CLI_REFERENCE.md) | Command groups, outputs, and examples |
 | [Integrated workbench](docs/WORKBENCH_INTEGRATED_BUILD.md) | Textual UI installation, operation, and safety behavior |
+| [Assurance pipeline](docs/ASSURANCE_PIPELINE.md) | Six fail-closed controls, verdict policy, VM and provenance attestations |
 | [Pipelines](docs/PIPELINES.md) | End-to-end execution, decoder engine, and analyzer pipeline |
 | [Developer guide](docs/DEVELOPER_GUIDE.md) | Repository layout and implementation workflow |
 | [Intelligence Layer](docs/INTELLIGENCE_LAYER.md) | Signals, classification, ranking, and compatibility |

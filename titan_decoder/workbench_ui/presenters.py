@@ -43,8 +43,44 @@ def summary_text(snapshot: AnalysisSnapshot) -> str:
         )
 
     nodes = snapshot.nodes
+    outcome = snapshot.analysis_outcome
+    outcome_status = str(outcome.get("status") or "completed")
+    status_labels = {
+        "empty_input": "No input",
+        "partial_decode": "Partial decode",
+        "unrecognized": "Unrecognized payload",
+        "limited": "Incomplete (safety limit)",
+        "decoded": "Decoded",
+        "analyzed": "Analyzed",
+        "completed": "Completed",
+    }
+    status = status_labels.get(outcome_status, outcome_status.replace("_", " ").title())
+    explanation = str(outcome.get("summary") or "").strip()
+    incomplete = outcome_status in {
+        "empty_input",
+        "partial_decode",
+        "unrecognized",
+        "limited",
+    }
+    interpretation = (
+        "Not fully interpreted" if incomplete else "Readable/recognized endpoint"
+    )
+    assurance = snapshot.assurance
+    verdict = str(assurance.get("verdict") or "NOT ASSESSED").replace("_", " ")
+    satisfied = assurance.get("controls_satisfied")
+    total = assurance.get("controls_total")
+    coverage = (
+        f"{satisfied}/{total} controls"
+        if isinstance(satisfied, int) and isinstance(total, int)
+        else "not available"
+    )
+    detail = f"\n[b]Explanation[/b]     {markup_escape(explanation)}" if explanation else ""
     return (
-        f"[b]Status[/b]          Completed\n"
+        f"[b]Verdict[/b]         {markup_escape(verdict)}\n"
+        f"[b]Assurance[/b]       {markup_escape(coverage)}\n"
+        f"[b]Status[/b]          {markup_escape(status)}\n"
+        f"[b]Interpretation[/b]  {interpretation}"
+        f"{detail}\n"
         f"[b]Profile[/b]         Titan engine\n"
         f"[b]Duration[/b]        {snapshot.duration_seconds:.2f}s\n"
         f"[b]Decode nodes[/b]    {len(nodes)}\n"
@@ -62,14 +98,42 @@ def findings_text(snapshot: AnalysisSnapshot) -> str:
         lines.append(f"[b]Detections[/b]  {len(snapshot.detections)}")
     if snapshot.relationships:
         lines.append(f"[b]Relationships[/b]  {len(snapshot.relationships)}")
+    assurance = snapshot.assurance
+    controls = assurance.get("controls") if isinstance(assurance, dict) else []
+    if isinstance(controls, list) and controls:
+        lines.append("[b]Assurance controls[/b]")
+        for control in controls[:6]:
+            if not isinstance(control, dict):
+                continue
+            state = str(control.get("state") or "unknown").upper()
+            label = str(control.get("label") or control.get("id") or "control")
+            lines.append(f"• {markup_escape(state):<14} {markup_escape(label)}")
+    blockers = assurance.get("blockers") if isinstance(assurance, dict) else []
+    if isinstance(blockers, list) and blockers:
+        reasons = [
+            str(item.get("summary") or "")
+            for item in blockers[:3]
+            if isinstance(item, dict) and item.get("summary")
+        ]
+        if reasons:
+            lines.append("[b]Assurance blockers[/b]")
+            lines.extend(f"• {markup_escape(reason)}" for reason in reasons)
     if lines:
         return "\n".join(lines)
     if snapshot.report:
+        outcome_status = str(snapshot.analysis_outcome.get("status") or "")
+        if outcome_status in {"partial_decode", "unrecognized", "limited"}:
+            return (
+                "No indicators or detections extracted from interpretable content.\n"
+                "Opaque or incomplete data remains. This is not a benign verdict."
+            )
+        if outcome_status == "empty_input":
+            return "No evidence bytes were available to inspect."
         # An analysis ran but surfaced no indicators; without this hint the
         # empty card reads as if decoding itself failed.
         return (
             "No indicators or detections extracted.\n"
-            "Decoded content is in the DECODE TREE tab."
+            "Decoded artifacts are summarized in the analysis overview."
         )
     return "No findings loaded."
 
@@ -78,17 +142,42 @@ def decode_tree_text(snapshot: AnalysisSnapshot) -> str:
     if not snapshot.nodes:
         return "No decode tree available."
     lines = []
+    outcome = snapshot.analysis_outcome
+    opaque_ids = set(outcome.get("opaque_terminal_node_ids") or [])
+    weak_ids = {
+        item.get("node_id")
+        for item in outcome.get("weak_decodes") or []
+        if isinstance(item, dict)
+    }
     for node in snapshot.nodes[:300]:
         try:
             depth = int(node.get("depth", 0) or 0)
         except (TypeError, ValueError):
             depth = 0
         depth = min(max(depth, 0), 50)
+        node_id = node.get("id")
         method = node.get("method") or node.get("decoder_used") or "input"
+        if method == "ANALYZE" and node_id in opaque_ids:
+            method = "STOP_UNRECOGNIZED"
         ctype = node.get("content_type") or "unknown"
+        score_text = ""
+        if node.get("decoder_used"):
+            try:
+                score = float(node.get("decode_score", 0) or 0)
+            except (TypeError, ValueError):
+                score = 0.0
+            confidence = " LOW CONFIDENCE" if node_id in weak_ids else ""
+            score_text = f" score={score:.3f}{confidence}"
         lines.append(
             f"{'  ' * depth}• {markup_escape(method)} [{markup_escape(ctype)}]"
+            f"{score_text}"
         )
+        reason = str(node.get("termination_reason") or "").strip()
+        if reason and (
+            node.get("analysis_state") in {"terminal", "duplicate"}
+            or node_id in weak_ids
+        ):
+            lines.append(f"{'  ' * depth}    [#f0ca70]{short(reason, 160)}[/#f0ca70]")
         # Show each node's bounded content preview so the decoded payload is
         # actually readable here — the report does not retain raw bytes.
         preview = str(node.get("content_preview") or "").strip()

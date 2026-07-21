@@ -15,6 +15,10 @@ Titan's primary JSON report is the contract between analysis, interpretation, ex
 - `threat_intelligence` — versioned ATT&CK techniques, LOLBins, behavioral tags, and relationships.
 - `enrichment` — optional provider output.
 
+The additive `analysis_outcome` section records decoding coverage and opaque
+terminal payloads. `static_analysis` records offline provider/rule coverage,
+and `assurance` contains the six-control fail-closed verdict and blockers.
+
 ## Versioning
 
 The primary report schema version is defined in the engine. The Intelligence sub-object has its own JSON Schema and compatibility tests because it is consumed independently.

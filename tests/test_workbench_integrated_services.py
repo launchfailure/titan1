@@ -16,7 +16,15 @@ def test_decoder_inventory_is_real():
 
 def test_system_metrics_have_expected_fields():
     metrics = WorkbenchServices().system_metrics()
-    assert set(metrics) == {"cpu", "memory", "workers", "disk"}
+    assert set(metrics) == {
+        "cpu",
+        "memory",
+        "workers",
+        "disk",
+        "cpu_percent",
+        "memory_percent",
+        "disk_percent",
+    }
 
 
 def test_system_metrics_work_without_unix_resource_module(monkeypatch):

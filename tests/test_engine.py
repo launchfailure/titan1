@@ -15,6 +15,8 @@ def test_base64_decoding():
 
     assert report["node_count"] >= 2  # Original + decoded
     assert any("Hello, World!" in node["content_preview"] for node in report["nodes"])
+    assert report["analysis_outcome"]["status"] == "decoded"
+    assert report["analysis_outcome"]["complete"] is True
 
 
 def test_handles_empty_file_gracefully():
@@ -24,6 +26,33 @@ def test_handles_empty_file_gracefully():
     # Should produce zero or minimal nodes and not crash
     assert "nodes" in report
     assert report["node_count"] >= 0
+    assert report["analysis_outcome"]["status"] == "empty_input"
+    assert report["analysis_outcome"]["complete"] is False
+
+
+def test_analysis_outcome_reports_partial_decode_and_weak_candidate():
+    inner = b"<" + (b"A" * 240) + b">"
+    data = inner
+    for _ in range(3):
+        data = base64.b64encode(data)
+
+    report = TitanEngine().run_analysis(data)
+    outcome = report["analysis_outcome"]
+
+    assert outcome["status"] == "partial_decode"
+    assert outcome["complete"] is False
+    assert outcome["opaque_terminal_node_ids"]
+    assert "unrecognized terminal payload" in outcome["summary"]
+    terminal = report["nodes"][outcome["opaque_terminal_node_ids"][0]]
+    assert terminal["analysis_state"] in {"terminal", "duplicate"}
+    assert terminal["termination_reason"]
+
+
+def test_analysis_outcome_reports_unrecognized_binary():
+    report = TitanEngine().run_analysis(bytes(range(256)))
+
+    assert report["analysis_outcome"]["status"] == "unrecognized"
+    assert report["analysis_outcome"]["complete"] is False
 
 
 def test_gzip_decoding():

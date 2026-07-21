@@ -241,6 +241,25 @@ class CorrelationRulesEngine:
             )
         )
 
+        # Rule 8: payload hidden in image/media data.  This indicates a
+        # concealment technique, not by itself a malicious verdict; recovered
+        # content is separately scanned by all normal Titan controls.
+        self.rules.append(
+            DetectionRule(
+                rule_id="TITAN-008",
+                name="Hidden Media Payload",
+                description=(
+                    "A payload was recovered from image/media trailing data, "
+                    "metadata, or least-significant bits"
+                ),
+                severity="medium",
+                detect_fn=lambda report, iocs: self._detect_hidden_media_payload(
+                    report
+                ),
+                attack_ids=["T1027.003"],
+            )
+        )
+
         logger.info(f"Loaded {len(self.rules)} correlation rules")
 
     def _detect_deep_base64(self, report: Dict[str, Any]) -> bool:
@@ -403,6 +422,18 @@ class CorrelationRulesEngine:
             if "MZ" in preview or "ELF" in preview:
                 return has_pdf
 
+        return False
+
+    def _detect_hidden_media_payload(self, report: Dict[str, Any]) -> bool:
+        """Detect successful output from the bounded media analyzer."""
+        for node in report.get("nodes", []):
+            method = str(node.get("method") or "").lower()
+            decoder = str(node.get("decoder_used") or "").lower()
+            artifact = str(node.get("artifact_name") or "").lower()
+            if "steganography" in method or "steganography" in decoder:
+                return True
+            if artifact.startswith("steg_"):
+                return True
         return False
 
     def evaluate_all(

@@ -11,6 +11,33 @@ titan-ui
 
 The existing `titan-workbench-ui` command remains an equivalent alias.
 
+## Terminal file drops
+
+Titan accepts a single file or folder dropped anywhere in the workbench when
+the terminal emulator represents the drop as a bracketed paste. The path is
+placed in the evidence input and analysis starts immediately. Quoted paths,
+`file://` URIs, native POSIX paths, and Windows drive paths pasted into a WSL
+session are normalized before they are resolved.
+
+The terminal emulator still owns the operating-system drop operation. If it
+does not emit the path, click the drop zone and paste the path manually. A drop
+is only auto-analyzed when it resolves to an existing local file or directory;
+ordinary pasted text continues to be treated as evidence.
+
+## Analysis outcomes
+
+The Summary tab distinguishes fully interpreted content from incomplete work.
+Reports carry an `analysis_outcome` with one of `decoded`, `analyzed`,
+`partial_decode`, `unrecognized`, `limited`, or `empty_input`. Partial and
+unrecognized outcomes identify opaque terminal nodes and explicitly warn that
+the absence of indicators is not a benign verdict. The Decode Tree displays
+decoder scores, low-confidence labels, and the reason processing stopped.
+
+The Summary begins with the assurance verdict and completed-control count.
+Assurance blockers are shown in the findings card. The workbench automatically
+runs Titan's offline static suite; VM and provenance controls consume the
+hash-bound provider attestations configured in `~/.titan_decoder/config.json`.
+
 ## Implemented
 
 - permanent left, center, and right columns;

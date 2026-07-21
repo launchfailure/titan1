@@ -7,6 +7,7 @@ def test_load_starter_rules():
     rule_ids = [r.rule_id for r in engine.rules]
     assert "TITAN-001" in rule_ids
     assert "TITAN-007" in rule_ids
+    assert "TITAN-008" in rule_ids
 
 
 def test_deep_base64_detection():

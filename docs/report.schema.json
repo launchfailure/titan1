@@ -43,6 +43,11 @@
           "decode_score": {"type": "number"},
           "decoder_used": {"type": ["string", "null"]},
           "pruned": {"type": "boolean"},
+          "analysis_state": {
+            "type": "string",
+            "enum": ["pending", "decoded", "extracted", "terminal", "duplicate"]
+          },
+          "termination_reason": {"type": ["string", "null"]},
           "artifact_name": {"type": ["string", "null"]},
           "provenance": {
             "type": ["object", "null"],
@@ -62,6 +67,119 @@
       }
     },
     "iocs": {"type": "object", "additionalProperties": true},
+    "analysis_outcome": {
+      "type": "object",
+      "required": ["status", "complete", "summary"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "empty_input",
+            "partial_decode",
+            "unrecognized",
+            "limited",
+            "decoded",
+            "analyzed"
+          ]
+        },
+        "complete": {"type": "boolean"},
+        "summary": {"type": "string"},
+        "terminal_node_ids": {"type": "array", "items": {"type": "integer"}},
+        "opaque_terminal_node_ids": {
+          "type": "array",
+          "items": {"type": "integer"}
+        },
+        "weak_decodes": {"type": "array"},
+        "limitations": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "static_analysis": {
+      "type": "object",
+      "required": ["completed", "offline", "providers", "rules_evaluated", "detection_count"],
+      "properties": {
+        "completed": {"type": "boolean"},
+        "offline": {"type": "boolean"},
+        "providers": {"type": "array", "items": {"type": "string"}},
+        "rules_evaluated": {"type": "integer", "minimum": 0},
+        "rule_packs": {"type": "array"},
+        "detection_count": {"type": "integer", "minimum": 0},
+        "strings_extracted": {"type": "integer", "minimum": 0},
+        "yara": {
+          "type": "object",
+          "properties": {
+            "state": {
+              "type": "string",
+              "enum": ["not_configured", "completed", "unavailable"]
+            },
+            "matches": {"type": "array"},
+            "reason": {"type": "string"}
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "assurance": {
+      "type": "object",
+      "required": [
+        "version",
+        "verdict",
+        "confidence",
+        "summary",
+        "controls_satisfied",
+        "controls_total",
+        "all_required_controls_passed",
+        "controls",
+        "blockers",
+        "safety_claim"
+      ],
+      "properties": {
+        "version": {"type": "string", "const": "1.0"},
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "MALICIOUS",
+            "SUSPICIOUS",
+            "NO_MALICIOUS_EVIDENCE",
+            "INDETERMINATE"
+          ]
+        },
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "summary": {"type": "string", "minLength": 1},
+        "root_sha256": {"type": ["string", "null"]},
+        "controls_satisfied": {"type": "integer", "minimum": 0, "maximum": 6},
+        "controls_total": {"type": "integer", "const": 6},
+        "all_required_controls_passed": {"type": "boolean"},
+        "controls": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "state", "summary"],
+            "properties": {
+              "id": {"type": "string"},
+              "label": {"type": "string"},
+              "state": {
+                "type": "string",
+                "enum": ["pass", "fail", "unavailable", "not_applicable"]
+              },
+              "summary": {"type": "string"},
+              "evidence": {},
+              "disposition": {
+                "type": "string",
+                "enum": ["suspicious", "malicious"]
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "blockers": {"type": "array"},
+        "safety_claim": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
     "run_manifest": {
       "type": "object",
       "required": ["tool", "limits", "components", "effective_config", "environment"],

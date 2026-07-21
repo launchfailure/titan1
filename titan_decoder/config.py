@@ -29,6 +29,12 @@ class Config:
         "max_tar_files": 25,
         "max_tar_total_size": 10 * 1024 * 1024,  # 10MB
         "max_tar_file_size": 50 * 1024 * 1024,  # 50MB per file
+        # Static image/media steganography extraction bounds.
+        "max_media_artifacts": 8,
+        "max_media_total_size": 8 * 1024 * 1024,
+        "max_media_artifact_size": 4 * 1024 * 1024,
+        "max_lsb_carrier_bytes": 4 * 1024 * 1024,
+        "max_lsb_output_size": 1024 * 1024,
         # Pruning policies (each toggles a rule in PruningEngine)
         "enable_quality_pruning": True,
         "enable_resource_pruning": True,
@@ -67,6 +73,7 @@ class Config:
             "tar": True,
             "pe": True,
             "elf": True,
+            "steganography": True,
         },
         # Forensics / enrichment
         "enable_geo_enrichment": False,  # Optional MaxMind/GeoIP if available
@@ -79,6 +86,13 @@ class Config:
         "correlation_db_path": None,
         "enable_yara": False,  # Optional YARA scanning on decoded artifacts
         "yara_rules_path": None,
+        # Fail-closed assurance providers. Attestations are JSON documents named
+        # <sha256>.json and are accepted only when their embedded hash matches.
+        "enable_assurance": True,
+        "malicious_hashes_path": None,
+        "trusted_hashes_path": None,
+        "sandbox_attestations_dir": None,
+        "provenance_attestations_dir": None,
         # Reproducibility / strictness
         "seed": None,  # Optional deterministic seed recorded in run_manifest
         "strict": False,  # Optional CLI strict mode can enforce report contract

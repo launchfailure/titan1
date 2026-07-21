@@ -61,6 +61,12 @@ existing signal semantics requires a new contract version.
 | 61–80 | `HIGH_RISK_PAYLOAD` |
 | 81–100 | `LIKELY_MALICIOUS` |
 
+If analysis stops with an empty, partial, unrecognized, or safety-limited
+payload and no intelligence signals are found, the classification is
+`NO_SIGNALS_DETECTED` instead of `CLEAN`. This distinction means the engine
+found no risk signal, but did not obtain enough interpreted content to make a
+benign assessment; the recommendation explicitly requires manual review.
+
 The thresholds are compatibility-sensitive and covered by tests. Changes must
 be deliberate and should normally require a new calibration corpus or contract
 version.

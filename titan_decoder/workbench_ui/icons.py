@@ -1,0 +1,30 @@
+"""Monochrome terminal-safe iconography for the integrated workbench.
+
+These glyphs intentionally avoid emoji presentation so the UI stays aligned
+in Windows Terminal, WSL, and ordinary Linux terminals.
+"""
+
+SHIELD = "⛊"
+HOME = "⌂"
+SEARCH = "⌕"
+CODE = "</>"
+FOLDER = "▱"
+MEMORY = "▦"
+FILE = "▤"
+GRAPH = "⌘"
+PLUGIN = "◆"
+TARGET = "◎"
+SETTINGS = "⚙"
+BOOK = "▣"
+UPLOAD = "⇧"
+PASTE = "▧"
+HEX = "▦"
+LOAD = "▱"
+RECENT = "◴"
+DOCUMENT = "▤"
+COPY = "□"
+SAVE = "▣"
+RUN = "▷"
+CHECK = "✓"
+DOT = "●"
+CHEVRON = "›"

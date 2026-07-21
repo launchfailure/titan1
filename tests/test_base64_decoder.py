@@ -56,3 +56,37 @@ def test_can_decode_consistent_with_decode():
     assert dec.can_decode(enc) is True
     out, ok = dec.decode(enc)
     assert ok is True and out == b"the quick brown fox jumps over the lazy dog"
+
+
+def test_balanced_wrapper_and_missing_padding_are_normalized():
+    dec = Base64Decoder()
+    original = b"opaque binary payload\x00\xff"
+    unpadded = base64.b64encode(original).rstrip(b"=")
+    wrapped = b"<" + unpadded + b">"
+
+    assert dec.can_decode(wrapped) is True
+    out, ok = dec.decode(wrapped)
+    assert ok is True
+    assert out == original
+
+
+def test_relaxed_base64_requires_a_balanced_wrapper():
+    dec = Base64Decoder()
+    unpadded = base64.b64encode(b"opaque binary payload!").rstrip(b"=")
+
+    for candidate in (unpadded, b"<" + unpadded, unpadded + b">"):
+        assert dec.can_decode(candidate) is False
+        out, ok = dec.decode(candidate)
+        assert ok is False
+        assert out == candidate
+
+
+def test_long_angle_prefixed_base64_tolerates_missing_closer():
+    dec = Base64Decoder()
+    original = bytes(range(96))
+    candidate = b"<" + base64.b64encode(original).rstrip(b"=")
+
+    assert dec.can_decode(candidate) is True
+    out, ok = dec.decode(candidate)
+    assert ok is True
+    assert out == original

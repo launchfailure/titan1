@@ -174,14 +174,33 @@ class IntelligenceEngine:
             )
 
         score = max(0, min(score, 100))
+        outcome_status = str(
+            (report.get("analysis_outcome") or {}).get("status") or ""
+        )
+        incomplete_without_signals = score == 0 and outcome_status in {
+            "empty_input",
+            "partial_decode",
+            "unrecognized",
+            "limited",
+        }
+        classification = (
+            "NO_SIGNALS_DETECTED"
+            if incomplete_without_signals
+            else self.classify(score)
+        )
+        recommendation = (
+            "Manual review required: analysis did not fully interpret the payload"
+            if incomplete_without_signals
+            else self.recommendation(score)
+        )
         return {
             "version": "1.0",
             "intelligence_score": score,
-            "classification": self.classify(score),
+            "classification": classification,
             "confidence": round(score / 100.0, 2),
             "signals": signals,
             "top_artifacts": self.rank_nodes(nodes, limit=5),
-            "recommendation": self.recommendation(score),
+            "recommendation": recommendation,
         }
 
     def rank_nodes(

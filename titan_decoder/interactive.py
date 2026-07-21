@@ -25,6 +25,7 @@ from typing import Callable, List, Optional, Tuple
 from . import __version__ as TITAN_VERSION
 from .config import Config
 from .core.engine import TitanEngine
+from .core.analyzers.steganography import MediaPayloadDecoder
 from .decoders.base import (
     ASN1Decoder,
     Base32Decoder,
@@ -226,6 +227,12 @@ def build_decoder_registry() -> List[DecoderChoice]:
             "ASN.1 / DER",
             "Parse ASN.1 DER structures",
             lambda: ASN1Decoder(enabled=True),
+        ),
+        DecoderChoice(
+            "steganography_media",
+            "Steganography / Media",
+            "Recover hidden or appended payloads from images and media",
+            lambda: MediaPayloadDecoder(_MAX_DECOMPRESSED),
         ),
     ]
 
