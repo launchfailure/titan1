@@ -156,8 +156,12 @@ def build_decoder_registry() -> List[DecoderChoice]:
             "base32", "Base32", "RFC 4648 Base32", lambda: Base32Decoder(enabled=True)
         ),
         DecoderChoice("ascii85", "ASCII85", "Adobe ASCII85 / Base85", Ascii85Decoder),
-        DecoderChoice("base58", "Base58", "Labeled or strongly recognized Base58", Base58Decoder),
-        DecoderChoice("base91", "Base91", "Labeled or strongly recognized Base91", Base91Decoder),
+        DecoderChoice(
+            "base58", "Base58", "Labeled or strongly recognized Base58", Base58Decoder
+        ),
+        DecoderChoice(
+            "base91", "Base91", "Labeled or strongly recognized Base91", Base91Decoder
+        ),
         DecoderChoice("hex", "Hex", "Hexadecimal (e.g. 48656c6c6f)", HexDecoder),
         DecoderChoice(
             "url", "URL / percent", "URL percent-encoding (%20 etc.)", URLDecoder

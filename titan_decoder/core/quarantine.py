@@ -162,7 +162,9 @@ class QuarantineVault:
         record = self.get(record_id)
         object_path = Path(record.object_path)
         if not object_path.is_file() or _hash_file(object_path) != record.sha256:
-            raise RuntimeError("quarantine object is missing or failed hash verification")
+            raise RuntimeError(
+                "quarantine object is missing or failed hash verification"
+            )
         destination = (
             destination.expanduser()
             if destination is not None

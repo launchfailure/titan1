@@ -268,9 +268,7 @@ class TitanEngine:
         # Initialize analyzers
         self.analyzers: List[Analyzer] = []
         structured_config = {
-            "max_structured_artifacts": self.config.get(
-                "max_structured_artifacts", 32
-            ),
+            "max_structured_artifacts": self.config.get("max_structured_artifacts", 32),
             "max_structured_total_size": self.config.get(
                 "max_structured_total_size", 16 * 1024 * 1024
             ),

@@ -71,8 +71,10 @@ class EmailAnalyzer(Analyzer):
         return "Email"
 
     def can_analyze(self, data: bytes) -> bool:
-        header = data[:64 * 1024]
-        return bool(b"\n\n" in header.replace(b"\r\n", b"\n") and self._HEADER.search(header))
+        header = data[: 64 * 1024]
+        return bool(
+            b"\n\n" in header.replace(b"\r\n", b"\n") and self._HEADER.search(header)
+        )
 
     def analyze(self, data: bytes) -> list[tuple[str, bytes]]:
         if not self.can_analyze(data):
@@ -115,7 +117,11 @@ class EmailAnalyzer(Analyzer):
                 payload = None
             if not isinstance(payload, bytes) or not payload:
                 continue
-            if filename or disposition == "attachment" or not content_type.startswith("text/"):
+            if (
+                filename
+                or disposition == "attachment"
+                or not content_type.startswith("text/")
+            ):
                 attachment_index += 1
                 safe = _safe_name(str(filename or f"attachment_{attachment_index}.bin"))
                 if collector.add(f"email_{safe}", payload):
@@ -130,7 +136,9 @@ class EmailAnalyzer(Analyzer):
             collector.add(f"email_body_{body_index}.txt", normalized)
 
         encoded_summary = json.dumps(summary, indent=2, sort_keys=True).encode("utf-8")
-        collector.items.insert(0, ("email_summary.json", encoded_summary[: self.max_item]))
+        collector.items.insert(
+            0, ("email_summary.json", encoded_summary[: self.max_item])
+        )
         return collector.items[: self.max_artifacts]
 
 
@@ -174,7 +182,10 @@ class OfficeAnalyzer(Analyzer):
                 continue
             if info.file_size > self.max_item:
                 continue
-            if info.compress_size and info.file_size / info.compress_size > self.max_ratio:
+            if (
+                info.compress_size
+                and info.file_size / info.compress_size > self.max_ratio
+            ):
                 continue
             if total + info.file_size > self.max_total:
                 break
@@ -211,7 +222,9 @@ class OfficeAnalyzer(Analyzer):
                         lowered.endswith("vbaproject.bin")
                         or "/embeddings/" in lowered
                         or lowered.endswith(".rels")
-                        or lowered.endswith(("document.xml", "workbook.xml", "presentation.xml"))
+                        or lowered.endswith(
+                            ("document.xml", "workbook.xml", "presentation.xml")
+                        )
                     )
                     if not interesting:
                         continue
@@ -227,18 +240,28 @@ class OfficeAnalyzer(Analyzer):
                         summary["embedded_objects"].append(info.filename)
                         collector.add(f"office_{_safe_name(info.filename)}", content)
                     elif lowered.endswith(".rels"):
-                        for match in self._REL_TARGET.finditer(content[: self.max_item]):
-                            target = html.unescape(match.group(1).decode("utf-8", errors="replace"))
-                            if "://" in target or target.lower().startswith(("file:", "\\\\")):
+                        for match in self._REL_TARGET.finditer(
+                            content[: self.max_item]
+                        ):
+                            target = html.unescape(
+                                match.group(1).decode("utf-8", errors="replace")
+                            )
+                            if "://" in target or target.lower().startswith(
+                                ("file:", "\\\\")
+                            ):
                                 summary["external_relationships"].append(target[:4096])
                         collector.add(f"office_{_safe_name(info.filename)}", content)
                     else:
                         text = html.unescape(
-                            self._TAG.sub(b" ", content).decode("utf-8", errors="replace")
+                            self._TAG.sub(b" ", content).decode(
+                                "utf-8", errors="replace"
+                            )
                         )
                         text = re.sub(r"\s+", " ", text).strip()
                         if text:
-                            collector.add("office_document_text.txt", text.encode("utf-8"))
+                            collector.add(
+                                "office_document_text.txt", text.encode("utf-8")
+                            )
         except (OSError, zipfile.BadZipFile):
             return []
 
@@ -255,8 +278,20 @@ class ScriptAnalyzer(Analyzer):
     """Recognize and statically normalize suspicious script content."""
 
     _LANGUAGE_PATTERNS: dict[str, tuple[bytes, ...]] = {
-        "powershell": (b"powershell", b"invoke-", b"new-object", b"$env:", b"-encodedcommand"),
-        "javascript": (b"<script", b"function ", b"fromcharcode", b"activexobject", b"eval("),
+        "powershell": (
+            b"powershell",
+            b"invoke-",
+            b"new-object",
+            b"$env:",
+            b"-encodedcommand",
+        ),
+        "javascript": (
+            b"<script",
+            b"function ",
+            b"fromcharcode",
+            b"activexobject",
+            b"eval(",
+        ),
         "vbscript": (b"createobject(", b"wscript.", b"cscript", b"dim "),
         "batch": (b"@echo off", b"%comspec%", b"cmd.exe /c", b"setlocal"),
         "shell": (b"#!/bin/", b"curl ", b"wget ", b"chmod +x", b"/bin/sh"),
@@ -323,7 +358,10 @@ class ScriptAnalyzer(Analyzer):
             "execution_performed": False,
         }
         return [
-            ("script_summary.json", json.dumps(summary, indent=2, sort_keys=True).encode()),
+            (
+                "script_summary.json",
+                json.dumps(summary, indent=2, sort_keys=True).encode(),
+            ),
             *artifacts,
         ]
 
@@ -340,7 +378,11 @@ class LnkAnalyzer(Analyzer):
         return "WindowsLNK"
 
     def can_analyze(self, data: bytes) -> bool:
-        return len(data) >= 76 and data[:4] == b"L\x00\x00\x00" and data[4:20] == self._CLSID
+        return (
+            len(data) >= 76
+            and data[:4] == b"L\x00\x00\x00"
+            and data[4:20] == self._CLSID
+        )
 
     def analyze(self, data: bytes) -> list[tuple[str, bytes]]:
         if not self.can_analyze(data):
@@ -360,7 +402,9 @@ class LnkAnalyzer(Analyzer):
             for value in strings
             if "\\" in value
             or "://" in value
-            or value.lower().endswith((".exe", ".dll", ".ps1", ".js", ".vbs", ".bat", ".cmd"))
+            or value.lower().endswith(
+                (".exe", ".dll", ".ps1", ".js", ".vbs", ".bat", ".cmd")
+            )
         )[:256]
         summary = {
             "analyzer": "windows_lnk",
@@ -372,7 +416,12 @@ class LnkAnalyzer(Analyzer):
             "strings": interesting,
             "execution_performed": False,
         }
-        return [("lnk_metadata.json", json.dumps(summary, indent=2, sort_keys=True).encode())]
+        return [
+            (
+                "lnk_metadata.json",
+                json.dumps(summary, indent=2, sort_keys=True).encode(),
+            )
+        ]
 
 
 class OptionalArchiveAnalyzer(Analyzer):
@@ -451,7 +500,10 @@ class OptionalArchiveAnalyzer(Analyzer):
                 for info in archive.infolist()[: self.max_artifacts * 4]:
                     if info.isdir() or info.file_size > self.max_item:
                         continue
-                    if info.compress_size and info.file_size / info.compress_size > self.max_ratio:
+                    if (
+                        info.compress_size
+                        and info.file_size / info.compress_size > self.max_ratio
+                    ):
                         continue
                     collector.add(_safe_name(info.filename), archive.read(info))
             return collector.items

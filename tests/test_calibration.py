@@ -55,7 +55,5 @@ def test_cli_calibration_writes_report(tmp_path, capsys):
     )
 
     assert cli.handle_info_commands(args, Config(tmp_path / "missing.json")) == 0
-    assert json.loads(output.read_text(encoding="utf-8"))["quality_gate"][
-        "passed"
-    ]
+    assert json.loads(output.read_text(encoding="utf-8"))["quality_gate"]["passed"]
     assert json.loads(capsys.readouterr().out)["case_count"] == 20

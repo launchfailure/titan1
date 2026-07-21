@@ -141,7 +141,9 @@ def test_webp_xmp_metadata_payload_is_extracted():
     body = b"WEBP" + chunk
     carrier = b"RIFF" + len(body).to_bytes(4, "little") + body
     extracted = SteganographyAnalyzer().analyze(carrier)
-    assert any(name.startswith("steg_webp_xmp") and data == payload for name, data in extracted)
+    assert any(
+        name.startswith("steg_webp_xmp") and data == payload for name, data in extracted
+    )
 
 
 def test_tiff_ascii_tag_payload_is_extracted():
@@ -160,7 +162,9 @@ def test_mp3_id3_private_payload_is_extracted():
     frame = b"PRIV" + len(payload).to_bytes(4, "big") + b"\x00\x00" + payload
     carrier = b"ID3\x03\x00\x00" + _synchsafe(len(frame)) + frame
     extracted = SteganographyAnalyzer().analyze(carrier)
-    assert any(name.startswith("steg_mp3_priv") and data == payload for name, data in extracted)
+    assert any(
+        name.startswith("steg_mp3_priv") and data == payload for name, data in extracted
+    )
 
 
 def test_mp4_uuid_payload_is_extracted():
@@ -168,7 +172,9 @@ def test_mp4_uuid_payload_is_extracted():
     payload = b"PK\x03\x04 http://mp4.example/archive"
     uuid = (8 + len(payload)).to_bytes(4, "big") + b"uuid" + payload
     extracted = SteganographyAnalyzer().analyze(ftyp + uuid)
-    assert any(name.startswith("steg_mp4_uuid") and data == payload for name, data in extracted)
+    assert any(
+        name.startswith("steg_mp4_uuid") and data == payload for name, data in extracted
+    )
 
 
 def test_malformed_media_never_raises_or_extracts():

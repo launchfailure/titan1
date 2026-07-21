@@ -515,7 +515,13 @@ class SteganographyAnalyzer(Analyzer):
             if chunk_end > min(declared_end, len(data)):
                 break
             payload = data[payload_at:chunk_end]
-            if chunk_type in {b"EXIF", b"XMP ", b"ICCP", b"LIST", b"INFO"} and _is_suspicious(payload):
+            if chunk_type in {
+                b"EXIF",
+                b"XMP ",
+                b"ICCP",
+                b"LIST",
+                b"INFO",
+            } and _is_suspicious(payload):
                 label = chunk_type.decode("ascii", errors="replace").strip().lower()
                 found.append(
                     (f"steg_{carrier}_{label}{_payload_extension(payload)}", payload)
@@ -673,9 +679,7 @@ class SteganographyAnalyzer(Analyzer):
         return comments
 
     def _analyze_tiff(self, data: bytes) -> list[tuple[str, bytes]]:
-        endian: Literal["little", "big"] = (
-            "little" if data[:2] == b"II" else "big"
-        )
+        endian: Literal["little", "big"] = "little" if data[:2] == b"II" else "big"
         if len(data) < 8:
             return []
         ifd = int.from_bytes(data[4:8], endian)
@@ -746,7 +750,13 @@ class SteganographyAnalyzer(Analyzer):
             if size <= 0 or frame_end > end:
                 break
             payload = data[payload_at:frame_end]
-            if frame_id in {b"APIC", b"GEOB", b"COMM", b"TXXX", b"PRIV"} and _is_suspicious(payload):
+            if frame_id in {
+                b"APIC",
+                b"GEOB",
+                b"COMM",
+                b"TXXX",
+                b"PRIV",
+            } and _is_suspicious(payload):
                 label = frame_id.decode("ascii").lower()
                 found.append(
                     (f"steg_mp3_{label}{_payload_extension(payload)}", payload)
@@ -773,7 +783,14 @@ class SteganographyAnalyzer(Analyzer):
             if size < header or size > len(data) - position:
                 break
             payload = data[position + header : position + size]
-            if atom_type in {b"uuid", b"udta", b"meta", b"ilst", b"free", b"XMP_"} and _is_suspicious(payload):
+            if atom_type in {
+                b"uuid",
+                b"udta",
+                b"meta",
+                b"ilst",
+                b"free",
+                b"XMP_",
+            } and _is_suspicious(payload):
                 label = re.sub(rb"[^A-Za-z0-9]", b"_", atom_type).decode("ascii")
                 found.append(
                     (f"steg_mp4_{label}{_payload_extension(payload)}", payload)

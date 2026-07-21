@@ -48,7 +48,9 @@ def test_bridge_emits_progress_and_result(monkeypatch, capsys):
         "event": {"stage": "analysis", "percent": 50},
     }
     assert events[-1]["type"] == "result"
-    assert base64.b64decode(events[-1]["payload"]["decoded_output_base64"]) == b"decoded"
+    assert (
+        base64.b64decode(events[-1]["payload"]["decoded_output_base64"]) == b"decoded"
+    )
 
 
 def test_debian_service_routes_manual_decoder_to_backend(monkeypatch):
@@ -137,9 +139,7 @@ def test_debian_service_routes_deep_scan_to_backend(monkeypatch):
         return {"analyzed_count": 2, "results": []}
 
     monkeypatch.setattr(service, "_request", request)
-    result = service.deep_scan_path(
-        Path(r"C:\Evidence"), quarantine_malicious=True
-    )
+    result = service.deep_scan_path(Path(r"C:\Evidence"), quarantine_malicious=True)
 
     assert result["analyzed_count"] == 2
     assert seen["operation"] == "deep_scan_path"

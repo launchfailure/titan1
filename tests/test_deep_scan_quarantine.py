@@ -97,9 +97,10 @@ def test_deep_scan_is_deterministic_bounded_and_quarantines_malicious(tmp_path):
     ]
     malicious_result = summary["results"][1]
     assert malicious_result["verdict"] == "MALICIOUS"
-    assert malicious_result["quarantine"]["sha256"] == sha256(
-        malicious.read_bytes()
-    ).hexdigest()
+    assert (
+        malicious_result["quarantine"]["sha256"]
+        == sha256(malicious.read_bytes()).hexdigest()
+    )
     assert malicious.exists()  # copy is the non-destructive default
     assert len(vault.records()) == 1
     assert events[0]["current"] == 1 and events[-1]["current"] == 2

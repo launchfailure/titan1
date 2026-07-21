@@ -269,7 +269,7 @@ class Base91Decoder(Decoder):
 
     _ALPHABET = (
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-        "!#$%&()*+,./:;<=>?@[]^_`{|}~\""
+        '!#$%&()*+,./:;<=>?@[]^_`{|}~"'
     )
     _TABLE = {value: index for index, value in enumerate(_ALPHABET)}
 

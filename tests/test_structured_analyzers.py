@@ -27,9 +27,7 @@ def test_email_extracts_body_and_attachment_without_execution():
         b"--x\r\nContent-Type: text/plain\r\n\r\nSee http://body.example/\r\n"
         b"--x\r\nContent-Type: application/octet-stream\r\n"
         b"Content-Disposition: attachment; filename=invoice.exe\r\n"
-        b"Content-Transfer-Encoding: base64\r\n\r\n"
-        + attachment
-        + b"\r\n--x--\r\n"
+        b"Content-Transfer-Encoding: base64\r\n\r\n" + attachment + b"\r\n--x--\r\n"
     )
     artifacts = EmailAnalyzer().analyze(message)
     names = {name for name, _ in artifacts}
@@ -84,7 +82,9 @@ def test_script_analyzer_statically_deobfuscates_powershell_and_javascript():
     assert "powershell" in summary["languages"]
     assert summary["execution_performed"] is False
 
-    javascript = b"function x(){eval(String.fromCharCode(104,116,116,112)+':%2f%2fjs.example')}"
+    javascript = (
+        b"function x(){eval(String.fromCharCode(104,116,116,112)+':%2f%2fjs.example')}"
+    )
     artifacts = dict(ScriptAnalyzer().analyze(javascript))
     assert b"http://js.example" in artifacts["javascript_normalized.txt"]
 
@@ -115,4 +115,6 @@ def test_optional_archive_recognition_fails_closed_without_valid_payload():
 def test_structured_analyzers_are_registered_deterministically():
     names = [analyzer.name for analyzer in TitanEngine().analyzers]
     assert names == sorted(names)
-    assert {"Email", "OfficeOOXML", "Script", "WindowsLNK", "OptionalArchive"} <= set(names)
+    assert {"Email", "OfficeOOXML", "Script", "WindowsLNK", "OptionalArchive"} <= set(
+        names
+    )

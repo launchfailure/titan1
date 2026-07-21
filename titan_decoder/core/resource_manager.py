@@ -36,8 +36,10 @@ class ResourceManager:
         """
         sigalrm = getattr(signal, "SIGALRM", None)
         alarm = getattr(signal, "alarm", None)
-        can_use_alarm = sigalrm is not None and callable(alarm) and (
-            threading.current_thread() is threading.main_thread()
+        can_use_alarm = (
+            sigalrm is not None
+            and callable(alarm)
+            and (threading.current_thread() is threading.main_thread())
         )
         if not can_use_alarm or seconds <= 0:
             if not can_use_alarm:

@@ -73,9 +73,7 @@ class CalibrationRunner:
             try:
                 data = self._case_data(raw_case, corpus_path.parent)
                 expected = bool(raw_case.get("expected_match"))
-                predicted, observation = self._evaluate(
-                    kind, component, data, raw_case
-                )
+                predicted, observation = self._evaluate(kind, component, data, raw_case)
             except Exception as exc:
                 expected = bool(raw_case.get("expected_match"))
                 predicted = False

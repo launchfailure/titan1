@@ -89,7 +89,9 @@ def _validate_attestation(
             raise ValueError("sandbox provider returned an unknown verdict")
     elif kind == "provenance":
         if not isinstance(value.get("trusted"), bool):
-            raise ValueError("provenance attestation must declare trusted true or false")
+            raise ValueError(
+                "provenance attestation must declare trusted true or false"
+            )
         if value.get("trusted") is True and not all(
             str(value.get(field) or "").strip()
             for field in ("verification_method", "identity")
@@ -239,9 +241,7 @@ class AssuranceProviderRunner:
         if not isinstance(command, Sequence) or isinstance(command, (str, bytes)):
             return self._error(kind, "provider command must be a JSON argv array")
         argv = [
-            str(token)
-            .replace("{sample}", str(sample_path))
-            .replace("{sha256}", digest)
+            str(token).replace("{sample}", str(sample_path)).replace("{sha256}", digest)
             for token in command
         ]
         if not argv:

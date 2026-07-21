@@ -107,7 +107,9 @@ class IsolatedPluginClient:
         if not isinstance(response, dict):
             raise RuntimeError("plugin worker returned a non-object response")
         if response.get("ok") is not True:
-            raise RuntimeError(str(response.get("error") or "plugin worker failed")[:1000])
+            raise RuntimeError(
+                str(response.get("error") or "plugin worker failed")[:1000]
+            )
         return response.get("result")
 
     def _context_payload(self, context: PluginContext | None) -> dict[str, Any]:
@@ -215,9 +217,7 @@ class IsolatedDecoderProxy(_ProxyBase, DecoderPlugin):
             raise TypeError("decoder can_decode returned a non-boolean value")
         return value
 
-    def decode(
-        self, data: bytes, context: PluginContext | None = None
-    ) -> DecodeResult:
+    def decode(self, data: bytes, context: PluginContext | None = None) -> DecodeResult:
         value = self._client.invoke(
             "decode", {"data": base64.b64encode(data).decode("ascii")}, context
         )
@@ -310,7 +310,9 @@ class IsolatedReportProxy(_ProxyBase, ReportPlugin):
         report: Mapping[str, Any],
         context: PluginContext | None = None,
     ) -> list[ReportSection]:
-        values = self._client.invoke("build_sections", {"report": dict(report)}, context)
+        values = self._client.invoke(
+            "build_sections", {"report": dict(report)}, context
+        )
         if not isinstance(values, list):
             raise TypeError("report plugin returned an invalid result")
         return [

@@ -169,7 +169,11 @@ class DebianWorkbenchServices(WorkbenchServices):
         if response is None:
             raise RuntimeError(
                 "The Debian backend returned no valid result."
-                + (f" Protocol output: {'; '.join(protocol_noise)}" if protocol_noise else "")
+                + (
+                    f" Protocol output: {'; '.join(protocol_noise)}"
+                    if protocol_noise
+                    else ""
+                )
             )
         return response
 
@@ -227,23 +231,27 @@ class DebianWorkbenchServices(WorkbenchServices):
         self.cancel_event.clear()
         self._ensure_compatible()
         return self._snapshot(
-            self._request({
-                "operation": "analyze",
-                "state": self._state_payload(),
-                "source_name": source_name,
-                "data_base64": base64.b64encode(data).decode("ascii"),
-            })
+            self._request(
+                {
+                    "operation": "analyze",
+                    "state": self._state_payload(),
+                    "source_name": source_name,
+                    "data_base64": base64.b64encode(data).decode("ascii"),
+                }
+            )
         )
 
     def analyze_path(self, path: Path) -> AnalysisSnapshot:
         self.cancel_event.clear()
         self._ensure_compatible()
         snapshot = self._snapshot(
-            self._request({
-                "operation": "analyze_path",
-                "state": self._state_payload(),
-                "path": windows_path_to_wsl(path),
-            })
+            self._request(
+                {
+                    "operation": "analyze_path",
+                    "state": self._state_payload(),
+                    "path": windows_path_to_wsl(path),
+                }
+            )
         )
         # Keep a local copy so the native frontend's Recent Samples action can
         # reload the latest Debian result without another bridge call.

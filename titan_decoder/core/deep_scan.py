@@ -77,11 +77,7 @@ class DeepScanner:
         verdicts = {value.upper() for value in (quarantine_verdicts or set())}
         max_total = max(
             1,
-            int(
-                self.config.get(
-                    "deep_scan_max_total_bytes", 10 * 1024 * 1024 * 1024
-                )
-            ),
+            int(self.config.get("deep_scan_max_total_bytes", 10 * 1024 * 1024 * 1024)),
         )
         max_file = max(1, int(self.config.get("max_data_size", 50 * 1024 * 1024)))
         total_bytes = 0
@@ -245,7 +241,9 @@ class DeepScanner:
         for plugin in engine.plugin_manager.get_detections():
             declared = {str(value) for value in plugin.rule_ids}
             try:
-                findings = list(plugin.detect(report, report.get("iocs") or {}, context))
+                findings = list(
+                    plugin.detect(report, report.get("iocs") or {}, context)
+                )
             except Exception:
                 continue
             for finding in findings[:200]:

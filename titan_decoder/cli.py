@@ -533,7 +533,10 @@ def handle_info_commands(args, config) -> "int | None":
         if args.quarantine_list:
             print(
                 json.dumps(
-                    {"root": str(vault.root), "records": [r.to_dict() for r in vault.records()]},
+                    {
+                        "root": str(vault.root),
+                        "records": [r.to_dict() for r in vault.records()],
+                    },
                     indent=2,
                 )
             )
@@ -1634,9 +1637,7 @@ def run_deep_scan(args, config) -> int:
     from .core.quarantine import QuarantineVault
 
     configured = args.quarantine_dir or config.get("quarantine_dir")
-    verdicts = {
-        str(value).upper() for value in (args.quarantine_verdict or [])
-    }
+    verdicts = {str(value).upper() for value in (args.quarantine_verdict or [])}
     vault = (
         QuarantineVault(Path(str(configured)) if configured else None)
         if verdicts

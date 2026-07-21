@@ -51,9 +51,7 @@ class Example(DecoderPlugin):
     manager.load_plugins()
     decoder = manager.decoders[0]
 
-    result = decoder.decode(
-        b"abcd", PluginContext(config={"secret": "not disclosed"})
-    )
+    result = decoder.decode(b"abcd", PluginContext(config={"secret": "not disclosed"}))
 
     assert result.data == b"dcba"
     assert result.metadata["pid"] != os.getpid()

@@ -425,8 +425,10 @@ class PEAnalyzer(Analyzer):
                         if at + 40 > len(data):
                             anomalies.append("truncated_section_table")
                             break
-                        name = data[at : at + 8].split(b"\x00", 1)[0].decode(
-                            "ascii", errors="replace"
+                        name = (
+                            data[at : at + 8]
+                            .split(b"\x00", 1)[0]
+                            .decode("ascii", errors="replace")
                         )
                         (
                             virtual_size,
@@ -452,8 +454,10 @@ class PEAnalyzer(Analyzer):
                         section_entropy = round(entropy(raw), 4) if raw else 0.0
                         if executable and len(raw) >= 256 and section_entropy >= 7.2:
                             anomalies.append(f"high_entropy_executable_section:{name}")
-                        if virtual_address <= entry_point < virtual_address + max(
-                            virtual_size, raw_size, 1
+                        if (
+                            virtual_address
+                            <= entry_point
+                            < virtual_address + max(virtual_size, raw_size, 1)
                         ):
                             entry_section = name
                         raw_end = max(raw_end, raw_pointer + raw_size)
@@ -506,10 +510,14 @@ class PEAnalyzer(Analyzer):
                             name_at = rva_offset(values[3])
                             if name_at is None:
                                 continue
-                            end = data.find(b"\x00", name_at, min(len(data), name_at + 512))
+                            end = data.find(
+                                b"\x00", name_at, min(len(data), name_at + 512)
+                            )
                             if end < 0:
                                 continue
-                            library = data[name_at:end].decode("ascii", errors="replace")
+                            library = data[name_at:end].decode(
+                                "ascii", errors="replace"
+                            )
                             if library:
                                 imports.append(library)
                         certificate_at, certificate_size = struct.unpack_from(
@@ -685,13 +693,18 @@ class ELFAnalyzer(Analyzer):
                 for index in range(min(e_shnum, 256)):
                     at = e_shoff + index * e_shentsize
                     section_records.append(
-                        struct.unpack(section_fmt, data[at : at + expected_section_size])
+                        struct.unpack(
+                            section_fmt, data[at : at + expected_section_size]
+                        )
                     )
                 if 0 <= e_shstrndx < len(section_records):
                     names_record = section_records[e_shstrndx]
                     names_offset = names_record[4]
                     names_size = names_record[5]
-                    if names_offset <= len(data) and names_size <= len(data) - names_offset:
+                    if (
+                        names_offset <= len(data)
+                        and names_size <= len(data) - names_offset
+                    ):
                         section_names = data[names_offset : names_offset + names_size]
 
             def section_name(offset: int) -> str:
@@ -755,9 +768,11 @@ class ELFAnalyzer(Analyzer):
                         and file_offset <= len(data)
                         and file_size <= len(data) - file_offset
                     ):
-                        interpreter = data[
-                            file_offset : file_offset + min(file_size, 4096)
-                        ].split(b"\x00", 1)[0].decode("utf-8", errors="replace")
+                        interpreter = (
+                            data[file_offset : file_offset + min(file_size, 4096)]
+                            .split(b"\x00", 1)[0]
+                            .decode("utf-8", errors="replace")
+                        )
                         break
 
             libraries = sorted(
@@ -769,7 +784,9 @@ class ELFAnalyzer(Analyzer):
                     )
                 }
             )[:256]
-            if sections and not any(section["name"] == ".symtab" for section in sections):
+            if sections and not any(
+                section["name"] == ".symtab" for section in sections
+            ):
                 anomalies.append("symbol_table_absent")
             metadata.update(
                 {
