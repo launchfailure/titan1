@@ -6,6 +6,8 @@ import json
 import struct
 import zipfile
 
+import pytest
+
 from titan_decoder.core.analyzers.structured import (
     EmailAnalyzer,
     LnkAnalyzer,
@@ -110,6 +112,47 @@ def test_optional_archive_recognition_fails_closed_without_valid_payload():
     fake_cab = b"MSCF" + b"not a valid cabinet"
     assert analyzer.can_analyze(fake_cab)
     assert analyzer.analyze(fake_cab) == []
+
+
+def test_optional_7z_analyzer_extracts_with_current_py7zr_api():
+    py7zr = pytest.importorskip("py7zr")
+    payload = b"bounded 7z payload"
+    output = io.BytesIO()
+    with py7zr.SevenZipFile(output, mode="w") as archive:
+        archive.writestr(payload, "nested/evidence.txt")
+
+    data = output.getvalue()
+    analyzer = OptionalArchiveAnalyzer()
+    assert analyzer.can_analyze(data)
+    assert dict(analyzer.analyze(data)) == {"evidence.txt": payload}
+
+
+def test_optional_iso_analyzer_uses_complete_member_paths():
+    pycdlib = pytest.importorskip("pycdlib")
+    payload = b"bounded ISO payload"
+    image = pycdlib.PyCdlib()
+    image.new(interchange_level=3)
+    image.add_fp(io.BytesIO(payload), len(payload), iso_path="/EVIDENCE.TXT;1")
+    output = io.BytesIO()
+    image.write_fp(output)
+    image.close()
+
+    data = output.getvalue()
+    analyzer = OptionalArchiveAnalyzer()
+    assert analyzer.can_analyze(data)
+    assert dict(analyzer.analyze(data)) == {"EVIDENCE.TXT1": payload}
+
+
+def test_optional_cab_analyzer_extracts_members():
+    cabarchive = pytest.importorskip("cabarchive")
+    payload = b"bounded CAB payload"
+    archive = cabarchive.CabArchive()
+    archive["evidence.txt"] = cabarchive.CabFile(payload)
+
+    data = archive.save()
+    analyzer = OptionalArchiveAnalyzer()
+    assert analyzer.can_analyze(data)
+    assert dict(analyzer.analyze(data)) == {"evidence.txt": payload}
 
 
 def test_structured_analyzers_are_registered_deterministically():

@@ -105,7 +105,7 @@ git clone https://github.com/pragmaconflux/titan1.git
 cd titan1
 python -m venv .venv
 source .venv/bin/activate
-pip install -e '.[dev,workbench-ui]'
+pip install -e '.[dev,workbench-ui,formats]'
 ```
 
 Install optional Brotli, Zstandard, 7z, RAR, ISO, and CAB support with
@@ -131,7 +131,7 @@ titan-decoder --file suspicious.bin --out report.json
 Launch the native desktop workbench after installing its extra:
 
 ```bash
-pip install -e '.[desktop-ui]'
+pip install -e '.[desktop-ui,formats]'
 titan-ui
 ```
 

@@ -7,8 +7,10 @@ from email.parser import BytesParser
 import html
 import io
 import json
+from pathlib import Path, PurePosixPath
 import re
 import struct
+import tempfile
 from typing import Any, Iterable
 import zipfile
 
@@ -24,6 +26,16 @@ def _safe_name(value: str, fallback: str = "artifact.bin") -> str:
     value = value.replace("\\", "/").rsplit("/", 1)[-1]
     value = "".join(char for char in value if char.isalnum() or char in "._- ")
     return value[:160] or fallback
+
+
+def _safe_archive_path(value: str) -> PurePosixPath | None:
+    """Return a normalized relative archive path or reject unsafe members."""
+    path = PurePosixPath(value.replace("\\", "/"))
+    if path.is_absolute() or not path.parts:
+        return None
+    if any(part in {"", ".", ".."} for part in path.parts):
+        return None
+    return path
 
 
 class _Collector:
@@ -479,15 +491,54 @@ class OptionalArchiveAnalyzer(Analyzer):
             import py7zr  # type: ignore[import-not-found]
 
             with py7zr.SevenZipFile(io.BytesIO(data), mode="r") as archive:
-                if not hasattr(archive, "readall"):
+                selected: list[tuple[str, PurePosixPath]] = []
+                selected_total = 0
+                for info in sorted(archive.list(), key=lambda item: item.filename):
+                    relative = _safe_archive_path(str(info.filename))
+                    declared_size = int(info.uncompressed or 0)
+                    compressed_size = int(info.compressed or 0)
+                    if (
+                        relative is None
+                        or info.is_directory
+                        or info.is_symlink
+                        or declared_size <= 0
+                        or declared_size > self.max_item
+                        or selected_total + declared_size > self.max_total
+                        or (
+                            compressed_size
+                            and declared_size / compressed_size > self.max_ratio
+                        )
+                    ):
+                        continue
+                    selected.append((str(info.filename), relative))
+                    selected_total += declared_size
+                    if len(selected) >= self.max_artifacts:
+                        break
+
+                if not selected:
                     return []
-                extracted = archive.readall()
-            collector = _Collector(self.max_artifacts, self.max_total, self.max_item)
-            for name, stream in sorted(extracted.items()):
-                content = stream.read(self.max_item + 1)
-                if len(content) <= self.max_item:
-                    collector.add(_safe_name(name), content)
-            return collector.items
+
+                collector = _Collector(
+                    self.max_artifacts, self.max_total, self.max_item
+                )
+                with tempfile.TemporaryDirectory(prefix="titan-7z-") as directory:
+                    archive.extract(
+                        path=directory,
+                        targets=[name for name, _ in selected],
+                    )
+                    root = Path(directory).resolve()
+                    for name, relative in selected:
+                        target = root.joinpath(*relative.parts)
+                        if target.is_symlink():
+                            continue
+                        resolved = target.resolve()
+                        if root not in resolved.parents or not resolved.is_file():
+                            continue
+                        with resolved.open("rb") as stream:
+                            content = stream.read(self.max_item + 1)
+                        if len(content) <= self.max_item:
+                            collector.add(_safe_name(name), content)
+                return collector.items
         except Exception:
             return []
 
@@ -518,12 +569,23 @@ class OptionalArchiveAnalyzer(Analyzer):
             image.open_fp(io.BytesIO(data))
             collector = _Collector(self.max_artifacts, self.max_total, self.max_item)
             try:
-                for _, _, files in image.walk(iso_path="/"):
+                for directory, _, files in image.walk(iso_path="/"):
                     for entry in files:
-                        path = str(entry)
+                        parent = str(directory).rstrip("/")
+                        path = f"{parent}/{entry}"
+                        record: Any = image.get_record(iso_path=path)
+                        declared_size = int(record.data_length)
+                        if (
+                            declared_size <= 0
+                            or declared_size > self.max_item
+                            or collector.total + declared_size > self.max_total
+                        ):
+                            continue
                         output = io.BytesIO()
                         image.get_file_from_iso_fp(output, iso_path=path)
-                        collector.add(_safe_name(path), output.getvalue())
+                        content = output.getvalue()
+                        if len(content) <= self.max_item:
+                            collector.add(_safe_name(path), content)
                         if len(collector.items) >= self.max_artifacts:
                             return collector.items
             finally:

@@ -9,7 +9,7 @@ different interfaces with different optional dependencies.
 ### Native desktop workbench
 
 ```bash
-python -m pip install -e '.[desktop-ui]'
+python -m pip install -e '.[desktop-ui,formats]'
 titan-ui
 ```
 

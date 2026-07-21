@@ -21,6 +21,11 @@ Engine coverage, isolation, and response workflow:
   F1, specificity, accuracy, and per-component quality gates.
 - Expose Deep Scan in the native Windows workbench and add CLI commands for
   scanning, quarantine listing/restoration, and calibration.
+- Install the format extra in the supported Windows/WSL setup and make
+  `--doctor` report optional-format readiness, missing modules, and recovery
+  guidance; manual optional decoders now fail with an actionable message.
+  Restore 7z extraction for the current py7zr API and correct ISO member-path
+  resolution.
 
 Integrated workbench interface redesign:
 

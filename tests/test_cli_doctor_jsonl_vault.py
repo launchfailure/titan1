@@ -17,6 +17,18 @@ def test_cli_doctor_outputs_json_and_exits_zero(monkeypatch, capsys):
     assert diag["ok"] is True
     assert "python" in diag
     assert "optional_dependencies" in diag
+    assert set(diag["optional_formats"]["modules"]) == {
+        "brotli",
+        "zstandard",
+        "py7zr",
+        "rarfile",
+        "pycdlib",
+        "cabarchive",
+    }
+    assert diag["optional_formats"]["ready"] is (
+        not diag["optional_formats"]["missing"]
+    )
+    assert diag["status"] in {"ready", "degraded"}
     assert "version" in diag
     assert "schema_version" in diag
 
