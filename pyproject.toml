@@ -42,7 +42,7 @@ titan-analyst = "titan_decoder.analyst.cli:main"
 # Keep these lists in sync with requirements-dev.txt / requirements-optional.txt.
 [project.optional-dependencies]
 workbench-ui = [
-    "textual>=0.89,<2",
+    "textual>=0.89,<9",
 ]
 dev = [
     "pytest>=9.1.1",
