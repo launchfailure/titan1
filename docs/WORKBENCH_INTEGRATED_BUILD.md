@@ -1,17 +1,34 @@
 # Titan Forensic Workbench — Integrated Build
 
-This build advances the Phase 9.1 shell toward the approved visual design.
+Titan provides a native PySide6 desktop workbench and a Textual terminal
+workbench. Both use the same deterministic engine and report model, but they are
+different interfaces with different optional dependencies.
 
 ## Install and launch
 
+### Native desktop workbench
+
 ```bash
-python -m pip install -e '.[workbench-ui]'
+python -m pip install -e '.[desktop-ui]'
 titan-ui
 ```
 
-The existing `titan-workbench-ui` command remains an equivalent alias.
+On Windows, use the two-environment setup and `Titan-Windows.cmd` launcher
+documented in [WINDOWS_DESKTOP_UI.md](WINDOWS_DESKTOP_UI.md). That build receives
+native File Explorer drag-and-drop events and delegates analysis to Debian
+through WSL.
 
-## Terminal file drops
+### Textual terminal workbench
+
+```bash
+python -m pip install -e '.[workbench-ui]'
+titan-tui
+```
+
+`titan-workbench-ui` is an equivalent alias for `titan-tui`. Neither command is
+an alias for the native `titan-ui` application.
+
+## Textual terminal file drops
 
 Titan accepts a single file or folder dropped anywhere in the workbench when
 the terminal emulator represents the drop as a bracketed paste. The path is
@@ -23,6 +40,9 @@ The terminal emulator still owns the operating-system drop operation. If it
 does not emit the path, click the drop zone and paste the path manually. A drop
 is only auto-analyzed when it resolves to an existing local file or directory;
 ordinary pasted text continues to be treated as evidence.
+
+For native Windows Explorer drag-and-drop and its troubleshooting steps, use
+the [Windows Desktop Workbench guide](WINDOWS_DESKTOP_UI.md).
 
 ## Analysis outcomes
 
@@ -38,7 +58,7 @@ Assurance blockers are shown in the findings card. The workbench automatically
 runs Titan's offline static suite; VM and provenance controls consume the
 hash-bound provider attestations configured in `~/.titan_decoder/config.json`.
 
-## Implemented
+## Shared workbench capabilities
 
 - permanent left, center, and right columns;
 - compact custom header and status bar with live session state;
@@ -57,10 +77,16 @@ hash-bound provider attestations configured in `~/.titan_decoder/config.json`.
 - session settings for profile, offline mode, and aggressive detection;
 - detailed dark forensic theme.
 
+The native desktop additionally provides desktop dialogs, native Explorer file
+drops, application artwork, and the Debian analysis bridge. Some navigation and
+presentation details differ between the PySide6 and Textual front ends.
+
 ## Safety
 
-The new UI is a presentation layer. It does not replace or duplicate Titan's
-analysis logic, and the existing `titan` command remains unchanged.
+The workbench interfaces are presentation layers. They do not replace or
+duplicate Titan's analysis logic, and the existing `titan` command remains
+unchanged. WSL is not a VM isolation boundary; do not execute unknown or
+recovered payloads merely because the workbench can inspect them.
 
 
 ## Completion recovery update

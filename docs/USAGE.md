@@ -26,9 +26,14 @@ From the repo root:
 
   - `pip install -r requirements-optional.txt`
 
-Installing gives you **two commands**:
+Installing Titan provides these command-line entry points; optional interfaces
+require their matching extras:
 
 - **`titan`** — the interactive, menu-driven UI (see below). Easiest way in.
+- **`titan-ui`** — the native PySide6 desktop workbench. On Windows, see
+  [WINDOWS_DESKTOP_UI.md](WINDOWS_DESKTOP_UI.md) for the Debian-backed setup.
+- **`titan-tui`** / **`titan-workbench-ui`** — the optional Textual terminal
+  workbench installed with `.[workbench-ui]`.
 - **`titan-workbench`** — explore completed JSON reports: decode trees, graphs, IOCs, timelines, search, investigation workspaces, exports. See [ANALYST_WORKBENCH.md](ANALYST_WORKBENCH.md).
 - **`titan-analyst`** — ask grounded questions about completed reports ("Why is this High Risk?"); deterministic by default, optional local model backend. See [LOCAL_AI_ANALYST.md](LOCAL_AI_ANALYST.md).
 - **`titan-decoder`** — the scriptable CLI used throughout the rest of this guide.

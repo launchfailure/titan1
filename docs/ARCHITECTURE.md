@@ -60,6 +60,26 @@ flowchart TB
     JSON --> Vault
 ```
 
+## Windows desktop boundary
+
+The native Windows interface is deliberately separated from Debian analysis:
+
+```mermaid
+flowchart LR
+    Explorer["Windows Explorer / input dialogs"] --> Qt["Native PySide6 workbench"]
+    Qt -->|"JSON over stdin/stdout via wsl.exe"| Bridge["Debian WSL bridge"]
+    Bridge --> Services["Workbench services"]
+    Services --> Engine["TitanEngine"]
+    Engine --> Report["Deterministic report"]
+    Report --> Qt
+```
+
+`titan_decoder.desktop_ui.debian_services` translates Windows paths to `/mnt`
+paths and invokes `titan_decoder.desktop_ui.debian_bridge` inside the selected
+Debian distribution. The bridge transfers report state back to the native UI;
+it does not create a detonation or VM isolation boundary. See
+[WINDOWS_DESKTOP_UI.md](WINDOWS_DESKTOP_UI.md) for setup and operation.
+
 ## Key design rules
 
 1. The byte-analysis engine does not depend on case-report or UI rendering.
@@ -79,6 +99,8 @@ flowchart TB
 - `titan_decoder/core/risk_scoring.py` — operational risk.
 - `titan_decoder/core/graph_export.py` — graph serialization.
 - `titan_decoder/core/case_report.py` — Markdown/HTML reports.
+- `titan_decoder/desktop_ui/` — native PySide6 frontend and Debian WSL bridge.
+- `titan_decoder/workbench_ui/` — Textual terminal frontend and shared workbench services.
 - `titan_decoder/plugins.py` — plugin discovery and loading.
 - `tests/` — unit, contract, corpus, safety, and regression suites.
 
