@@ -5,7 +5,8 @@
 - [USAGE.md](USAGE.md) — practical walkthroughs.
 - [INTERACTIVE_CONSOLE.md](INTERACTIVE_CONSOLE.md) — the `titan` terminal console.
 - [ANALYST_WORKBENCH.md](ANALYST_WORKBENCH.md) — the `titan-workbench` report explorer.
-- [WORKBENCH_INTEGRATED_BUILD.md](WORKBENCH_INTEGRATED_BUILD.md) — the optional Textual forensic workbench.
+- [WINDOWS_DESKTOP_UI.md](WINDOWS_DESKTOP_UI.md) — native Windows setup, Debian bridge, drag-and-drop, and troubleshooting.
+- [WORKBENCH_INTEGRATED_BUILD.md](WORKBENCH_INTEGRATED_BUILD.md) — native and Textual workbench commands and shared capabilities.
 - [LOCAL_AI_ANALYST.md](LOCAL_AI_ANALYST.md) — the `titan-analyst` grounded Q&A tool.
 - [CLI_REFERENCE.md](CLI_REFERENCE.md) — command groups and examples.
 - [GRAPH_EXPORTS.md](GRAPH_EXPORTS.md) — JSON, DOT, and Mermaid output.

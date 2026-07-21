@@ -130,8 +130,13 @@ pip install -e '.[desktop-ui]'
 titan-ui
 ```
 
-For the terminal version, install `.[workbench-ui]` and run `titan-tui` or
-`titan-workbench-ui`.
+On Windows, the supported native configuration uses a PySide6 front end and a
+Debian analysis backend through WSL. Follow the one-time setup in the
+[Windows Desktop Workbench guide](docs/WINDOWS_DESKTOP_UI.md), then launch
+`Titan-Windows.cmd`. Native Explorer drag-and-drop is available in this build.
+
+For the separate terminal version, install `.[workbench-ui]` and run
+`titan-tui` or `titan-workbench-ui`.
 
 Add detections, risk, a readable explanation, and a separate Intelligence object:
 
@@ -315,7 +320,8 @@ See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 | [Project charter](docs/PROJECT_CHARTER.md) | Mission, core principles, scope, and governance |
 | [Architecture](docs/ARCHITECTURE.md) | Components, boundaries, and system diagrams |
 | [CLI reference](docs/CLI_REFERENCE.md) | Command groups, outputs, and examples |
-| [Integrated workbench](docs/WORKBENCH_INTEGRATED_BUILD.md) | Textual UI installation, operation, and safety behavior |
+| [Windows desktop workbench](docs/WINDOWS_DESKTOP_UI.md) | Native setup, Debian bridge, drag-and-drop, and troubleshooting |
+| [Integrated workbench](docs/WORKBENCH_INTEGRATED_BUILD.md) | Native and Textual interface commands, operation, and safety behavior |
 | [Assurance pipeline](docs/ASSURANCE_PIPELINE.md) | Six fail-closed controls, verdict policy, VM and provenance attestations |
 | [Pipelines](docs/PIPELINES.md) | End-to-end execution, decoder engine, and analyzer pipeline |
 | [Developer guide](docs/DEVELOPER_GUIDE.md) | Repository layout and implementation workflow |
