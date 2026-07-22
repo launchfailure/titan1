@@ -53,6 +53,40 @@ formats, richer memory-image analysis, and provider-specific VM integrations.
 Any new parser or decoder should land with a labeled positive/negative corpus
 slice and resource-bound regression tests.
 
+## Enterprise-competitiveness track
+
+Ordered by leverage. Each item ships incrementally behind Titan's existing
+constraints: deterministic, bounded, offline-first, fail-closed.
+
+1. **Detection content at scale.** YARA scanning of every artifact-graph
+   node shipped (see DETECTION_AND_RISK.md); next: grow the built-in rule
+   library and starter packs aggressively, expand the calibration corpus
+   toward thousands of labeled cases, and publish per-rule precision/recall
+   from the calibration gate.
+2. **Malware config extraction.** Family identification plus C2/config
+   recovery (addresses, keys, campaign ids) as isolated manifest plugins on
+   the existing out-of-process worker substrate, with a documented extractor
+   SDK and a seed set of extractors for prevalent families.
+3. **Format coverage depth.** .NET assembly structure, MSI/NSIS/InnoSetup
+   installers, OneNote, RTF exploit structures, Excel 4.0 XLM macros, VBA
+   p-code, PDF stream filters with JavaScript extraction, Mach-O, APK/DEX,
+   VHD/VHDX, and password-protected archives (`infected`). Every new parser
+   lands with a labeled corpus slice and resource-bound regression tests.
+4. **Service mode.** A `titan-server` deployment shape: REST API, work
+   queue, horizontally scalable workers, artifact store, and hash-based
+   dedup cache (reference architecture: CCCS Assemblyline), so Titan runs as
+   pipeline infrastructure rather than a single-process CLI.
+5. **Bounded emulation.** Instruction-budgeted, no-I/O emulation for
+   shellcode (Unicorn-class) and sandboxed JavaScript evaluation for
+   deobfuscation — deterministic and fail-closed by construction, extending
+   static analysis past string-building obfuscation without becoming a
+   sandbox.
+6. **Proof and ecosystem.** Published benchmark runs against public corpora,
+   a public accuracy dashboard fed by calibration output, third-party audit
+   of the parsing surface (extending the fuzz harness), MISP/STIX export,
+   and a community plugin registry. Positioning: forensic-grade,
+   deterministic, offline-first, court-ready provenance.
+
 ## Local AI assistant (shipped as Milestone 8)
 
 The requirements that guided the design — optional and disabled by

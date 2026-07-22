@@ -221,7 +221,15 @@
       "trusted_hashes_path": null,
       "vault_db_path": null,
       "vault_dir": null,
-      "yara_rules_path": null
+      "yara_max_matches": 200,
+      "yara_max_meta_bytes": 4096,
+      "yara_max_nodes": 300,
+      "yara_max_string_bytes": 128,
+      "yara_max_strings_per_match": 8,
+      "yara_rules_dirs": [],
+      "yara_rules_files": [],
+      "yara_rules_path": null,
+      "yara_timeout_seconds": 10
     },
     "limits": {
       "analysis_timeout_seconds": 300,

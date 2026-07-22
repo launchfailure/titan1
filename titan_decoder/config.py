@@ -111,6 +111,16 @@ class Config:
         "correlation_db_path": None,
         "enable_yara": False,  # Optional YARA scanning on decoded artifacts
         "yara_rules_path": None,
+        # Additional YARA sources and bounds. Directories are compiled with
+        # one namespace per rule file so match provenance survives merging.
+        "yara_rules_files": [],  # list of individual rule files
+        "yara_rules_dirs": [],  # list of directories of .yar/.yara files
+        "yara_timeout_seconds": 10,  # per-payload scan timeout
+        "yara_max_matches": 200,  # total matches recorded per run
+        "yara_max_nodes": 300,  # payloads scanned per run (node order)
+        "yara_max_meta_bytes": 4096,  # serialized meta captured per match
+        "yara_max_strings_per_match": 8,
+        "yara_max_string_bytes": 128,
         # Fail-closed assurance providers. Attestations are JSON documents named
         # <sha256>.json and are accepted only when their embedded hash matches.
         "enable_assurance": True,

@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+First-class YARA integration:
+
+- Scan every artifact-graph node — raw, decoded, and extracted content —
+  with configured YARA rules during the detection stage, so signatures
+  match content that a scan of the raw input alone would never see.
+- Add `--yara-rules` (repeatable, file or directory) and configuration keys
+  for rule files, rule directories, and scan bounds (per-payload timeout,
+  node/match caps, bounded meta and matched-string capture).
+- Compile rule directories with one namespace per file, report matches in
+  deterministic order, and persist the fail-closed scan result as the
+  report's `yara` section.
+- Convert matches into `YARA:<namespace>:<rule>` detections (grouped per
+  rule with all matched node ids, severity and ATT&CK ids from rule meta)
+  that feed risk scoring, which now receives the previously-unused YARA
+  weighting input.
+- Route assurance's static YARA control through the same shared scanner,
+  giving Deep Scan and assurance rule-directory support and bounded
+  capture for free.
+- Keep YARA active under `--offline`: it is a purely local scan and no
+  longer disabled alongside network enrichment providers.
+- Ship a starter rule pack in `examples/yara_rules/` tuned for per-node
+  scanning (download cradles, encoded-command flags, PE-in-decoded-content,
+  UPX, JavaScript eval chains).
+
 Decoder and artifact-graph correctness:
 
 - Require raw Deflate input to be exactly one complete DEFLATE stream

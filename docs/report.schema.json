@@ -205,6 +205,17 @@
     "detections": {"type": "array"},
     "risk_assessment": {"type": "object"},
     "enrichment": {"type": "object"},
+    "yara": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["completed", "unavailable", "not_configured"]
+        },
+        "matches": {"type": "array"}
+      },
+      "additionalProperties": true
+    },
     "evidence": {
       "type": "object",
       "properties": {

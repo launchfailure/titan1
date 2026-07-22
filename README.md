@@ -49,7 +49,7 @@ Titan is designed for repeatable analysis rather than opaque “best guess” de
 | Archive analysis | ZIP/TAR plus optional 7z, RAR, ISO, and CAB extraction with count/size/ratio limits |
 | Executables | Deeper PE/ELF section, entropy, import, entry-point, overlay, interpreter, and anomaly analysis |
 | Indicators | URLs, domains, IPs, emails, hashes, and normalized evidence indicators |
-| Detection | Built-in correlation rules and optional rule packs |
+| Detection | Built-in correlation rules, optional rule packs, and bounded YARA scanning of every artifact node (raw, decoded, and extracted content) |
 | Risk | Deterministic 0–100 risk assessment |
 | Intelligence | Classification, scored signals, artifact ranking, confidence, recommendation |
 | Threat intelligence | MITRE ATT&CK technique mapping, LOLBin identification, behavioral malware tags, node relationships |
