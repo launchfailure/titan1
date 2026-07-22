@@ -82,6 +82,10 @@ class EmailAnalyzer(Analyzer):
     def name(self) -> str:
         return "Email"
 
+    @property
+    def metadata_artifact_names(self) -> frozenset:
+        return frozenset({"email_summary.json"})
+
     def can_analyze(self, data: bytes) -> bool:
         header = data[: 64 * 1024]
         return bool(
@@ -97,6 +101,9 @@ class EmailAnalyzer(Analyzer):
             return []
 
         collector = _Collector(self.max_artifacts, self.max_total, self.max_item)
+        # Reserve the summary name so an attachment that sanitizes to the same
+        # string is renamed by the collector instead of colliding with it.
+        collector.names.add("email_summary.json")
         summary: dict[str, Any] = {
             "analyzer": "email",
             "subject": str(message.get("subject", ""))[:4096],
@@ -174,6 +181,10 @@ class OfficeAnalyzer(Analyzer):
     def name(self) -> str:
         return "OfficeOOXML"
 
+    @property
+    def metadata_artifact_names(self) -> frozenset:
+        return frozenset({"office_summary.json"})
+
     def can_analyze(self, data: bytes) -> bool:
         if not data.startswith(b"PK\x03\x04"):
             return False
@@ -209,6 +220,9 @@ class OfficeAnalyzer(Analyzer):
         if not self.can_analyze(data):
             return []
         collector = _Collector(self.max_artifacts, self.max_total, self.max_item)
+        # Reserve the summary name so an archive member that sanitizes to the
+        # same string is renamed by the collector instead of colliding with it.
+        collector.names.add("office_summary.json")
         summary: dict[str, Any] = {
             "analyzer": "office_ooxml",
             "package_type": "unknown",
@@ -325,6 +339,10 @@ class ScriptAnalyzer(Analyzer):
     def name(self) -> str:
         return "Script"
 
+    @property
+    def metadata_artifact_names(self) -> frozenset:
+        return frozenset({"script_summary.json"})
+
     def _languages(self, data: bytes) -> list[str]:
         lowered = data[: self.max_item].lower()
         return sorted(
@@ -388,6 +406,10 @@ class LnkAnalyzer(Analyzer):
     @property
     def name(self) -> str:
         return "WindowsLNK"
+
+    @property
+    def metadata_artifact_names(self) -> frozenset:
+        return frozenset({"lnk_metadata.json"})
 
     def can_analyze(self, data: bytes) -> bool:
         return (

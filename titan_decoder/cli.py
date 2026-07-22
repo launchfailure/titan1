@@ -366,6 +366,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory of detection rule packs to load (.json/.yml/.yaml). Can be repeated.",
     )
     parser.add_argument(
+        "--yara-rules",
+        action="append",
+        type=Path,
+        help=(
+            "YARA rules file or directory of .yar/.yara files, scanned against "
+            "every artifact-graph node (raw, decoded, and extracted content). "
+            "Implies YARA scanning for the run; requires --enable-detections "
+            "and the optional yara-python dependency. Can be repeated."
+        ),
+    )
+    parser.add_argument(
         "--rules-validate",
         action="append",
         type=Path,
@@ -697,7 +708,8 @@ def apply_runtime_config(args, config) -> None:
     if args.offline:
         config.set("enable_geo_enrichment", False)
         config.set("enable_whois", False)
-        config.set("enable_yara", False)
+        # YARA is a purely local scan and stays available offline; only the
+        # network-dependent enrichment providers are disabled here.
 
     # Extra plugin directories: merged into config so the engine's plugin
     # manager discovers them alongside the configured and default dirs.
@@ -1014,6 +1026,49 @@ def _run_detection_plugins(args, config, report, iocs, engine):
     return results
 
 
+def _run_yara_stage(args, config, report, detections, engine):
+    """Scan every artifact-graph node with configured YARA rules.
+
+    ``--yara-rules`` sources are merged into the configured file/directory
+    lists and imply enabling YARA for the run. The full bounded scan result
+    is persisted as ``report["yara"]``, and matches are appended to
+    ``detections`` (one entry per distinct rule, carrying all matched node
+    ids) so they feed risk scoring and intelligence like any other rule.
+    Returns the raw match list for the risk engine's YARA weighting.
+    """
+    from .core.yara_scanner import YaraScanner, yara_matches_to_detections
+
+    cli_sources = list(getattr(args, "yara_rules", None) or [])
+    if cli_sources:
+        files = list(config.get("yara_rules_files", []) or [])
+        dirs = list(config.get("yara_rules_dirs", []) or [])
+        for source in cli_sources:
+            source = Path(source)
+            if source.is_dir():
+                dirs.append(str(source))
+            else:
+                files.append(str(source))
+        config.set("yara_rules_files", files)
+        config.set("yara_rules_dirs", dirs)
+        config.set("enable_yara", True)
+    if not config.get("enable_yara", False):
+        return None
+
+    scanner = YaraScanner(config._config)
+    payloads = engine.artifact_payloads() if engine is not None else []
+    result = scanner.scan(payloads)
+    report["yara"] = result
+    detections.extend(yara_matches_to_detections(result))
+    if result.get("state") != "completed":
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "YARA scanning was requested but did not run: %s",
+            result.get("reason") or result.get("state"),
+        )
+    return result.get("matches") or None
+
+
 def run_detections_stage(args, config, report, evidence_result, engine=None):
     """Run detection rules, detection plugins, and risk scoring if requested.
 
@@ -1057,8 +1112,12 @@ def run_detections_stage(args, config, report, evidence_result, engine=None):
             report.setdefault("meta", {})
             report["meta"]["rule_packs"] = rules_engine.rule_packs
 
+        yara_matches = _run_yara_stage(args, config, report, detections, engine)
+
         risk_engine = RiskScoringEngine()
-        risk_assessment = risk_engine.compute_risk_score(report, iocs, detections)
+        risk_assessment = risk_engine.compute_risk_score(
+            report, iocs, detections, yara_matches=yara_matches
+        )
 
         # Persist these in the report for downstream tooling.
         report["detections"] = detections

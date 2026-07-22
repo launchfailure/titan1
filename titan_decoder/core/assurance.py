@@ -479,52 +479,9 @@ class AssuranceEngine:
         return sorted(values)
 
     def _scan_yara(self, payloads: Sequence[tuple[int, bytes]]) -> dict[str, Any]:
-        if not self.config.get("enable_yara", False):
-            return {"state": "not_configured", "matches": []}
-        rules_path = self.config.get("yara_rules_path")
-        if not rules_path or not Path(str(rules_path)).expanduser().is_file():
-            return {
-                "state": "unavailable",
-                "matches": [],
-                "reason": "configured YARA rules file was not found",
-            }
-        if not payloads:
-            return {
-                "state": "unavailable",
-                "matches": [],
-                "reason": "raw artifact payloads were not supplied to the scanner",
-            }
-        try:
-            import yara
-        except ImportError:
-            return {
-                "state": "unavailable",
-                "matches": [],
-                "reason": "yara-python is not installed",
-            }
-        try:
-            rules = yara.compile(filepath=str(Path(str(rules_path)).expanduser()))
-            matches: list[dict[str, Any]] = []
-            for node_id, data in payloads[:300]:
-                for match in rules.match(data=data, timeout=10):
-                    matches.append(
-                        {
-                            "node_id": node_id,
-                            "rule": str(match.rule),
-                            "tags": [str(tag) for tag in match.tags],
-                        }
-                    )
-                    if len(matches) >= 100:
-                        break
-                if len(matches) >= 100:
-                    break
-            return {"state": "completed", "matches": matches}
-        except Exception as exc:
-            return {
-                "state": "unavailable",
-                "matches": [],
-                "reason": f"YARA scan failed: {type(exc).__name__}",
-            }
+        from .yara_scanner import YaraScanner
+
+        return YaraScanner(self.config).scan(list(payloads or []))
 
     @staticmethod
     def _root_hash(report: Mapping[str, Any]) -> str | None:

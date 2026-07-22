@@ -46,6 +46,34 @@ low/medium/high/critical. Patterns must compile at validation time.
 Fixture packs demonstrating valid, duplicate-ID, and invalid rules live in
 `tests/fixtures/rule_packs/` and back `tests/test_rule_pack_validation.py`.
 
+## YARA scanning across the artifact graph
+
+With `--enable-detections` and one or more `--yara-rules` sources (a rules
+file or a directory of `.yar`/`.yara` files, repeatable), Titan scans **every
+artifact-graph node** — the raw input plus all decoded and extracted content —
+so signatures match content that a scan of the raw bytes alone would never
+see. Rules can also be configured persistently via `enable_yara`,
+`yara_rules_path`, `yara_rules_files`, and `yara_rules_dirs`.
+
+Scanning is bounded and deterministic: rule files load in sorted order with
+one namespace per file, per-payload scans time out
+(`yara_timeout_seconds`, default 10), and node, match, meta, and
+matched-string capture counts are capped (`yara_max_nodes`,
+`yara_max_matches`, `yara_max_meta_bytes`, `yara_max_strings_per_match`,
+`yara_max_string_bytes`). The full result — including scanner state, rule
+sources, and per-node matches — is persisted as the report's `yara` section,
+and it is fail-closed: when YARA was requested but the library or rules are
+unavailable, the state says so explicitly.
+
+Matches also become detections (one per distinct rule, carrying every matched
+node id) with rule ids of the form `YARA:<namespace>:<rule>`, so they feed
+risk scoring and intelligence exactly like correlation rules. Rules can carry
+`severity` (low/medium/high/critical) and `attack_id` meta fields to control
+that mapping; severity defaults to medium.
+
+YARA requires the optional `yara-python` dependency and works fully offline.
+A starter pack lives in `examples/yara_rules/`.
+
 ## ATT&CK metadata
 
 Every built-in rule carries static `attack_ids` — the MITRE ATT&CK technique IDs the rule indicates — and rule packs can declare the same field per rule. Triggered detections expose `attack_ids`, and the Threat Intelligence Engine consumes them as corroborating technique evidence (see [THREAT_INTELLIGENCE.md](THREAT_INTELLIGENCE.md)). A test asserts that every referenced ID exists in the bundled ATT&CK catalog, so rules and catalog cannot drift apart.
