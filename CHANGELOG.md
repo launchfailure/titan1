@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+Decoder and artifact-graph correctness:
+
+- Require raw Deflate input to be exactly one complete DEFLATE stream
+  (reject trailing `unused_data`), so ordinary text whose first bytes form a
+  coincidental stream is no longer reported as a decode.
+- Stop feeding analyzer-generated metadata artifacts (summary/metadata JSON)
+  back through decoders and analyzers; they remain in the graph and still
+  contribute to IOC extraction.
+- Reserve analyzer summary names so an extracted file with the same
+  sanitized name is deterministically renamed instead of shadowing the
+  summary artifact.
+
 Engine coverage, isolation, and response workflow:
 
 - Add ASCII85, Base58, Base91, raw Deflate, PowerShell EncodedCommand,
