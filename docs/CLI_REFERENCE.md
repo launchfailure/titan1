@@ -74,9 +74,12 @@ titan-decoder --file sample.bin --enable-detections --out report.json
 titan-decoder --file sample.bin --enable-detections --explain
 titan-decoder --file sample.bin --intelligence-out intelligence.json
 titan-decoder --file sample.bin --enable-detections --fail-on-risk-level HIGH
+titan-decoder --file sample.bin --enable-detections --yara-rules rules/ --yara-rules extra.yar
 ```
 
 The Intelligence object is attached to every normal report. Detection and risk inputs are richer when `--enable-detections` is set. `--fail-on-risk-level` is intended for CI and returns a non-zero status when the configured threshold is met or exceeded.
+
+`--yara-rules` (repeatable, file or directory) scans every artifact-graph node — raw, decoded, and extracted content — with the given YARA rules; matches become `YARA:<namespace>:<rule>` detections and feed risk scoring. Requires the optional `yara-python` dependency, works fully offline, and is bounded and fail-closed. See [DETECTION_AND_RISK.md](DETECTION_AND_RISK.md).
 
 ## Evidence ingestion
 

@@ -26,6 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e '.[workbench-ui]'
           python -m pip install pytest ruff mypy pytest-cov hypothesis jsonschema
+          # Optional dependency exercised by tests/test_yara_integration.py;
+          # those tests importorskip when it is absent.
+          python -m pip install 'yara-python>=4.5.4'
 
       - name: Lint
         run: |
