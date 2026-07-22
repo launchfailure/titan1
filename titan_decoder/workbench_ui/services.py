@@ -4,7 +4,6 @@ from dataclasses import replace
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, Callable
-import importlib.util
 import json
 import os
 import platform
@@ -19,6 +18,11 @@ from titan_decoder.config import Config
 from titan_decoder.core.assurance import AssuranceEngine
 from titan_decoder.core.engine import TitanEngine
 from titan_decoder.interactive import build_decoder_registry
+from titan_decoder.optional_formats import (
+    FORMAT_DECODER_REQUIREMENTS,
+    FORMAT_INSTALL_HINT,
+    optional_format_status,
+)
 
 from .models import AnalysisSnapshot, WorkbenchState
 
@@ -73,6 +77,7 @@ class WorkbenchServices:
         ).encode("utf-8")
         from titan_decoder.core.engine import SCHEMA_VERSION
 
+        format_status = optional_format_status()
         return {
             "protocol_version": WORKBENCH_PROTOCOL_VERSION,
             "engine_version": TITAN_VERSION,
@@ -90,17 +95,8 @@ class WorkbenchServices:
                 - {""}
             ),
             "plugins": engine.plugin_manager.get_plugin_info(),
-            "optional_formats": {
-                module: importlib.util.find_spec(module) is not None
-                for module in (
-                    "brotli",
-                    "zstandard",
-                    "py7zr",
-                    "rarfile",
-                    "pycdlib",
-                    "cabarchive",
-                )
-            },
+            "optional_formats": format_status["modules"],
+            "optional_format_support": format_status,
             "features": {
                 "progress_events": True,
                 "cancellation": True,
@@ -354,6 +350,14 @@ class WorkbenchServices:
         )
         started = time.monotonic()
         choice = self.registry[index]
+        required_module = FORMAT_DECODER_REQUIREMENTS.get(choice.label)
+        if required_module and not optional_format_status()["modules"].get(
+            required_module, False
+        ):
+            raise RuntimeError(
+                f"{choice.label} support is unavailable because {required_module} "
+                f"is not importable. Install it with: {FORMAT_INSTALL_HINT}"
+            )
         decoded, success = choice.factory().decode(data)
         self._progress(
             {"stage": "complete", "percent": 100, "message": "Decoder complete"}

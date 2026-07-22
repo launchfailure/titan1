@@ -55,7 +55,7 @@ sudo apt update
 sudo apt install -y python3-venv
 python3 -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install -e .
+.venv/bin/python -m pip install -e '.[formats]'
 ```
 
 Replace the example repository path with the location of your clone. The
@@ -70,12 +70,13 @@ Open PowerShell in the same repository and create `.venv-windows`:
 cd C:\path\to\titan1
 py -m venv .venv-windows
 .\.venv-windows\Scripts\python.exe -m pip install --upgrade pip
-.\.venv-windows\Scripts\python.exe -m pip install -e ".[desktop-ui]"
+.\.venv-windows\Scripts\python.exe -m pip install -e ".[desktop-ui,formats]"
 ```
 
-This installs Titan, PySide6, and the native desktop assets into the Windows
-environment. The environments are machine-local and are not committed to the
-repository.
+This installs Titan, PySide6, the native desktop assets, and the optional
+format libraries into the Windows environment. The Debian command installs the
+same format libraries for the actual analysis backend. The environments are
+machine-local and are not committed to the repository.
 
 ## Launch
 
@@ -183,9 +184,15 @@ isolation.
 
 ### The launcher says the Windows environment is not installed
 
-Create `.venv-windows` and install `.[desktop-ui]` using the Windows setup
+Create `.venv-windows` and install `.[desktop-ui,formats]` using the Windows setup
 commands above. The launcher requires
 `.venv-windows\Scripts\pythonw.exe` in the repository.
+
+### A decoder is listed but optional format support is unavailable
+
+Run `titan-decoder --doctor` in both environments. Its `optional_formats`
+section reports every required module and provides an install hint. Re-run the
+setup commands above when the status is `degraded`.
 
 ### The Debian analysis backend failed
 

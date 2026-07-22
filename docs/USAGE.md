@@ -20,11 +20,15 @@ From the repo root:
 
 - Editable install (recommended while you’re developing):
 
-  - `pip install -e .`
+  - `pip install -e '.[formats]'`
 
 - Optional enrichment dependencies:
 
   - `pip install -r requirements-optional.txt`
+
+Use `titan-decoder --doctor` after installation. The `optional_formats`
+section identifies missing or broken Brotli, Zstandard, 7z, RAR, ISO, and CAB
+libraries instead of allowing those features to fail silently.
 
 Installing Titan provides these command-line entry points; optional interfaces
 require their matching extras:

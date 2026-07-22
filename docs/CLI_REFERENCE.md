@@ -189,4 +189,8 @@ titan-decoder --list-rule-packs
 titan-decoder --print-schema-version
 ```
 
-These commands are side-effect-light and suitable for installation checks and CI diagnostics.
+These commands are side-effect-light and suitable for installation checks and
+CI diagnostics. `--doctor` reports `ready` or `degraded`, imports every optional
+format module to detect broken native installations, lists missing modules, and
+prints the command needed to install the `formats` extra. Missing optional
+libraries are warnings rather than a core-engine failure.

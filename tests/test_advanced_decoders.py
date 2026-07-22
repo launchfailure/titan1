@@ -3,6 +3,8 @@
 import base64
 import zlib
 
+import pytest
+
 from titan_decoder.core.engine import TitanEngine
 from titan_decoder.decoders.advanced import (
     Ascii85Decoder,
@@ -87,6 +89,22 @@ def test_optional_compression_decoders_fail_closed_when_unavailable_or_invalid()
     zstd_payload = b"\x28\xb5\x2f\xfdnot-a-frame"
     assert ZstandardDecoder().can_decode(zstd_payload)
     assert ZstandardDecoder().decode(zstd_payload) == (zstd_payload, False)
+
+
+def test_brotli_decoder_round_trip_when_dependency_is_available():
+    brotli = pytest.importorskip("brotli")
+    source = b"bounded Brotli payload"
+    encoded = b"brotli:" + brotli.compress(source)
+    assert BrotliDecoder().decode(encoded) == (source, True)
+    assert BrotliDecoder(max_output=4).decode(encoded) == (encoded, False)
+
+
+def test_zstandard_decoder_round_trip_when_dependency_is_available():
+    zstandard = pytest.importorskip("zstandard")
+    source = b"bounded Zstandard payload"
+    encoded = zstandard.ZstdCompressor().compress(source)
+    assert ZstandardDecoder().decode(encoded) == (source, True)
+    assert ZstandardDecoder(max_output=4).decode(encoded) == (encoded, False)
 
 
 def test_advanced_decoders_are_registered_and_name_sorted():

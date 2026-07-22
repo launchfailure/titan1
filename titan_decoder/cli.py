@@ -5,6 +5,7 @@ import json
 import sys
 import random
 from pathlib import Path
+from typing import Any
 
 from . import __version__ as TITAN_VERSION
 from .core.engine import TitanEngine
@@ -14,6 +15,7 @@ from .core.offline_guard import block_network, is_network_blocked
 from .core.evidence_parsers import parse_evidence_file, combine_parse_results
 from .core.evidence_correlation import top_pivots, build_last_seen, build_entity_hints
 from .core.evidence_links import build_links_from_evidence_events, top_links
+from .optional_formats import optional_format_status
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1856,8 +1858,10 @@ def _run_doctor(config: Config) -> dict:
         except Exception as e:
             pack_results.append({"path": str(p), "ok": False, "error": str(e)})
 
-    diag = {
+    format_status = optional_format_status()
+    diag: dict[str, Any] = {
         "ok": True,
+        "status": "ready" if format_status["ready"] else "degraded",
         "python": sys.version.split(" ")[0],
         "platform": platform.platform(),
         "version": TITAN_VERSION,
@@ -1868,7 +1872,17 @@ def _run_doctor(config: Config) -> dict:
             "yara": has("yara"),
             "yaml": has("yaml"),
             "requests": has("requests"),
+            **format_status["modules"],
         },
+        "optional_formats": format_status,
+        "warnings": (
+            []
+            if format_status["ready"]
+            else [
+                "Optional format support is incomplete; install the formats extra "
+                "to enable Brotli, Zstandard, 7z, RAR, ISO, and CAB handling."
+            ]
+        ),
         "rule_packs": pack_results,
     }
 
