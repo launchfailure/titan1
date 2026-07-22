@@ -418,6 +418,7 @@ class TitanEngine:
         depth: int = 0,
         is_decoded_content: bool = False,
         artifact_name: Optional[str] = None,
+        is_analyzer_metadata: bool = False,
     ) -> None:
         """Recursively analyze a blob of data with intelligent scoring and pruning."""
         if self._cancelled():
@@ -499,6 +500,18 @@ class TitanEngine:
             return
         self._seen_hashes.add(node.sha256)
 
+        # Analyzer-generated metadata (summaries, parsed headers) is authored
+        # by Titan itself, not recovered from the input. It stays in the graph
+        # so previews feed IOC extraction and reporting, but running decoders
+        # or analyzers over it can only manufacture false-positive nodes.
+        if is_analyzer_metadata:
+            node.analysis_state = "terminal"
+            node.termination_reason = (
+                "Analyzer-generated metadata artifact; not fed back through "
+                "decoders or analyzers."
+            )
+            return
+
         # Smart detection: Check if we should enable any off-by-default decoders
         detected_decoders = self.smart_detector.detect_format(data)
         if detected_decoders:
@@ -572,6 +585,9 @@ class TitanEngine:
                         # never score-pruned (is_decoded_content=True); the
                         # depth limit and global node cap inside analyze_blob
                         # are what bound the fan-out.
+                        metadata_names = getattr(
+                            analyzer, "metadata_artifact_names", frozenset()
+                        )
                         for name, content in extracted:
                             self.analyze_blob(
                                 content,
@@ -579,6 +595,7 @@ class TitanEngine:
                                 depth + 1,
                                 is_decoded_content=True,
                                 artifact_name=name,
+                                is_analyzer_metadata=name in metadata_names,
                             )
 
                         if self.include_decision_trace:

@@ -28,6 +28,15 @@ class Analyzer(ABC):
         """Name of the analyzer."""
         pass
 
+    @property
+    def metadata_artifact_names(self) -> frozenset:
+        """Artifact names this analyzer generates itself (summaries, parsed
+        metadata) rather than extracts from the input. The engine records
+        these nodes for IOC extraction and reporting but never feeds them
+        back through decoders, where analyzer-authored JSON can only ever
+        produce false-positive decode nodes."""
+        return frozenset()
+
 
 class ZipAnalyzer(Analyzer):
     """ZIP file analyzer with comprehensive safety checks.
@@ -295,6 +304,10 @@ class TarAnalyzer(Analyzer):
 class PEAnalyzer(Analyzer):
     """PE (Portable Executable) file metadata analyzer."""
 
+    @property
+    def metadata_artifact_names(self) -> frozenset:
+        return frozenset({"pe_metadata.json"})
+
     def can_analyze(self, data: bytes) -> bool:
         """Check if data looks like a PE file."""
         if len(data) < 64:
@@ -558,6 +571,10 @@ class PEAnalyzer(Analyzer):
 
 class ELFAnalyzer(Analyzer):
     """ELF (Executable and Linkable Format) file metadata analyzer."""
+
+    @property
+    def metadata_artifact_names(self) -> frozenset:
+        return frozenset({"elf_metadata.json"})
 
     def can_analyze(self, data: bytes) -> bool:
         """Check if data looks like an ELF file."""

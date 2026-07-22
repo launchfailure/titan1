@@ -93,9 +93,14 @@ class RawDeflateDecoder(Decoder):
         try:
             decoder = zlib.decompressobj(-zlib.MAX_WBITS)
             output = decoder.decompress(data, self.max_output + 1)
+            # Raw DEFLATE has no header, so the only defensible signal is that
+            # the entire input is one complete stream: bytes left after EOF
+            # land in unused_data and mean the "stream" was a coincidental
+            # prefix (ordinary text such as "{\n ..." decodes this way).
             if (
                 len(output) > self.max_output
                 or decoder.unconsumed_tail
+                or decoder.unused_data
                 or not decoder.eof
             ):
                 return None
