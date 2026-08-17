@@ -10,7 +10,7 @@ Two plugin styles are supported side by side:
 
 - Single-file plugins (API 1.0): a ``.py`` file in a plugin directory.
 - Manifest plugins (API 1.1): a directory with ``titan-plugin.json`` plus
-  its entry-point module, supporting all four SDK capabilities.
+  its entry-point module, supporting all five SDK capabilities.
 
 See docs/PLUGIN_API.md for the full contract.
 """
@@ -19,10 +19,12 @@ from .contracts import (
     PLUGIN_API_VERSION,
     AnalysisArtifact,
     AnalyzerPlugin,
+    ConfigExtraction,
     DecodeResult,
     DecoderPlugin,
     DetectionFinding,
     DetectionPlugin,
+    ExtractorPlugin,
     PluginAnalyzer,
     PluginCapability,
     PluginContext,
@@ -54,10 +56,12 @@ from .validation import (
 __all__ = [
     "AnalysisArtifact",
     "AnalyzerPlugin",
+    "ConfigExtraction",
     "DecodeResult",
     "DecoderPlugin",
     "DetectionFinding",
     "DetectionPlugin",
+    "ExtractorPlugin",
     "LoadedPlugin",
     "PLUGIN_API_VERSION",
     "PLUGIN_MANIFEST_FILENAME",

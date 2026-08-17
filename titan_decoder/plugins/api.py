@@ -25,9 +25,10 @@ Single-file plugin (``myplugin.py`` dropped in a plugin dir, API 1.0)::
                         for b in data)
             return out, out != data
 
-Manifest plugin (a directory with ``titan-plugin.json``, API 1.1) may use any
-of the four SDK base classes — :class:`DecoderPlugin`,
-:class:`AnalyzerPlugin`, :class:`DetectionPlugin`, :class:`ReportPlugin` —
+Manifest plugin (a directory with ``titan-plugin.json``, API 1.1+) may use any
+of the five SDK base classes — :class:`DecoderPlugin`,
+:class:`AnalyzerPlugin`, :class:`DetectionPlugin`, :class:`ExtractorPlugin`,
+:class:`ReportPlugin` —
 with typed results and an optional :class:`PluginContext`. See
 ``examples/plugins/`` for one complete plugin per capability.
 
@@ -44,10 +45,12 @@ from .contracts import (
     PLUGIN_API_VERSION,
     AnalysisArtifact,
     AnalyzerPlugin,
+    ConfigExtraction,
     DecodeResult,
     DecoderPlugin,
     DetectionFinding,
     DetectionPlugin,
+    ExtractorPlugin,
     PluginAnalyzer,
     PluginCapability,
     PluginContext,
@@ -76,10 +79,12 @@ __all__ = [
     "PLUGIN_MANIFEST_SCHEMA_VERSION",
     "AnalysisArtifact",
     "AnalyzerPlugin",
+    "ConfigExtraction",
     "DecodeResult",
     "DecoderPlugin",
     "DetectionFinding",
     "DetectionPlugin",
+    "ExtractorPlugin",
     "PluginAnalyzer",
     "PluginCapability",
     "PluginContext",

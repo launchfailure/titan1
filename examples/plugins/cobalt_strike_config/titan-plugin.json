@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "id": "titan.extractor.cobalt-strike",
+  "name": "Cobalt Strike Beacon Config Extractor",
+  "version": "1.0.0",
+  "api_version": "1.2.0",
+  "entry_point": "plugin:CobaltStrikeConfigExtractor",
+  "capabilities": ["extractor"],
+  "description": "Bounded extractor for Cobalt Strike 3.x/4.x Beacon configuration blocks.",
+  "author": "Titan contributors",
+  "license": "AGPL-3.0-or-later",
+  "permissions": [],
+  "dependencies": {}
+}

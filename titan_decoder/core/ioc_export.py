@@ -115,6 +115,9 @@ def export_stix_minimal(iocs: Dict[str, Any], path: Path):
             "spec_version": "2.1",
             "pattern_type": "stix",
             "pattern": pattern,
+            "created": "1970-01-01T00:00:00.000Z",
+            "modified": "1970-01-01T00:00:00.000Z",
+            "valid_from": "1970-01-01T00:00:00.000Z",
         }
 
     idx = 1

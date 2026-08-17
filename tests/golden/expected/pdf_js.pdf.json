@@ -88,8 +88,10 @@
   "run_manifest": {
     "components": {
       "analyzers": [
+        "DEX",
         "ELF",
         "Email",
+        "Mach-O",
         "OfficeOOXML",
         "OptionalArchive",
         "PE",
@@ -97,6 +99,7 @@
         "Steganography",
         "TAR",
         "WindowsLNK",
+        "X86ShellcodeEmulation",
         "ZIP"
       ],
       "decoders": [
@@ -110,6 +113,7 @@
         "Gzip",
         "HTMLEntity",
         "Hex",
+        "JavaScriptEmulation",
         "JavaScriptEscape",
         "LZMA",
         "OLE",
@@ -128,11 +132,12 @@
       ],
       "plugins": {
         "analyzers": [],
-        "api_version": "1.1",
+        "api_version": "1.2",
         "decoders": [],
         "detections": [],
         "errors": [],
         "execution_mode": "isolated",
+        "extractors": [],
         "legacy_plugins_in_process": false,
         "loaded_plugins": [],
         "manifest_plugins": [],
@@ -143,15 +148,18 @@
       "analysis_timeout_seconds": 300,
       "analyzer_timeout_seconds": 10,
       "analyzers": {
+        "dex": true,
         "elf": true,
         "email": true,
         "lnk": true,
+        "macho": true,
         "office": true,
         "optional_archives": true,
         "pe": true,
         "script": true,
         "steganography": true,
         "tar": true,
+        "x86_shellcode_emulation": true,
         "zip": true
       },
       "assurance_provider_timeout_seconds": 120,
@@ -172,6 +180,7 @@
         "gzip": true,
         "hex": true,
         "html_entity": true,
+        "javascript_emulation": true,
         "javascript_escape": true,
         "lzma": true,
         "ole": true,

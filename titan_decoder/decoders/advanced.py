@@ -14,6 +14,7 @@ import re
 import zlib
 
 from .base import Decoder, DEFAULT_MAX_DECOMPRESSED_SIZE
+from ..core.emulation import JavaScriptConstantEvaluator
 
 
 _MAGICS = (
@@ -225,6 +226,99 @@ class JavaScriptEscapeDecoder(Decoder):
         return (output, True) if output != data else (data, False)
 
 
+class JavaScriptEmulationDecoder(Decoder):
+    """Interpret a closed, constant-only JavaScript subset to expose eval text."""
+
+    _ASSIGNMENT = re.compile(
+        r"(?is)^(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*(.+)$"
+    )
+
+    def __init__(self, max_source: int = 1024 * 1024, max_steps: int = 4096):
+        self.max_source = max_source
+        self.max_steps = max_steps
+
+    @property
+    def name(self) -> str:
+        return "JavaScriptEmulation"
+
+    @staticmethod
+    def _statements(text: str) -> list[str]:
+        statements: list[str] = []
+        start = 0
+        depth = 0
+        quote = ""
+        escaped = False
+        for index, character in enumerate(text):
+            if quote:
+                if escaped:
+                    escaped = False
+                elif character == "\\":
+                    escaped = True
+                elif character == quote:
+                    quote = ""
+            elif character in "'\"":
+                quote = character
+            elif character == "(":
+                depth += 1
+            elif character == ")":
+                depth -= 1
+                if depth < 0:
+                    return []
+            elif character == ";" and depth == 0:
+                statements.append(text[start:index].strip())
+                start = index + 1
+        if quote or depth:
+            return []
+        statements.append(text[start:].strip())
+        return [statement for statement in statements if statement]
+
+    def _decode(self, data: bytes) -> bytes | None:
+        if not data or len(data) > self.max_source:
+            return None
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+        if "eval" not in text or not any(
+            marker in text
+            for marker in (
+                "fromCharCode",
+                "atob(",
+                "decodeURIComponent(",
+                "unescape(",
+            )
+        ):
+            return None
+        variables: dict[str, str | int] = {}
+        evaluator = JavaScriptConstantEvaluator(
+            max_steps=self.max_steps, max_output=self.max_source
+        )
+        try:
+            for statement in self._statements(text)[:64]:
+                assignment = self._ASSIGNMENT.fullmatch(statement)
+                if assignment:
+                    variables[assignment.group(1)] = evaluator.evaluate(
+                        assignment.group(2), variables
+                    )
+                    continue
+                if statement.startswith("eval(") and statement.endswith(")"):
+                    value = evaluator.evaluate(statement[5:-1], variables)
+                    if isinstance(value, str) and value:
+                        return value.encode("utf-8")
+        except (ValueError, UnicodeError):
+            return None
+        return None
+
+    def can_decode(self, data: bytes) -> bool:
+        return self._decode(data) is not None
+
+    def decode(self, data: bytes) -> tuple[bytes, bool]:
+        output = self._decode(data)
+        return (
+            (output, True) if output is not None and output != data else (data, False)
+        )
+
+
 class Base58Decoder(Decoder):
     """Decode Base58 only when explicitly labeled or strongly recognizable."""
 
@@ -333,7 +427,10 @@ class BrotliDecoder(Decoder):
         return "Brotli"
 
     def _decode(self, data: bytes) -> bytes | None:
-        value = data.strip()
+        # Only discard whitespace before the textual transport label.  The
+        # bytes after ``brotli:`` are an opaque binary stream, so stripping
+        # them can remove a legitimate final compressed byte.
+        value = data.lstrip()
         if not value.lower().startswith(b"brotli:"):
             return None
         value = value[7:]
@@ -346,6 +443,11 @@ class BrotliDecoder(Decoder):
                 output.extend(decoder.process(value[offset : offset + 64 * 1024]))
                 if len(output) > self.max_output:
                     return None
+            # brotli.Decompressor.process() can return partial output without
+            # raising when the input ends before the stream does.  Never
+            # report that partial evidence as a successful decode.
+            if not decoder.is_finished():
+                return None
             return bytes(output) if output else None
         except Exception:
             return None

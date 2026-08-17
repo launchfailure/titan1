@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+"""Generate the committed, deterministic roadmap proof bundle."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import html
+import json
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from titan_decoder import __version__  # noqa: E402
+from titan_decoder.config import Config  # noqa: E402
+from titan_decoder.core.calibration import CalibrationRunner  # noqa: E402
+from titan_decoder.core.engine import TitanEngine  # noqa: E402
+from titan_decoder.ecosystem.catalog import load_catalog  # noqa: E402
+from tools.eval_detections import evaluate  # noqa: E402
+
+OUTPUT = ROOT / "docs" / "proof"
+CALIBRATION = ROOT / "tests" / "fixtures" / "calibration" / "decoder-analyzer-v1.json"
+
+
+def _canonical_bytes(path: Path, *, text: bool = False) -> bytes:
+    payload = path.read_bytes()
+    if text:
+        payload = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return payload
+
+
+def _digest(path: Path, *, text: bool = False) -> str:
+    return hashlib.sha256(_canonical_bytes(path, text=text)).hexdigest()
+
+
+def build_metrics() -> dict:
+    calibration = CalibrationRunner().run(CALIBRATION)
+    calibration["corpus"] = CALIBRATION.relative_to(ROOT).as_posix()
+    detection = evaluate()
+    baseline = json.loads((ROOT / "tools" / "bench_baseline.json").read_text())
+    fuzz_files = sorted((ROOT / "fuzz" / "corpus").iterdir())
+    catalog = load_catalog(ROOT / "registry" / "plugins-v1.json")
+    return {
+        "schema_version": "1.0",
+        "titan_version": __version__,
+        "accuracy": {
+            "decoder_analyzer": calibration,
+            "detection": detection,
+        },
+        "benchmark": {
+            "source": "tools/bench_baseline.json",
+            "case_count": len(baseline["cases"]),
+            "cases": baseline["cases"],
+            "hardware_normalized": True,
+        },
+        "fuzzing": {
+            "harness": "fuzz/fuzz_decoders.py",
+            "seed_count": len(fuzz_files),
+            "seeds": [
+                {
+                    "path": path.relative_to(ROOT).as_posix(),
+                    "bytes": len(_canonical_bytes(path, text=path.suffix == ".txt")),
+                    "sha256": _digest(path, text=path.suffix == ".txt"),
+                }
+                for path in fuzz_files
+                if path.is_file()
+            ],
+        },
+        "ecosystem": {
+            "catalog": "registry/plugins-v1.json",
+            "catalog_entries": len(catalog["plugins"]),
+            "exports": ["MISP JSON", "STIX 2.1"],
+        },
+    }
+
+
+def build_audit_scope() -> dict:
+    engine = TitanEngine(Config())
+    files = sorted(
+        path
+        for root in (
+            ROOT / "titan_decoder" / "decoders",
+            ROOT / "titan_decoder" / "core" / "analyzers",
+        )
+        for path in root.glob("*.py")
+        if path.name != "__init__.py"
+    )
+    return {
+        "schema_version": "1.0",
+        "purpose": "Third-party parser security review scope and reproducible evidence manifest",
+        "in_scope_components": {
+            "decoders": sorted(item.name for item in engine.decoders),
+            "analyzers": sorted(item.name for item in engine.analyzers),
+        },
+        "source_files": [
+            {
+                "path": path.relative_to(ROOT).as_posix(),
+                "sha256": _digest(path, text=True),
+            }
+            for path in files
+        ],
+        "required_checks": [
+            "pytest -q",
+            "python fuzz/fuzz_decoders.py --seconds 30",
+            "python tools/bench.py --check",
+            "python tools/publish_proof.py --check",
+        ],
+        "security_invariants": [
+            "no uncaught parser exceptions",
+            "bounded output and resource use",
+            "no parser-triggered network or process execution",
+            "path traversal and archive expansion fail closed",
+            "deterministic evidence and provenance",
+        ],
+        "external_assessment": {
+            "status": "ready-for-independent-review",
+            "assessor": None,
+            "report_url": None,
+        },
+    }
+
+
+def build_html(metrics: dict) -> str:
+    calibration = metrics["accuracy"]["decoder_analyzer"]
+    aggregate = calibration["aggregate"]
+    rows = "".join(
+        "<tr><td>{}</td><td>{:.3f}</td><td>{:.3f}</td><td>{:.3f}</td></tr>".format(
+            html.escape(name), values["precision"], values["recall"], values["f1"]
+        )
+        for name, values in calibration["components"].items()
+    )
+    return f"""<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>Titan accuracy and proof dashboard</title>
+<style>body{{font:16px system-ui;max-width:1050px;margin:2rem auto;padding:0 1rem;color:#172033}}table{{border-collapse:collapse;width:100%}}th,td{{padding:.55rem;border-bottom:1px solid #ccd3df;text-align:left}}.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem}}.card{{padding:1rem;border:1px solid #ccd3df;border-radius:8px}}code{{background:#eef1f5;padding:.1rem .3rem}}</style>
+<h1>Titan accuracy and proof dashboard</h1>
+<p>Deterministically generated by <code>tools/publish_proof.py</code> from committed calibration, benchmark, fuzz, and catalog inputs. A small synthetic corpus is a regression signal, not a field-accuracy claim.</p>
+<div class="cards"><div class="card"><b>Calibration cases</b><br>{calibration["case_count"]}</div><div class="card"><b>Aggregate precision</b><br>{aggregate["precision"]:.3f}</div><div class="card"><b>Aggregate recall</b><br>{aggregate["recall"]:.3f}</div><div class="card"><b>Benchmark cases</b><br>{metrics["benchmark"]["case_count"]}</div><div class="card"><b>Fuzz seeds</b><br>{metrics["fuzzing"]["seed_count"]}</div><div class="card"><b>Plugin entries</b><br>{metrics["ecosystem"]["catalog_entries"]}</div></div>
+<h2>Decoder and analyzer calibration</h2><table><thead><tr><th>Component</th><th>Precision</th><th>Recall</th><th>F1</th></tr></thead><tbody>{rows}</tbody></table>
+<h2>Evidence</h2><ul><li><a href="metrics.json">Machine-readable metrics</a></li><li><a href="parser-audit-scope.json">Independent parser-audit scope</a></li><li><a href="../../tools/bench_baseline.json">Committed benchmark baseline</a></li><li><a href="../../registry/plugins-v1.json">Plugin catalog</a></li></ul>
+</html>
+"""
+
+
+def generated() -> dict[Path, bytes]:
+    metrics = build_metrics()
+    return {
+        OUTPUT / "metrics.json": (
+            json.dumps(metrics, indent=2, sort_keys=True) + "\n"
+        ).encode(),
+        OUTPUT / "parser-audit-scope.json": (
+            json.dumps(build_audit_scope(), indent=2, sort_keys=True) + "\n"
+        ).encode(),
+        OUTPUT / "index.html": build_html(metrics).encode(),
+    }
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--check", action="store_true")
+    args = parser.parse_args(argv)
+    failures = []
+    for path, payload in generated().items():
+        if args.check:
+            if not path.exists() or path.read_bytes() != payload:
+                failures.append(path.relative_to(ROOT).as_posix())
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(payload)
+    if failures:
+        print("stale proof artifacts: " + ", ".join(failures), file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

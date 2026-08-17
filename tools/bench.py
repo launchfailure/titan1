@@ -29,6 +29,7 @@ import json
 import os
 import sys
 import time
+import hashlib
 from typing import Dict
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -97,7 +98,21 @@ def run_bench() -> Dict:
     corpus = _bench_corpus()
     calib = min(_calibrate() for _ in range(3))
     cases = {name: _measure(data) for name, data in corpus.items()}
-    return {"calibration": calib, "time_threshold": TIME_THRESHOLD, "cases": cases}
+    return {
+        "schema_version": "1.0",
+        "corpus": {
+            "name": "Titan public golden and deterministic stress corpus",
+            "repository": "https://github.com/pragmaconflux/titan1",
+            "license": "AGPL-3.0-or-later",
+            "cases": {
+                name: {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+                for name, data in sorted(corpus.items())
+            },
+        },
+        "calibration": calib,
+        "time_threshold": TIME_THRESHOLD,
+        "cases": cases,
+    }
 
 
 def regen() -> None:

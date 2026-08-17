@@ -1,46 +1,94 @@
 {
-  "calibration": 0.008021353000003728,
+  "calibration": 0.0017592000003787689,
   "cases": {
     "big_nested_base64": {
       "node_count": 2,
-      "time": 0.037521523000123125
+      "time": 0.03726029999961611
     },
     "big_xor": {
       "node_count": 3,
-      "time": 0.08621514300011768
+      "time": 0.07509039999968081
     },
     "cfb_macro.doc": {
       "node_count": 2,
-      "time": 0.028990089000217267
+      "time": 0.022734199999831617
     },
     "gzip_text.bin": {
       "node_count": 3,
-      "time": 0.026056290000269655
+      "time": 0.020799500000066473
     },
     "high_entropy.bin": {
       "node_count": 1,
-      "time": 0.0014527560001624806
+      "time": 0.0009126999993895879
     },
     "multi_ioc.txt": {
       "node_count": 1,
-      "time": 0.007082603999606363
+      "time": 0.005350199999156757
     },
     "nested_base64.txt": {
       "node_count": 2,
-      "time": 0.0056889200000114215
+      "time": 0.004285499999241438
     },
     "pdf_js.pdf": {
       "node_count": 2,
-      "time": 0.03420137299963244
+      "time": 0.026424599998790654
     },
     "plain_iocs.txt": {
       "node_count": 1,
-      "time": 0.007701952999923378
+      "time": 0.005859799999598181
     },
     "xor_url.bin": {
       "node_count": 2,
-      "time": 0.01273646399977224
+      "time": 0.010012800001277355
     }
   },
+  "corpus": {
+    "cases": {
+      "big_nested_base64": {
+        "bytes": 24892,
+        "sha256": "7ca7020b874e197d0b009aa06400b97bbf7974da4bf611aea43e371f1470c13f"
+      },
+      "big_xor": {
+        "bytes": 18000,
+        "sha256": "8726a672c5afad8ef78d9463365517984385a3177c191ef42a16bf305533a807"
+      },
+      "cfb_macro.doc": {
+        "bytes": 2560,
+        "sha256": "43625c3de22110ea2430af7d52d64e3452992d2d4272e7569c84d60509397a6e"
+      },
+      "gzip_text.bin": {
+        "bytes": 44,
+        "sha256": "83ee1326482e6e07a28ed2c5b9f766fb955b5fd0e26980769dac6707919bcb20"
+      },
+      "high_entropy.bin": {
+        "bytes": 2048,
+        "sha256": "6c995cc637182119ccccc03d521fe863d5c54fda83e0689da74e8f35f44bb660"
+      },
+      "multi_ioc.txt": {
+        "bytes": 63,
+        "sha256": "bced05b8304d05ca4bde18c1a2a2797239104f5b4b25ea6bac858148cb816f19"
+      },
+      "nested_base64.txt": {
+        "bytes": 104,
+        "sha256": "0a8a05128388a03017ae6274d8a397b6936eb09ea8d4299ab0ea5d6d54d54649"
+      },
+      "pdf_js.pdf": {
+        "bytes": 307,
+        "sha256": "76e773459dda63e7a475c5e3419f4534b46e6c10cce40ad68cf6d9c8a09a65de"
+      },
+      "plain_iocs.txt": {
+        "bytes": 66,
+        "sha256": "e1c899c82bcc572859214cd1dd05e0a2823bf5f59925e739fbbf81152cf60c5e"
+      },
+      "xor_url.bin": {
+        "bytes": 50,
+        "sha256": "8ef77063d7c4beb2d7e08d97886714b521e386692c4f0bfeb4f1b1379cc8e307"
+      }
+    },
+    "license": "AGPL-3.0-or-later",
+    "name": "Titan public golden and deterministic stress corpus",
+    "repository": "https://github.com/pragmaconflux/titan1"
+  },
+  "schema_version": "1.0",
   "time_threshold": 3.0
 }

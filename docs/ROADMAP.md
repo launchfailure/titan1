@@ -59,33 +59,43 @@ Ordered by leverage. Each item ships incrementally behind Titan's existing
 constraints: deterministic, bounded, offline-first, fail-closed.
 
 1. **Detection content at scale.** YARA scanning of every artifact-graph
-   node shipped (see DETECTION_AND_RISK.md); next: grow the built-in rule
-   library and starter packs aggressively, expand the calibration corpus
-   toward thousands of labeled cases, and publish per-rule precision/recall
-   from the calibration gate.
+   node shipped (see DETECTION_AND_RISK.md). The starter pack now includes
+   precision-tested remote certutil download, MSHTA execution, and regsvr32
+   scriptlet chains in addition to its decoded-content signatures. Every
+   starter rule now has multiple labeled positives, adversarial benign
+   near-misses, committed precision/recall metrics, and a CI quality gate;
+   next: grow the corpus and rule library with measured field-derived misses.
 2. **Malware config extraction.** Family identification plus C2/config
-   recovery (addresses, keys, campaign ids) as isolated manifest plugins on
-   the existing out-of-process worker substrate, with a documented extractor
-   SDK and a seed set of extractors for prevalent families.
+   recovery (addresses, keys, campaign ids) now has a documented API 1.2
+   extractor SDK, isolated-worker transport, validation, report integration,
+   and bounded seed extractors for Cobalt Strike Beacon and decrypted Remcos
+   settings, with real-layout positive/adversarial fixtures. Next: expand the
+   calibrated family and version matrix from measured field samples.
 3. **Format coverage depth.** .NET assembly structure, MSI/NSIS/InnoSetup
    installers, OneNote, RTF exploit structures, Excel 4.0 XLM macros, VBA
-   p-code, PDF stream filters with JavaScript extraction, Mach-O, APK/DEX,
-   VHD/VHDX, and password-protected archives (`infected`). Every new parser
-   lands with a labeled corpus slice and resource-bound regression tests.
+   p-code, PDF stream filters with JavaScript extraction, APK/DEX, VHD/VHDX,
+   and password-protected archives (`infected`). Thin Mach-O and DEX structural
+   analyzers now ship with malformed-input corpus slices and explicit resource
+   bounds; continue prioritizing the remaining formats by measured misses.
 4. **Service mode.** A `titan-server` deployment shape: REST API, work
    queue, horizontally scalable workers, artifact store, and hash-based
-   dedup cache (reference architecture: CCCS Assemblyline), so Titan runs as
-   pipeline infrastructure rather than a single-process CLI.
+   dedup cache now ships as a dependency-free, loopback-only-by-default
+   reference deployment. Next: production queue/object-store adapters and
+   deployment manifests for multi-host operation.
 5. **Bounded emulation.** Instruction-budgeted, no-I/O emulation for
-   shellcode (Unicorn-class) and sandboxed JavaScript evaluation for
-   deobfuscation — deterministic and fail-closed by construction, extending
-   static analysis past string-building obfuscation without becoming a
-   sandbox.
+   shellcode and sandboxed JavaScript evaluation for deobfuscation now has a
+   fail-closed foundation: a constant-only JavaScript interpreter plus an x86
+   register/stack interpreter that blocks memory, system, and extended
+   instructions. Next: expand opcode and language coverage only alongside
+   adversarial corpus cases and the existing hard budgets.
 6. **Proof and ecosystem.** Published benchmark runs against public corpora,
-   a public accuracy dashboard fed by calibration output, third-party audit
-   of the parsing surface (extending the fuzz harness), MISP/STIX export,
-   and a community plugin registry. Positioning: forensic-grade,
-   deterministic, offline-first, court-ready provenance.
+   a public accuracy dashboard fed by calibration output, MISP/STIX export,
+   and a provenance-pinned offline community plugin catalog now ship with a
+   deterministic CI freshness gate. The fuzz-backed parser inventory and
+   source-hash manifest are ready for independent review; publishing an actual
+   third-party assessor and report remains an external attestation step.
+   Positioning: forensic-grade, deterministic, offline-first, court-ready
+   provenance.
 
 ## Local AI assistant (shipped as Milestone 8)
 

@@ -12,6 +12,7 @@ from typing import Any, Mapping
 
 from .contracts import (
     DetectionPlugin,
+    ExtractorPlugin,
     PluginAnalyzer,
     PluginContext,
     PluginDecoder,
@@ -72,6 +73,8 @@ def _metadata(instance: Any) -> dict[str, Any]:
         capabilities.append("analyzer")
     if isinstance(instance, DetectionPlugin):
         capabilities.append("detection")
+    if isinstance(instance, ExtractorPlugin):
+        capabilities.append("extractor")
     if isinstance(instance, ReportPlugin):
         capabilities.append("report")
     return {
@@ -123,6 +126,10 @@ def _invoke(instance: Any, request: Mapping[str, Any]) -> Any:
             context,
         )
         return [value.to_dict() for value in values]
+    if operation == "can_extract":
+        return instance.can_extract(_bytes(payload), context)
+    if operation == "extract":
+        return [value.to_dict() for value in instance.extract(_bytes(payload), context)]
     if operation == "build_sections":
         report = payload.get("report")
         return [

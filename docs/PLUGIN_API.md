@@ -1,7 +1,8 @@
 # Plugin SDK v1
 
-Titan can be extended without modifying the core through four plugin SDKs:
-**decoders**, **analyzers**, **detections**, and **report sections**. All
+Titan can be extended without modifying the core through five plugin SDKs:
+**decoders**, **analyzers**, **detections**, **malware configuration
+extractors**, and **report sections**. All
 public types live in `titan_decoder.plugins.api` — third-party plugins import
 only from that module; it is the compatibility surface covered by the
 versioned API contract.
@@ -13,7 +14,7 @@ Two styles are supported side by side:
 | Style | API | Layout | Capabilities |
 |---|---|---|---|
 | Single-file | 1.0 | one `.py` file in a plugin directory | decoder, analyzer |
-| Manifest | 1.1 | a directory with `titan-plugin.json` + entry-point module | decoder, analyzer, detection, report |
+| Manifest | 1.1+ | a directory with `titan-plugin.json` + entry-point module | decoder, analyzer, detection, extractor, report |
 
 Plugin directories are searched in this order: `plugin_dirs` from
 configuration, `--plugin-dir` CLI arguments, `~/.titan_decoder/plugins`, and
@@ -21,11 +22,14 @@ the built-in plugin path. Every directory is scanned for both styles.
 
 ## API versioning
 
-The engine provides `PLUGIN_API_VERSION` (currently `1.1`, MAJOR.MINOR):
+The engine provides `PLUGIN_API_VERSION` (currently `1.2`, MAJOR.MINOR):
 
 - **MAJOR** bump = breaking change to base-class signatures or semantics.
 - **MINOR** bump = additive, backward-compatible extension. (`1.1` added the
   manifest SDK; every API `1.0` plugin still loads and runs unchanged.)
+
+API 1.2 adds the extractor capability and `ConfigExtraction`; older 1.0/1.1
+plugins remain compatible.
 
 Single-file plugins may declare a module-level `PLUGIN_API_VERSION`; they are
 skipped on a MAJOR mismatch. Manifest plugins must declare `api_version` and
@@ -75,6 +79,7 @@ Each manifest plugin directory contains `titan-plugin.json`
 ```python
 from titan_decoder.plugins.api import DecoderPlugin, DecodeResult
 
+
 class Rot47Decoder(DecoderPlugin):
     priority = 10  # higher = tried first
 
@@ -100,13 +105,13 @@ best-scoring decoder wins the node.
 ```python
 from titan_decoder.plugins.api import AnalyzerPlugin, AnalysisArtifact
 
+
 class StringsAnalyzer(AnalyzerPlugin):
     @property
     def name(self):
         return "PrintableStrings"
 
-    def can_analyze(self, data, context=None):
-        ...
+    def can_analyze(self, data, context=None): ...
 
     def analyze(self, data, context=None):
         return [AnalysisArtifact("strings.txt", content, {"count": 3})]
@@ -121,6 +126,7 @@ unpack like the legacy `(name, bytes)` tuples. Respect
 ```python
 from titan_decoder.plugins.api import DetectionPlugin, DetectionFinding
 
+
 class MarkerDetection(DetectionPlugin):
     @property
     def name(self):
@@ -132,14 +138,16 @@ class MarkerDetection(DetectionPlugin):
 
     def detect(self, report, iocs, context=None):
         ...
-        return [DetectionFinding(
-            rule_id="EXAMPLE-001",
-            name="Example Marker",
-            description="Synthetic marker found",
-            severity="medium",              # low | medium | high | critical
-            attack_ids=("T1027",),          # optional ATT&CK techniques
-            evidence=({"node_id": 2},),     # optional evidence references
-        )]
+        return [
+            DetectionFinding(
+                rule_id="EXAMPLE-001",
+                name="Example Marker",
+                description="Synthetic marker found",
+                severity="medium",  # low | medium | high | critical
+                attack_ids=("T1027",),  # optional ATT&CK techniques
+                evidence=({"node_id": 2},),  # optional evidence references
+            )
+        ]
 ```
 
 Detection plugins run during `--enable-detections`, after the built-in rules
@@ -156,10 +164,48 @@ Rules of the road (enforced at load and validation time):
 - Rule IDs must be unique across all loaded plugins.
 - At most 200 findings per plugin per run are accepted.
 
+## Malware configuration extractor SDK
+
+```python
+from titan_decoder.plugins.api import ConfigExtraction, ExtractorPlugin
+
+
+class FamilyConfigExtractor(ExtractorPlugin):
+    @property
+    def name(self):
+        return "Family Config"
+
+    def can_extract(self, data, context=None):
+        return data.startswith(b"FAMILY-CONFIG|")
+
+    def extract(self, data, context=None):
+        return [
+            ConfigExtraction(
+                family="ExampleFamily",
+                confidence=0.95,
+                values={"sleep_ms": 5000},
+                c2=("https://c2.example/gate",),
+                keys=("001122",),
+                campaign_id="red-team",
+            )
+        ]
+```
+
+Extractors run over every raw, decoded, and extracted artifact node. Results
+are bounded, sorted, and stored in `report["config_extractions"]` with the
+source node ID and plugin name. Manifest extractors use the same isolated,
+offline worker as other plugin capabilities. `values` and `metadata` must be
+JSON-serializable; `confidence` must be between 0 and 1.
+
+See [CONFIG_EXTRACTORS.md](CONFIG_EXTRACTORS.md) for the bounded Cobalt Strike
+Beacon and Remcos seed implementations, accepted representations, and
+calibration limits.
+
 ## Report SDK
 
 ```python
 from titan_decoder.plugins.api import ReportPlugin, ReportSection
+
 
 class SummaryReport(ReportPlugin):
     @property
@@ -167,13 +213,15 @@ class SummaryReport(ReportPlugin):
         return "Example Summary"
 
     def build_sections(self, report, context=None):
-        return [ReportSection(
-            section_id="example_summary",
-            title="Example Plugin Summary",
-            content={"node_count": report.get("node_count", 0)},
-            order=900,                       # lower renders first
-            formats=("json", "markdown", "html"),
-        )]
+        return [
+            ReportSection(
+                section_id="example_summary",
+                title="Example Plugin Summary",
+                content={"node_count": report.get("node_count", 0)},
+                order=900,  # lower renders first
+                formats=("json", "markdown", "html"),
+            )
+        ]
 ```
 
 Sections must be JSON-serializable. They are embedded in the JSON report
@@ -261,7 +309,8 @@ legacy plugin.
 
 Complete working examples — one per capability — live in
 `examples/plugins/`: `rot47_decoder`, `string_analyzer`, `marker_detection`,
-and `summary_report`. All four pass `--plugin-validate` and are exercised by
+`config_extractor`, `cobalt_strike_config`, `remcos_config`, and `summary_report`.
+All seven pass `--plugin-validate` and are exercised by
 the test suite (`tests/test_plugin_sdk.py`,
 `tests/test_plugin_sdk_integration.py`).
 
