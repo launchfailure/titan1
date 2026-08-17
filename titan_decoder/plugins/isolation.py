@@ -20,10 +20,12 @@ from typing import Any, Mapping
 from .contracts import (
     AnalysisArtifact,
     AnalyzerPlugin,
+    ConfigExtraction,
     DecodeResult,
     DecoderPlugin,
     DetectionFinding,
     DetectionPlugin,
+    ExtractorPlugin,
     PluginContext,
     ReportPlugin,
     ReportSection,
@@ -304,6 +306,42 @@ class IsolatedDetectionProxy(_ProxyBase, DetectionPlugin):
         ]
 
 
+class IsolatedExtractorProxy(_ProxyBase, ExtractorPlugin):
+    def can_extract(self, data: bytes, context: PluginContext | None = None) -> bool:
+        value = self._client.invoke(
+            "can_extract", {"data": base64.b64encode(data).decode("ascii")}, context
+        )
+        if not isinstance(value, bool):
+            raise TypeError("extractor can_extract returned a non-boolean value")
+        return value
+
+    def extract(
+        self, data: bytes, context: PluginContext | None = None
+    ) -> list[ConfigExtraction]:
+        values = self._client.invoke(
+            "extract", {"data": base64.b64encode(data).decode("ascii")}, context
+        )
+        if not isinstance(values, list):
+            raise TypeError("extractor returned an invalid result")
+        return [
+            ConfigExtraction(
+                family=str(value.get("family") or ""),
+                confidence=float(value.get("confidence") or 0.0),
+                values=_metadata_mapping(value.get("values")),
+                c2=tuple(value.get("c2") or ()),
+                keys=tuple(value.get("keys") or ()),
+                campaign_id=(
+                    str(value["campaign_id"])
+                    if value.get("campaign_id") is not None
+                    else None
+                ),
+                metadata=_metadata_mapping(value.get("metadata")),
+            )
+            for value in values[: self._client.max_children]
+            if isinstance(value, dict)
+        ]
+
+
 class IsolatedReportProxy(_ProxyBase, ReportPlugin):
     def build_sections(
         self,
@@ -351,6 +389,7 @@ def build_isolated_proxies(
             "decoder": IsolatedDecoderProxy,
             "analyzer": IsolatedAnalyzerProxy,
             "detection": IsolatedDetectionProxy,
+            "extractor": IsolatedExtractorProxy,
             "report": IsolatedReportProxy,
         }[capability]
         proxies.append(proxy_type(client, metadata))

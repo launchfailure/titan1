@@ -19,10 +19,12 @@ from typing import Any
 from .contracts import (
     AnalysisArtifact,
     AnalyzerPlugin,
+    ConfigExtraction,
     DecodeResult,
     DecoderPlugin,
     DetectionFinding,
     DetectionPlugin,
+    ExtractorPlugin,
     PluginContext,
     ReportPlugin,
     ReportSection,
@@ -161,6 +163,24 @@ def _probe_report(instance: ReportPlugin, context: PluginContext, report):
             )
 
 
+def _probe_extractor(instance: ExtractorPlugin, context: PluginContext, report):
+    can = instance.can_extract(_PROBE_INPUT, context)
+    if not isinstance(can, bool):
+        report.error("extractor.can_extract_type", "can_extract must return bool")
+    values = instance.extract(_PROBE_INPUT, context)
+    if len(values) > context.max_children:
+        report.error(
+            "extractor.child_limit",
+            f"extract produced more than {context.max_children} results",
+        )
+    for value in values:
+        if not isinstance(value, ConfigExtraction):
+            report.error(
+                "extractor.result_type",
+                "extract must return ConfigExtraction items",
+            )
+
+
 def validate_plugin(
     path: str | Path,
     *,
@@ -210,6 +230,7 @@ def validate_plugin(
         "decoder": DecoderPlugin,
         "analyzer": AnalyzerPlugin,
         "detection": DetectionPlugin,
+        "extractor": ExtractorPlugin,
         "report": ReportPlugin,
     }
     implemented = {
@@ -248,6 +269,8 @@ def validate_plugin(
             _probe_analyzer(instance, context, report, max_probe_output_bytes)
         if isinstance(instance, DetectionPlugin):
             _probe_detection(instance, context, report)
+        if isinstance(instance, ExtractorPlugin):
+            _probe_extractor(instance, context, report)
         if isinstance(instance, ReportPlugin):
             _probe_report(instance, context, report)
     except Exception as exc:

@@ -64,9 +64,10 @@ constraints: deterministic, bounded, offline-first, fail-closed.
    toward thousands of labeled cases, and publish per-rule precision/recall
    from the calibration gate.
 2. **Malware config extraction.** Family identification plus C2/config
-   recovery (addresses, keys, campaign ids) as isolated manifest plugins on
-   the existing out-of-process worker substrate, with a documented extractor
-   SDK and a seed set of extractors for prevalent families.
+   recovery (addresses, keys, campaign ids) now has a documented API 1.2
+   extractor SDK, isolated-worker transport, validation, report integration,
+   and a complete synthetic example; next: ship and calibrate the seed set of
+   extractors for prevalent families.
 3. **Format coverage depth.** .NET assembly structure, MSI/NSIS/InnoSetup
    installers, OneNote, RTF exploit structures, Excel 4.0 XLM macros, VBA
    p-code, PDF stream filters with JavaScript extraction, Mach-O, APK/DEX,
