@@ -1,0 +1,285 @@
+{
+  "schema": "titan-yara-quality/1",
+  "corpus_size": 27,
+  "positive_samples": 16,
+  "benign_samples": 11,
+  "per_rule": {
+    "Titan_PowerShell_Download_Cradle": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 25,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Titan_Encoded_Command_Invocation": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 25,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Titan_Executable_In_Decoded_Content": {
+      "tp": 4,
+      "fp": 0,
+      "fn": 0,
+      "tn": 23,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Titan_UPX_Packed_Executable": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 25,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Titan_JavaScript_Eval_Decode_Chain": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 25,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Titan_Certutil_Remote_Download": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 25,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Titan_MSHTA_Remote_Execution": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 25,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Titan_Regsvr32_Remote_Scriptlet": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 25,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "per_sample": [
+    {
+      "name": "powershell_downloadstring",
+      "expected_rules": [
+        "Titan_PowerShell_Download_Cradle"
+      ],
+      "fired_rules": [
+        "Titan_PowerShell_Download_Cradle"
+      ]
+    },
+    {
+      "name": "powershell_iwr",
+      "expected_rules": [
+        "Titan_PowerShell_Download_Cradle"
+      ],
+      "fired_rules": [
+        "Titan_PowerShell_Download_Cradle"
+      ]
+    },
+    {
+      "name": "encoded_powershell",
+      "expected_rules": [
+        "Titan_Encoded_Command_Invocation"
+      ],
+      "fired_rules": [
+        "Titan_Encoded_Command_Invocation"
+      ]
+    },
+    {
+      "name": "hidden_pwsh",
+      "expected_rules": [
+        "Titan_Encoded_Command_Invocation"
+      ],
+      "fired_rules": [
+        "Titan_Encoded_Command_Invocation"
+      ]
+    },
+    {
+      "name": "pe32",
+      "expected_rules": [
+        "Titan_Executable_In_Decoded_Content"
+      ],
+      "fired_rules": [
+        "Titan_Executable_In_Decoded_Content"
+      ]
+    },
+    {
+      "name": "pe64",
+      "expected_rules": [
+        "Titan_Executable_In_Decoded_Content"
+      ],
+      "fired_rules": [
+        "Titan_Executable_In_Decoded_Content"
+      ]
+    },
+    {
+      "name": "upx_sections",
+      "expected_rules": [
+        "Titan_Executable_In_Decoded_Content",
+        "Titan_UPX_Packed_Executable"
+      ],
+      "fired_rules": [
+        "Titan_Executable_In_Decoded_Content",
+        "Titan_UPX_Packed_Executable"
+      ]
+    },
+    {
+      "name": "upx_signature",
+      "expected_rules": [
+        "Titan_Executable_In_Decoded_Content",
+        "Titan_UPX_Packed_Executable"
+      ],
+      "fired_rules": [
+        "Titan_Executable_In_Decoded_Content",
+        "Titan_UPX_Packed_Executable"
+      ]
+    },
+    {
+      "name": "javascript_atob",
+      "expected_rules": [
+        "Titan_JavaScript_Eval_Decode_Chain"
+      ],
+      "fired_rules": [
+        "Titan_JavaScript_Eval_Decode_Chain"
+      ]
+    },
+    {
+      "name": "javascript_uri_decode",
+      "expected_rules": [
+        "Titan_JavaScript_Eval_Decode_Chain"
+      ],
+      "fired_rules": [
+        "Titan_JavaScript_Eval_Decode_Chain"
+      ]
+    },
+    {
+      "name": "certutil_download",
+      "expected_rules": [
+        "Titan_Certutil_Remote_Download"
+      ],
+      "fired_rules": [
+        "Titan_Certutil_Remote_Download"
+      ]
+    },
+    {
+      "name": "certutil_http",
+      "expected_rules": [
+        "Titan_Certutil_Remote_Download"
+      ],
+      "fired_rules": [
+        "Titan_Certutil_Remote_Download"
+      ]
+    },
+    {
+      "name": "mshta_remote",
+      "expected_rules": [
+        "Titan_MSHTA_Remote_Execution"
+      ],
+      "fired_rules": [
+        "Titan_MSHTA_Remote_Execution"
+      ]
+    },
+    {
+      "name": "mshta_inline",
+      "expected_rules": [
+        "Titan_MSHTA_Remote_Execution"
+      ],
+      "fired_rules": [
+        "Titan_MSHTA_Remote_Execution"
+      ]
+    },
+    {
+      "name": "regsvr32_https",
+      "expected_rules": [
+        "Titan_Regsvr32_Remote_Scriptlet"
+      ],
+      "fired_rules": [
+        "Titan_Regsvr32_Remote_Scriptlet"
+      ]
+    },
+    {
+      "name": "regsvr32_http",
+      "expected_rules": [
+        "Titan_Regsvr32_Remote_Scriptlet"
+      ],
+      "fired_rules": [
+        "Titan_Regsvr32_Remote_Scriptlet"
+      ]
+    },
+    {
+      "name": "benign_readme",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_powershell",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_webclient",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_pe_text",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_upx_text",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_javascript",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_certutil",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_mshta_local",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_mshta_docs",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_regsvr32",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_scrobj",
+      "expected_rules": [],
+      "fired_rules": []
+    }
+  ]
+}

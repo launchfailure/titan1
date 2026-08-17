@@ -59,10 +59,12 @@ Ordered by leverage. Each item ships incrementally behind Titan's existing
 constraints: deterministic, bounded, offline-first, fail-closed.
 
 1. **Detection content at scale.** YARA scanning of every artifact-graph
-   node shipped (see DETECTION_AND_RISK.md); next: grow the built-in rule
-   library and starter packs aggressively, expand the calibration corpus
-   toward thousands of labeled cases, and publish per-rule precision/recall
-   from the calibration gate.
+   node shipped (see DETECTION_AND_RISK.md). The starter pack now includes
+   precision-tested remote certutil download, MSHTA execution, and regsvr32
+   scriptlet chains in addition to its decoded-content signatures. Every
+   starter rule now has multiple labeled positives, adversarial benign
+   near-misses, committed precision/recall metrics, and a CI quality gate;
+   next: grow the corpus and rule library with measured field-derived misses.
 2. **Malware config extraction.** Family identification plus C2/config
    recovery (addresses, keys, campaign ids) as isolated manifest plugins on
    the existing out-of-process worker substrate, with a documented extractor

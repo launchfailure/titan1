@@ -85,3 +85,47 @@ rule Titan_JavaScript_Eval_Decode_Chain
     condition:
         any of them
 }
+
+rule Titan_Certutil_Remote_Download
+{
+    meta:
+        description = "Certutil URL-cache download chain"
+        severity = "high"
+        attack_id = "T1105"
+    strings:
+        $host = "certutil" ascii nocase
+        $urlcache = "-urlcache" ascii nocase
+        $url1 = "http://" ascii nocase
+        $url2 = "https://" ascii nocase
+    condition:
+        $host and $urlcache and any of ($url*)
+}
+
+rule Titan_MSHTA_Remote_Execution
+{
+    meta:
+        description = "MSHTA remote or inline script execution"
+        severity = "high"
+        attack_id = "T1218.005"
+    strings:
+        $remote = /mshta(\.exe)?["']?[ \t]+https?:\/\// ascii nocase
+        $inline = /mshta(\.exe)?["']?[ \t]+(javascript|vbscript):/ ascii nocase
+    condition:
+        any of them
+}
+
+rule Titan_Regsvr32_Remote_Scriptlet
+{
+    meta:
+        description = "Regsvr32 remote scriptlet execution through scrobj.dll"
+        severity = "high"
+        attack_id = "T1218.010"
+    strings:
+        $host = "regsvr32" ascii nocase
+        $scriptlet = "scrobj.dll" ascii nocase
+        $install = "/i:" ascii nocase
+        $url1 = "http://" ascii nocase
+        $url2 = "https://" ascii nocase
+    condition:
+        $host and $scriptlet and $install and any of ($url*)
+}
