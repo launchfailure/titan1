@@ -43,6 +43,7 @@ from ..decoders.advanced import (
     ZstandardDecoder,
 )
 from .analyzers.base import Analyzer, ZipAnalyzer, TarAnalyzer, PEAnalyzer, ELFAnalyzer
+from .analyzers.executable_formats import DexAnalyzer, MachOAnalyzer
 from .analyzers.steganography import SteganographyAnalyzer
 from .analyzers.structured import (
     EmailAnalyzer,
@@ -315,6 +316,10 @@ class TitanEngine:
             self.analyzers.append(PEAnalyzer())
         if self.config.get("analyzers", {}).get("elf", True):
             self.analyzers.append(ELFAnalyzer())
+        if self.config.get("analyzers", {}).get("macho", True):
+            self.analyzers.append(MachOAnalyzer())
+        if self.config.get("analyzers", {}).get("dex", True):
+            self.analyzers.append(DexAnalyzer())
         if self.config.get("analyzers", {}).get("steganography", True):
             media_config = {
                 "max_media_artifacts": self.config.get("max_media_artifacts", 8),

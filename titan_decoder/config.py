@@ -88,6 +88,8 @@ class Config:
             "tar": True,
             "pe": True,
             "elf": True,
+            "macho": True,
+            "dex": True,
             "steganography": True,
             "email": True,
             "office": True,

@@ -73,9 +73,10 @@ constraints: deterministic, bounded, offline-first, fail-closed.
    calibrated family and version matrix from measured field samples.
 3. **Format coverage depth.** .NET assembly structure, MSI/NSIS/InnoSetup
    installers, OneNote, RTF exploit structures, Excel 4.0 XLM macros, VBA
-   p-code, PDF stream filters with JavaScript extraction, Mach-O, APK/DEX,
-   VHD/VHDX, and password-protected archives (`infected`). Every new parser
-   lands with a labeled corpus slice and resource-bound regression tests.
+   p-code, PDF stream filters with JavaScript extraction, APK/DEX, VHD/VHDX,
+   and password-protected archives (`infected`). Thin Mach-O and DEX structural
+   analyzers now ship with malformed-input corpus slices and explicit resource
+   bounds; continue prioritizing the remaining formats by measured misses.
 4. **Service mode.** A `titan-server` deployment shape: REST API, work
    queue, horizontally scalable workers, artifact store, and hash-based
    dedup cache (reference architecture: CCCS Assemblyline), so Titan runs as
