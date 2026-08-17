@@ -74,8 +74,9 @@ constraints: deterministic, bounded, offline-first, fail-closed.
    lands with a labeled corpus slice and resource-bound regression tests.
 4. **Service mode.** A `titan-server` deployment shape: REST API, work
    queue, horizontally scalable workers, artifact store, and hash-based
-   dedup cache (reference architecture: CCCS Assemblyline), so Titan runs as
-   pipeline infrastructure rather than a single-process CLI.
+   dedup cache now ships as a dependency-free, loopback-only-by-default
+   reference deployment. Next: production queue/object-store adapters and
+   deployment manifests for multi-host operation.
 5. **Bounded emulation.** Instruction-budgeted, no-I/O emulation for
    shellcode (Unicorn-class) and sandboxed JavaScript evaluation for
    deobfuscation — deterministic and fail-closed by construction, extending
