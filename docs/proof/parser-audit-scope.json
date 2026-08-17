@@ -1,0 +1,93 @@
+{
+  "external_assessment": {
+    "assessor": null,
+    "report_url": null,
+    "status": "ready-for-independent-review"
+  },
+  "in_scope_components": {
+    "analyzers": [
+      "ELF",
+      "Email",
+      "OfficeOOXML",
+      "OptionalArchive",
+      "PE",
+      "Script",
+      "Steganography",
+      "TAR",
+      "WindowsLNK",
+      "ZIP"
+    ],
+    "decoders": [
+      "ASCII85",
+      "Base58",
+      "Base64",
+      "Base64URL",
+      "Base91",
+      "Brotli",
+      "Bz2",
+      "Gzip",
+      "HTMLEntity",
+      "Hex",
+      "JavaScriptEscape",
+      "LZMA",
+      "OLE",
+      "PDF",
+      "PEM",
+      "PowerShellEncodedCommand",
+      "ROT13",
+      "RawDeflate",
+      "RecursiveBase64",
+      "URLDecoder",
+      "UTF16",
+      "UnicodeEscape",
+      "XOR",
+      "ZLIB",
+      "Zstandard"
+    ]
+  },
+  "purpose": "Third-party parser security review scope and reproducible evidence manifest",
+  "required_checks": [
+    "pytest -q",
+    "python fuzz/fuzz_decoders.py --seconds 30",
+    "python tools/bench.py --check",
+    "python tools/publish_proof.py --check"
+  ],
+  "schema_version": "1.0",
+  "security_invariants": [
+    "no uncaught parser exceptions",
+    "bounded output and resource use",
+    "no parser-triggered network or process execution",
+    "path traversal and archive expansion fail closed",
+    "deterministic evidence and provenance"
+  ],
+  "source_files": [
+    {
+      "path": "titan_decoder/core/analyzers/base.py",
+      "sha256": "0565958d492520312921d28a46c92e15b9a47e755a4c79e6f3e437e255f4892a"
+    },
+    {
+      "path": "titan_decoder/core/analyzers/steganography.py",
+      "sha256": "88c868dcc07c8e583d9bb58d7594d2a1ff99a0d2f6282776dee5daccb77c7d4f"
+    },
+    {
+      "path": "titan_decoder/core/analyzers/structured.py",
+      "sha256": "f79cdd502acaca3631d9627e13154243f0654d4ed93ad4771daeae2e089d5fa5"
+    },
+    {
+      "path": "titan_decoder/decoders/advanced.py",
+      "sha256": "2c6febbe09b872594ac0421843392cd27d2063e71f5e30186b206fa99cfa1d18"
+    },
+    {
+      "path": "titan_decoder/decoders/base.py",
+      "sha256": "b0a1957ef12ea090946f9e29aedfda363b95ad5464f7109272e1482d5eeec2c6"
+    },
+    {
+      "path": "titan_decoder/decoders/cfb.py",
+      "sha256": "3b688c948f41022116cbbe7f4be708339f431a7b046d47782a0e6c4aedde2139"
+    },
+    {
+      "path": "titan_decoder/decoders/pdf.py",
+      "sha256": "01af0e759a908805f099c9d0db813b7515b8b789b607d78eff8f311177fb1f87"
+    }
+  ]
+}

@@ -73,3 +73,7 @@ jobs:
         # against a calibration workload so a slow runner does not false-fail.
         run: |
           python tools/bench.py --check
+
+      - name: Published proof bundle is current
+        run: |
+          python tools/publish_proof.py --check
