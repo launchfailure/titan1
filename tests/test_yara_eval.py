@@ -10,7 +10,9 @@ from tools.eval_yara import ALL_RULES, evaluate  # noqa: E402
 def test_every_starter_rule_has_multiple_positive_samples():
     metrics = evaluate()
     assert set(metrics["per_rule"]) == set(ALL_RULES)
-    assert all(values["tp"] + values["fn"] >= 2 for values in metrics["per_rule"].values())
+    assert all(
+        values["tp"] + values["fn"] >= 2 for values in metrics["per_rule"].values()
+    )
 
 
 def test_starter_yara_precision_and_recall_gate():

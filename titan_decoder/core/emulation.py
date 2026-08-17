@@ -42,7 +42,10 @@ class JavaScriptConstantEvaluator:
             raise EmulationLimitError("JavaScript instruction budget exhausted")
 
     def _bounded(self, value: str | int) -> str | int:
-        if isinstance(value, str) and len(value.encode("utf-8", errors="replace")) > self.max_output:
+        if (
+            isinstance(value, str)
+            and len(value.encode("utf-8", errors="replace")) > self.max_output
+        ):
             raise EmulationLimitError("JavaScript output budget exhausted")
         return value
 
@@ -53,7 +56,9 @@ class JavaScriptConstantEvaluator:
             match = self._TOKEN.match(expression, cursor)
             if match is None:
                 raise ValueError("unsupported JavaScript syntax")
-            kind = next(name for name, value in match.groupdict().items() if value is not None)
+            kind = next(
+                name for name, value in match.groupdict().items() if value is not None
+            )
             tokens.append((kind, match.group(kind)))
             cursor = match.end()
             if len(tokens) > self.max_steps:
@@ -64,6 +69,7 @@ class JavaScriptConstantEvaluator:
     def _string(token: str) -> str:
         quote = token[0]
         body = token[1:-1]
+
         # Decode only JavaScript's common literal escapes. Avoid Python eval.
         def replace(match: re.Match[str]) -> str:
             value = match.group(1)
@@ -81,7 +87,9 @@ class JavaScriptConstantEvaluator:
 
         return re.sub(r"\\(x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|.)", replace, body)
 
-    def evaluate(self, expression: str, variables: dict[str, str | int] | None = None) -> str | int:
+    def evaluate(
+        self, expression: str, variables: dict[str, str | int] | None = None
+    ) -> str | int:
         self.steps = 0
         self.variables = dict(variables or {})
         self.tokens = self._tokenize(expression.strip())
@@ -109,7 +117,11 @@ class JavaScriptConstantEvaluator:
         while self._peek("+"):
             self._take("+")
             right = self._primary()
-            value = value + right if isinstance(value, int) and isinstance(right, int) else str(value) + str(right)
+            value = (
+                value + right
+                if isinstance(value, int) and isinstance(right, int)
+                else str(value) + str(right)
+            )
             value = self._bounded(value)
         return value
 
@@ -146,11 +158,12 @@ class JavaScriptConstantEvaluator:
     def _call(self, name: str, arguments: list[str | int]) -> str:
         self._step()
         if name == "String.fromCharCode":
-            if len(arguments) > 4096 or any(not isinstance(value, int) or not 0 <= value <= 0xFFFF for value in arguments):
+            if len(arguments) > 4096 or any(
+                not isinstance(value, int) or not 0 <= value <= 0xFFFF
+                for value in arguments
+            ):
                 raise ValueError("invalid fromCharCode arguments")
-            return self._bounded(
-                "".join(chr(cast(int, value)) for value in arguments)
-            )  # type: ignore[return-value]
+            return self._bounded("".join(chr(cast(int, value)) for value in arguments))  # type: ignore[return-value]
         if len(arguments) != 1 or not isinstance(arguments[0], str):
             raise ValueError("function requires one string")
         value = arguments[0]
@@ -163,7 +176,11 @@ class JavaScriptConstantEvaluator:
         else:
             result = unquote(value.replace("%u", "\\u"))
             if name == "unescape":
-                result = re.sub(r"\\u([0-9a-fA-F]{4})", lambda match: chr(int(match.group(1), 16)), result)
+                result = re.sub(
+                    r"\\u([0-9a-fA-F]{4})",
+                    lambda match: chr(int(match.group(1), 16)),
+                    result,
+                )
         return self._bounded(result)  # type: ignore[return-value]
 
 
@@ -265,7 +282,11 @@ class X86ConstantEmulator:
                     ip += 2
                 elif opcode in (0x74, 0x75, 0xEB):
                     displacement = self._read(code, ip + 1, 1, signed=True)
-                    taken = opcode == 0xEB or (opcode == 0x74 and zero) or (opcode == 0x75 and not zero)
+                    taken = (
+                        opcode == 0xEB
+                        or (opcode == 0x74 and zero)
+                        or (opcode == 0x75 and not zero)
+                    )
                     ip = ip + 2 + displacement if taken else ip + 2
                 elif opcode in (0xE8, 0xE9):
                     displacement = self._read(code, ip + 1, 4, signed=True)

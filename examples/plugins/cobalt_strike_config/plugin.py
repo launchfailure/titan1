@@ -51,7 +51,9 @@ class CobaltStrikeConfigExtractor(ExtractorPlugin):
                 continue
             raw = block[offset + 6 : offset + 6 + length]
             if data_type == 3:
-                text = raw.split(b"\x00", 1)[0].decode("utf-8", errors="replace").strip()
+                text = (
+                    raw.split(b"\x00", 1)[0].decode("utf-8", errors="replace").strip()
+                )
                 if text:
                     values[label] = text
             else:

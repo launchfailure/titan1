@@ -55,11 +55,21 @@ def evaluate(rules_dir: Path = RULES_DIR) -> dict[str, Any]:
         fired = {match["rule"] for match in result["matches"]}
         unexpected = fired - set(ALL_RULES)
         if unexpected:
-            raise RuntimeError(f"starter pack contains untracked rules: {sorted(unexpected)}")
+            raise RuntimeError(
+                f"starter pack contains untracked rules: {sorted(unexpected)}"
+            )
         for rule in ALL_RULES:
             expected = rule in sample.expected_rules
             matched = rule in fired
-            bucket = "tp" if expected and matched else "fn" if expected else "fp" if matched else "tn"
+            bucket = (
+                "tp"
+                if expected and matched
+                else "fn"
+                if expected
+                else "fp"
+                if matched
+                else "tn"
+            )
             counts[rule][bucket] += 1
         samples.append(
             {

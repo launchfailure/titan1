@@ -97,8 +97,6 @@ def test_shellcode_analyzer_emits_bounded_metadata_and_ioc_artifact():
 def test_engine_registers_emulators_and_extracts_emulated_ioc():
     engine = TitanEngine(Config())
     assert {decoder.name for decoder in engine.decoders} >= {"JavaScriptEmulation"}
-    assert {analyzer.name for analyzer in engine.analyzers} >= {
-        "X86ShellcodeEmulation"
-    }
+    assert {analyzer.name for analyzer in engine.analyzers} >= {"X86ShellcodeEmulation"}
     report = engine.run_analysis(_push_string_shellcode())
     assert "http://evil.com" in report["iocs"]["urls"]

@@ -105,7 +105,9 @@ def test_brotli_decoder_preserves_binary_whitespace_and_rejects_truncation():
     # This complete stream ends in form-feed (0x0c).  Treating the opaque
     # compressed bytes as surrounding text used to strip that byte and
     # silently return only b"payload" with success=True.
-    compressed = bytes.fromhex("1b1800f81d0936ce72617d90b4d52d31347022a8c2f2ea074d22914b0c")
+    compressed = bytes.fromhex(
+        "1b1800f81d0936ce72617d90b4d52d31347022a8c2f2ea074d22914b0c"
+    )
     assert brotli.decompress(compressed) == source
     encoded = b"brotli:" + compressed
     assert BrotliDecoder().decode(encoded) == (source, True)

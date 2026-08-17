@@ -14,8 +14,35 @@ def _macho64() -> bytes:
     header = b"\xcf\xfa\xed\xfe" + struct.pack(
         "<IIIIIII", 0x01000007, 3, 2, 2, 208, 0x200000, 0
     )
-    segment = struct.pack("<II16sQQQQIIII", 0x19, 152, b"__TEXT", 0x100000000, 0x1000, 0, len(section_data), 7, 5, 1, 0)
-    section = struct.pack("<16s16sQQIIIIIIII", b"__text", b"__TEXT", 0x100000F50, len(section_data), section_offset, 4, 0, 0, 0x80000400, 0, 0, 0)
+    segment = struct.pack(
+        "<II16sQQQQIIII",
+        0x19,
+        152,
+        b"__TEXT",
+        0x100000000,
+        0x1000,
+        0,
+        len(section_data),
+        7,
+        5,
+        1,
+        0,
+    )
+    section = struct.pack(
+        "<16s16sQQIIIIIIII",
+        b"__text",
+        b"__TEXT",
+        0x100000F50,
+        len(section_data),
+        section_offset,
+        4,
+        0,
+        0,
+        0x80000400,
+        0,
+        0,
+        0,
+    )
     dylib_name = b"/usr/lib/libSystem.B.dylib\x00"
     dylib = struct.pack("<IIIIII", 0xC, 56, 24, 0, 0, 0) + dylib_name.ljust(32, b"\x00")
     return header + segment + section + dylib + section_data
@@ -35,7 +62,11 @@ def _dex(strings: list[bytes]) -> bytes:
     struct.pack_into("<III", header, 32, file_size, 112, 0x12345678)
     struct.pack_into("<II", header, 56, len(strings), ids_offset)
     struct.pack_into("<II", header, 104, len(items), data_offset)
-    return bytes(header) + b"".join(struct.pack("<I", item) for item in offsets) + bytes(items)
+    return (
+        bytes(header)
+        + b"".join(struct.pack("<I", item) for item in offsets)
+        + bytes(items)
+    )
 
 
 def test_macho_extracts_load_commands_sections_and_dylibs():
@@ -65,7 +96,9 @@ def test_dex_extracts_bounded_strings_and_table_metadata():
     metadata = json.loads(artifacts["dex_metadata.json"])
     assert metadata["version"] == "035"
     assert metadata["tables"]["string"]["count"] == 2
-    assert artifacts["dex_strings.txt"] == b"Lcom/example/Main;\nhttps://dex.example/gate"
+    assert (
+        artifacts["dex_strings.txt"] == b"Lcom/example/Main;\nhttps://dex.example/gate"
+    )
 
 
 def test_dex_rejects_bad_endian_tag_and_out_of_range_table():

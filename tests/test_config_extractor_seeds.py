@@ -11,7 +11,11 @@ PLUGINS = Path(__file__).resolve().parents[1] / "examples" / "plugins"
 
 
 def _field(field_id: int, kind: int, size: int, value: bytes | int) -> bytes:
-    raw = value.to_bytes(size, "big") if isinstance(value, int) else value.ljust(size, b"\x00")
+    raw = (
+        value.to_bytes(size, "big")
+        if isinstance(value, int)
+        else value.ljust(size, b"\x00")
+    )
     return bytes((0, field_id, 0, kind)) + size.to_bytes(2, "big") + raw
 
 
@@ -57,7 +61,9 @@ def test_cobalt_strike_decoded_and_xor_variants_run_isolated(xor_key):
 def test_cobalt_strike_rejects_marker_only_and_invalid_timing():
     extractor = _extractor("cobalt_strike_config")
     assert not extractor.can_extract(b"\x00\x01\x00\x01\x00\x02" + b"noise" * 20)
-    invalid = _cobalt_config().replace((60_000).to_bytes(4, "big"), b"\x00\x00\x00\x00", 1)
+    invalid = _cobalt_config().replace(
+        (60_000).to_bytes(4, "big"), b"\x00\x00\x00\x00", 1
+    )
     assert extractor.extract(invalid) == []
 
 

@@ -69,9 +69,14 @@ class TitanHandler(BaseHTTPRequestHandler):
                     if parts[3] != "report":
                         raise KeyError(job_id)
                     if job["state"] != "completed":
-                        self._json(HTTPStatus.CONFLICT, {"error": "report not ready", "state": job["state"]})
+                        self._json(
+                            HTTPStatus.CONFLICT,
+                            {"error": "report not ready", "state": job["state"]},
+                        )
                         return
-                    self._json(HTTPStatus.OK, self.server.service.store.get_report(job_id))
+                    self._json(
+                        HTTPStatus.OK, self.server.service.store.get_report(job_id)
+                    )
                     return
                 self._json(HTTPStatus.OK, job)
             except (KeyError, FileNotFoundError):
@@ -92,7 +97,10 @@ class TitanHandler(BaseHTTPRequestHandler):
             length = -1
         maximum = self.server.service.store.max_artifact_bytes
         if length <= 0 or length > maximum:
-            self._json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "invalid artifact size", "max_bytes": maximum})
+            self._json(
+                HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
+                {"error": "invalid artifact size", "max_bytes": maximum},
+            )
             return
         data = self.rfile.read(length)
         try:
@@ -143,7 +151,11 @@ def main(argv=None) -> int:
     threads = []
     if args.mode in {"all", "worker"}:
         for index in range(args.workers):
-            thread = threading.Thread(target=_worker_loop, args=(service, f"{args.worker_id}:{index}", stop), daemon=True)
+            thread = threading.Thread(
+                target=_worker_loop,
+                args=(service, f"{args.worker_id}:{index}", stop),
+                daemon=True,
+            )
             thread.start()
             threads.append(thread)
     if args.mode in {"all", "serve"}:

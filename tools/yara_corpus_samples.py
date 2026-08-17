@@ -52,7 +52,9 @@ def build_yara_corpus() -> list[YaraSample]:
         YaraSample("pe32", _pe(), frozenset({executable})),
         YaraSample("pe64", _pe(b"native payload"), frozenset({executable})),
         YaraSample("upx_sections", _pe(b"UPX0", b"UPX1"), frozenset({executable, upx})),
-        YaraSample("upx_signature", _pe(b"UPX0", b"UPX!"), frozenset({executable, upx})),
+        YaraSample(
+            "upx_signature", _pe(b"UPX0", b"UPX!"), frozenset({executable, upx})
+        ),
         YaraSample(
             "javascript_atob",
             b"eval(atob('YWxlcnQoMSk='))",
@@ -98,10 +100,14 @@ def build_yara_corpus() -> list[YaraSample]:
         YaraSample("benign_webclient", b"The Net.WebClient API is deprecated."),
         YaraSample("benign_pe_text", b"MZ and PE are executable file signatures."),
         YaraSample("benign_upx_text", b"UPX0 and UPX1 are section-name examples."),
-        YaraSample("benign_javascript", b"const decoded = atob(value); console.log(decoded);"),
+        YaraSample(
+            "benign_javascript", b"const decoded = atob(value); console.log(decoded);"
+        ),
         YaraSample("benign_certutil", b"certutil -hashfile release.zip SHA256"),
         YaraSample("benign_mshta_local", b"mshta.exe local-help.hta"),
-        YaraSample("benign_mshta_docs", b"mshta can access https://docs.example/ in examples"),
+        YaraSample(
+            "benign_mshta_docs", b"mshta can access https://docs.example/ in examples"
+        ),
         YaraSample("benign_regsvr32", b"regsvr32 /s local-component.dll"),
         YaraSample("benign_scrobj", b"Windows includes the scrobj.dll component."),
     ]

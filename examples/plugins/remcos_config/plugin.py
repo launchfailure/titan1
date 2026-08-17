@@ -17,7 +17,11 @@ class RemcosConfigExtractor(ExtractorPlugin):
             return None
         endpoint_record = fields[0]
         separator = next(
-            (item for item in (b"|", b"\x1e", b"\xff\xff\xff\xff") if item in endpoint_record),
+            (
+                item
+                for item in (b"|", b"\x1e", b"\xff\xff\xff\xff")
+                if item in endpoint_record
+            ),
             None,
         )
         if separator is None:

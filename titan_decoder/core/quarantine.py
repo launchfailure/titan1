@@ -194,6 +194,42 @@ class QuarantineVault:
         overwrite: bool = False,
         read_only: bool = False,
     ) -> None:
+        if not overwrite:
+            # Publish through O_EXCL. On Windows, security software can remove
+            # hidden NamedTemporaryFile payloads between close and verification;
+            # that made quarantine intermittently fail under a full scan. The
+            # exclusive descriptor retains no-overwrite semantics, and any
+            # interrupted or hash-mismatched destination is removed below.
+            try:
+                descriptor = os.open(
+                    destination,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+                    0o600,
+                )
+            except FileExistsError as exc:
+                raise FileExistsError(
+                    f"destination already exists: {destination}"
+                ) from exc
+            try:
+                with os.fdopen(descriptor, "wb") as output_handle:
+                    with source.open("rb") as input_handle:
+                        shutil.copyfileobj(
+                            input_handle, output_handle, length=1024 * 1024
+                        )
+                    output_handle.flush()
+                    os.fsync(output_handle.fileno())
+                if _hash_file(destination) != expected_sha256:
+                    raise RuntimeError("destination failed post-copy hash verification")
+                if read_only:
+                    try:
+                        destination.chmod(stat.S_IREAD)
+                    except OSError:
+                        pass
+                return
+            except Exception:
+                destination.unlink(missing_ok=True)
+                raise
+
         with tempfile.NamedTemporaryFile(
             "wb",
             dir=destination.parent,
@@ -209,40 +245,7 @@ class QuarantineVault:
         try:
             if _hash_file(temporary) != expected_sha256:
                 raise RuntimeError("quarantine copy failed hash verification")
-            if overwrite:
-                temporary.replace(destination)
-            else:
-                try:
-                    os.link(temporary, destination)
-                except FileExistsError as exc:
-                    raise FileExistsError(
-                        f"destination already exists: {destination}"
-                    ) from exc
-                except OSError:
-                    # Some removable/network filesystems do not support hard
-                    # links. Preserve no-overwrite semantics with O_EXCL.
-                    descriptor = os.open(
-                        destination,
-                        os.O_WRONLY | os.O_CREAT | os.O_EXCL,
-                        0o600,
-                    )
-                    try:
-                        with os.fdopen(descriptor, "wb") as output_handle:
-                            with temporary.open("rb") as input_handle:
-                                shutil.copyfileobj(
-                                    input_handle, output_handle, length=1024 * 1024
-                                )
-                            output_handle.flush()
-                            os.fsync(output_handle.fileno())
-                        if _hash_file(destination) != expected_sha256:
-                            raise RuntimeError(
-                                "destination failed post-copy hash verification"
-                            )
-                    except Exception:
-                        if destination.exists():
-                            destination.unlink()
-                        raise
-                temporary.unlink()
+            temporary.replace(destination)
             if read_only:
                 try:
                     destination.chmod(stat.S_IREAD)

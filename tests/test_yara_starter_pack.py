@@ -36,12 +36,10 @@ RULES = Path(__file__).parents[1] / "examples" / "yara_rules"
         ),
     ],
 )
-def test_starter_pack_detects_proxy_execution_chains(
-    payload, expected_rule, attack_id
-):
-    result = YaraScanner(
-        {"enable_yara": True, "yara_rules_dirs": [str(RULES)]}
-    ).scan([(0, payload)])
+def test_starter_pack_detects_proxy_execution_chains(payload, expected_rule, attack_id):
+    result = YaraScanner({"enable_yara": True, "yara_rules_dirs": [str(RULES)]}).scan(
+        [(0, payload)]
+    )
 
     matches = {match["rule"]: match for match in result["matches"]}
     assert expected_rule in matches
@@ -60,9 +58,9 @@ def test_starter_pack_detects_proxy_execution_chains(
     ],
 )
 def test_starter_pack_rejects_benign_proxy_execution_near_misses(payload):
-    result = YaraScanner(
-        {"enable_yara": True, "yara_rules_dirs": [str(RULES)]}
-    ).scan([(0, payload)])
+    result = YaraScanner({"enable_yara": True, "yara_rules_dirs": [str(RULES)]}).scan(
+        [(0, payload)]
+    )
 
     new_rules = {
         "Titan_Certutil_Remote_Download",

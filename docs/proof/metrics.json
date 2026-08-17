@@ -610,7 +610,7 @@
           "malicious": false,
           "name": "ben_single_base64",
           "risk_level": "LOW",
-          "risk_score": 2
+          "risk_score": 4
         },
         {
           "expected_rules": [],
@@ -703,7 +703,7 @@
           2,
           2,
           2,
-          2,
+          4,
           4,
           5,
           6,
@@ -736,43 +736,43 @@
     "cases": {
       "big_nested_base64": {
         "node_count": 2,
-        "time": 0.03723139999965497
+        "time": 0.03726029999961611
       },
       "big_xor": {
         "node_count": 3,
-        "time": 0.07635610000033921
+        "time": 0.07509039999968081
       },
       "cfb_macro.doc": {
         "node_count": 2,
-        "time": 0.022773400000005495
+        "time": 0.022734199999831617
       },
       "gzip_text.bin": {
         "node_count": 3,
-        "time": 0.020429399999557063
+        "time": 0.020799500000066473
       },
       "high_entropy.bin": {
         "node_count": 1,
-        "time": 0.0008907000010367483
+        "time": 0.0009126999993895879
       },
       "multi_ioc.txt": {
         "node_count": 1,
-        "time": 0.005434500000774278
+        "time": 0.005350199999156757
       },
       "nested_base64.txt": {
         "node_count": 2,
-        "time": 0.004437999999936437
+        "time": 0.004285499999241438
       },
       "pdf_js.pdf": {
         "node_count": 2,
-        "time": 0.026784899999256595
+        "time": 0.026424599998790654
       },
       "plain_iocs.txt": {
         "node_count": 1,
-        "time": 0.006069400000342284
+        "time": 0.005859799999598181
       },
       "xor_url.bin": {
         "node_count": 2,
-        "time": 0.01028509999923699
+        "time": 0.010012800001277355
       }
     },
     "hardware_normalized": true,

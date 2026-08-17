@@ -314,7 +314,9 @@ class JavaScriptEmulationDecoder(Decoder):
 
     def decode(self, data: bytes) -> tuple[bytes, bool]:
         output = self._decode(data)
-        return (output, True) if output is not None and output != data else (data, False)
+        return (
+            (output, True) if output is not None and output != data else (data, False)
+        )
 
 
 class Base58Decoder(Decoder):

@@ -61,8 +61,8 @@ class MachOAnalyzer(Analyzer):
         header_size = 32 if bits == 64 else 28
         if len(data) < header_size:
             return None
-        cpu_type, cpu_subtype, file_type, ncmds, commands_size, flags = struct.unpack_from(
-            f"{endian}IIIIII", data, 4
+        cpu_type, cpu_subtype, file_type, ncmds, commands_size, flags = (
+            struct.unpack_from(f"{endian}IIIIII", data, 4)
         )
         if ncmds > self._MAX_COMMANDS or commands_size > len(data) - header_size:
             return None
@@ -96,16 +96,22 @@ class MachOAnalyzer(Analyzer):
                     section_name = self._cstring(data[at : at + 16])
                     segment_name = self._cstring(data[at + 16 : at + 32])
                     if is_64:
-                        address, size, offset, _align, _reloc, _nreloc, sec_flags = struct.unpack_from(
-                            f"{endian}QQIIIII", data, at + 32
+                        address, size, offset, _align, _reloc, _nreloc, sec_flags = (
+                            struct.unpack_from(f"{endian}QQIIIII", data, at + 32)
                         )
                     else:
-                        address, size, offset, _align, _reloc, _nreloc, sec_flags = struct.unpack_from(
-                            f"{endian}IIIIIII", data, at + 32
+                        address, size, offset, _align, _reloc, _nreloc, sec_flags = (
+                            struct.unpack_from(f"{endian}IIIIIII", data, at + 32)
                         )
-                    raw = data[offset : offset + size] if offset <= len(data) and size <= len(data) - offset else b""
+                    raw = (
+                        data[offset : offset + size]
+                        if offset <= len(data) and size <= len(data) - offset
+                        else b""
+                    )
                     if size and not raw:
-                        anomalies.append(f"invalid_section_range:{segment_name},{section_name}")
+                        anomalies.append(
+                            f"invalid_section_range:{segment_name},{section_name}"
+                        )
                     sections.append(
                         {
                             "segment": segment_name,
@@ -120,14 +126,24 @@ class MachOAnalyzer(Analyzer):
             elif command in self._DYLIB_COMMANDS and command_size >= 24:
                 name_offset = struct.unpack_from(f"{endian}I", data, cursor + 8)[0]
                 if 24 <= name_offset < command_size:
-                    name = self._cstring(data[cursor + name_offset : cursor + command_size])
+                    name = self._cstring(
+                        data[cursor + name_offset : cursor + command_size]
+                    )
                     if name:
                         dylibs.append(name)
             elif command == 0x80000028 and command_size >= 24:
                 entry_offset = struct.unpack_from(f"{endian}Q", data, cursor + 8)[0]
             elif command == 0x1B and command_size >= 24:
                 raw_uuid = data[cursor + 8 : cursor + 24].hex()
-                uuid = "-".join((raw_uuid[:8], raw_uuid[8:12], raw_uuid[12:16], raw_uuid[16:20], raw_uuid[20:]))
+                uuid = "-".join(
+                    (
+                        raw_uuid[:8],
+                        raw_uuid[8:12],
+                        raw_uuid[12:16],
+                        raw_uuid[16:20],
+                        raw_uuid[20:],
+                    )
+                )
             cursor += command_size
         if cursor != commands_end:
             anomalies.append("load_command_padding")
@@ -194,13 +210,20 @@ class DexAnalyzer(Analyzer):
             return None
         version = data[4:7].decode("ascii", errors="replace")
         file_size, header_size, endian_tag = struct.unpack_from("<III", data, 32)
-        if file_size < 112 or file_size > len(data) or header_size != 112 or endian_tag != 0x12345678:
+        if (
+            file_size < 112
+            or file_size > len(data)
+            or header_size != 112
+            or endian_tag != 0x12345678
+        ):
             return None
         table_names = ("string", "type", "proto", "field", "method", "class")
         tables: dict[str, dict[str, int]] = {}
         for index, name in enumerate(table_names):
             count, offset = struct.unpack_from("<II", data, 56 + index * 8)
-            if count > self._MAX_TABLE_ITEMS or (count and not 112 <= offset < file_size):
+            if count > self._MAX_TABLE_ITEMS or (
+                count and not 112 <= offset < file_size
+            ):
                 return None
             tables[name] = {"count": count, "offset": offset}
         string_count = tables["string"]["count"]
@@ -215,7 +238,9 @@ class DexAnalyzer(Analyzer):
             if prefix is None:
                 continue
             _utf16_length, start = prefix
-            end = data.find(b"\x00", start, min(file_size, start + self._MAX_STRING_BYTES + 1))
+            end = data.find(
+                b"\x00", start, min(file_size, start + self._MAX_STRING_BYTES + 1)
+            )
             if end < 0:
                 continue
             raw = data[start:end]

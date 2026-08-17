@@ -129,9 +129,7 @@ def _invoke(instance: Any, request: Mapping[str, Any]) -> Any:
     if operation == "can_extract":
         return instance.can_extract(_bytes(payload), context)
     if operation == "extract":
-        return [
-            value.to_dict() for value in instance.extract(_bytes(payload), context)
-        ]
+        return [value.to_dict() for value in instance.extract(_bytes(payload), context)]
     if operation == "build_sections":
         report = payload.get("report")
         return [

@@ -6,8 +6,10 @@
   },
   "in_scope_components": {
     "analyzers": [
+      "DEX",
       "ELF",
       "Email",
+      "Mach-O",
       "OfficeOOXML",
       "OptionalArchive",
       "PE",
@@ -15,6 +17,7 @@
       "Steganography",
       "TAR",
       "WindowsLNK",
+      "X86ShellcodeEmulation",
       "ZIP"
     ],
     "decoders": [
@@ -28,6 +31,7 @@
       "Gzip",
       "HTMLEntity",
       "Hex",
+      "JavaScriptEmulation",
       "JavaScriptEscape",
       "LZMA",
       "OLE",
@@ -66,16 +70,24 @@
       "sha256": "0565958d492520312921d28a46c92e15b9a47e755a4c79e6f3e437e255f4892a"
     },
     {
+      "path": "titan_decoder/core/analyzers/emulation.py",
+      "sha256": "8df23d6bdcec602ee051fb8fc3509663421f0eb45b1dcef2b9da8cd74d5b6e39"
+    },
+    {
+      "path": "titan_decoder/core/analyzers/executable_formats.py",
+      "sha256": "f1367b98e4ad1ae8824aecbfa67d781dbc9a011940985fd712db74d824c8aad1"
+    },
+    {
       "path": "titan_decoder/core/analyzers/steganography.py",
       "sha256": "88c868dcc07c8e583d9bb58d7594d2a1ff99a0d2f6282776dee5daccb77c7d4f"
     },
     {
       "path": "titan_decoder/core/analyzers/structured.py",
-      "sha256": "f79cdd502acaca3631d9627e13154243f0654d4ed93ad4771daeae2e089d5fa5"
+      "sha256": "6d65a3bad512aa093cfac2d90e265873e60aabaf15189ee72f714df4ef7030af"
     },
     {
       "path": "titan_decoder/decoders/advanced.py",
-      "sha256": "2c6febbe09b872594ac0421843392cd27d2063e71f5e30186b206fa99cfa1d18"
+      "sha256": "0ed6f6ffcec1c19e99c6de08f0ee0e8bb2be071b2d1acd4f6a4e2baf533d8863"
     },
     {
       "path": "titan_decoder/decoders/base.py",

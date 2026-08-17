@@ -39,7 +39,9 @@ class ArtifactStore:
         if target.exists():
             return digest, False
         target.parent.mkdir(parents=True, exist_ok=True)
-        temporary = target.with_name(f".{target.name}.{os.getpid()}.{threading.get_ident()}")
+        temporary = target.with_name(
+            f".{target.name}.{os.getpid()}.{threading.get_ident()}"
+        )
         try:
             with temporary.open("xb") as stream:
                 stream.write(data)
@@ -121,7 +123,9 @@ class JobQueue:
 
     def get(self, job_id: str) -> dict[str, Any]:
         with self._connect() as connection:
-            row = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+            row = connection.execute(
+                "SELECT * FROM jobs WHERE id = ?", (job_id,)
+            ).fetchone()
         if row is None:
             raise KeyError(job_id)
         return dict(row)
@@ -167,7 +171,12 @@ class JobQueue:
 class TitanService:
     """Coordinates submission, persistent workers, and report retrieval."""
 
-    def __init__(self, root: Path, config: Config | None = None, max_artifact_bytes: int = 50 * 1024 * 1024):
+    def __init__(
+        self,
+        root: Path,
+        config: Config | None = None,
+        max_artifact_bytes: int = 50 * 1024 * 1024,
+    ):
         self.store = ArtifactStore(Path(root), max_artifact_bytes)
         self.queue = JobQueue(Path(root) / "queue.sqlite3")
         self.config = config or Config()

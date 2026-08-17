@@ -14,9 +14,7 @@ class X86ShellcodeEmulationAnalyzer(Analyzer):
 
     def __init__(self, max_source: int = 1024 * 1024, max_steps: int = 4096):
         self.max_source = max_source
-        self.emulator = X86ConstantEmulator(
-            max_steps=max_steps, max_stack=max_source
-        )
+        self.emulator = X86ConstantEmulator(max_steps=max_steps, max_stack=max_source)
 
     @property
     def name(self) -> str:
@@ -70,7 +68,5 @@ class X86ShellcodeEmulationAnalyzer(Analyzer):
             )
         ]
         if strings:
-            artifacts.append(
-                ("x86_emulated_strings.txt", "\n".join(strings).encode())
-            )
+            artifacts.append(("x86_emulated_strings.txt", "\n".join(strings).encode()))
         return artifacts
