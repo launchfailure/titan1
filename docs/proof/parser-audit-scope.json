@@ -67,39 +67,39 @@
   "source_files": [
     {
       "path": "titan_decoder/core/analyzers/base.py",
-      "sha256": "0565958d492520312921d28a46c92e15b9a47e755a4c79e6f3e437e255f4892a"
+      "sha256": "9d7e98554fc3b2c6671434ff09cbafb58f0c025046e4d85a872e09987493fd6a"
     },
     {
       "path": "titan_decoder/core/analyzers/emulation.py",
-      "sha256": "8df23d6bdcec602ee051fb8fc3509663421f0eb45b1dcef2b9da8cd74d5b6e39"
+      "sha256": "bb4ccd669f02b0be57362d310c813e1fe17e3907c08289aabcbd3865ebab7f0a"
     },
     {
       "path": "titan_decoder/core/analyzers/executable_formats.py",
-      "sha256": "f1367b98e4ad1ae8824aecbfa67d781dbc9a011940985fd712db74d824c8aad1"
+      "sha256": "eff618bc9954d37144f25ef2e838dec6e2ee441ea89c255a9eb4c0bb778ab414"
     },
     {
       "path": "titan_decoder/core/analyzers/steganography.py",
-      "sha256": "88c868dcc07c8e583d9bb58d7594d2a1ff99a0d2f6282776dee5daccb77c7d4f"
+      "sha256": "3310187ed992216b3111514a118b4432aec31de838e012536dacf9c426295ba4"
     },
     {
       "path": "titan_decoder/core/analyzers/structured.py",
-      "sha256": "6d65a3bad512aa093cfac2d90e265873e60aabaf15189ee72f714df4ef7030af"
+      "sha256": "29d7ddfe8eb970a1c305ccb4ff842d90975d88b4ca55c9a5e0ed0ddc0954474d"
     },
     {
       "path": "titan_decoder/decoders/advanced.py",
-      "sha256": "0ed6f6ffcec1c19e99c6de08f0ee0e8bb2be071b2d1acd4f6a4e2baf533d8863"
+      "sha256": "369be3f01a55b55f23f3ae1d694fc37258d41a944e8a20da2dc700fc997af57e"
     },
     {
       "path": "titan_decoder/decoders/base.py",
-      "sha256": "b0a1957ef12ea090946f9e29aedfda363b95ad5464f7109272e1482d5eeec2c6"
+      "sha256": "08005162c908fe97214037dc6d8637536bc35dfb33feb60fad812a66aa631571"
     },
     {
       "path": "titan_decoder/decoders/cfb.py",
-      "sha256": "3b688c948f41022116cbbe7f4be708339f431a7b046d47782a0e6c4aedde2139"
+      "sha256": "e84ac28e46968f3a579c9b879cbf98100d6c20b00e72a9a697f50ff4a47a3558"
     },
     {
       "path": "titan_decoder/decoders/pdf.py",
-      "sha256": "01af0e759a908805f099c9d0db813b7515b8b789b607d78eff8f311177fb1f87"
+      "sha256": "e906aa584ffd47168115e4b93443f5ad4e872dd2388a48b8bd62166d8614c8f9"
     }
   ]
 }

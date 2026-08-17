@@ -25,8 +25,15 @@ OUTPUT = ROOT / "docs" / "proof"
 CALIBRATION = ROOT / "tests" / "fixtures" / "calibration" / "decoder-analyzer-v1.json"
 
 
-def _digest(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def _canonical_bytes(path: Path, *, text: bool = False) -> bytes:
+    payload = path.read_bytes()
+    if text:
+        payload = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return payload
+
+
+def _digest(path: Path, *, text: bool = False) -> str:
+    return hashlib.sha256(_canonical_bytes(path, text=text)).hexdigest()
 
 
 def build_metrics() -> dict:
@@ -55,8 +62,8 @@ def build_metrics() -> dict:
             "seeds": [
                 {
                     "path": path.relative_to(ROOT).as_posix(),
-                    "bytes": path.stat().st_size,
-                    "sha256": _digest(path),
+                    "bytes": len(_canonical_bytes(path, text=path.suffix == ".txt")),
+                    "sha256": _digest(path, text=path.suffix == ".txt"),
                 }
                 for path in fuzz_files
                 if path.is_file()
@@ -89,7 +96,10 @@ def build_audit_scope() -> dict:
             "analyzers": sorted(item.name for item in engine.analyzers),
         },
         "source_files": [
-            {"path": path.relative_to(ROOT).as_posix(), "sha256": _digest(path)}
+            {
+                "path": path.relative_to(ROOT).as_posix(),
+                "sha256": _digest(path, text=True),
+            }
             for path in files
         ],
         "required_checks": [

@@ -896,9 +896,9 @@
         "sha256": "822fa9364ffea00e9eed6d7f115b87aa8377b25c227391fb9bd43646cb09ca93"
       },
       {
-        "bytes": 91,
+        "bytes": 87,
         "path": "fuzz/corpus/uuencoded.txt",
-        "sha256": "f8e02364d0ce2d59151df3e77ca64a170bac3a8b7d8e05bb0cb7333862f90d58"
+        "sha256": "72e9b4b3c3298695661c21ae6c6a5e5f4ec468db263c8cce17e5c10607fc8897"
       },
       {
         "bytes": 50,

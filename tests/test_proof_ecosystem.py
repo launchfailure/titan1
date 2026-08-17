@@ -55,6 +55,18 @@ def test_proof_bundle_is_current_and_audit_scope_is_honest():
     assert audit["source_files"]
 
 
+def test_proof_text_hashes_are_independent_of_checkout_line_endings(tmp_path):
+    lf = tmp_path / "lf.txt"
+    crlf = tmp_path / "crlf.txt"
+    lf.write_bytes(b"first\nsecond\n")
+    crlf.write_bytes(b"first\r\nsecond\r\n")
+
+    assert publish_proof._digest(lf, text=True) == publish_proof._digest(
+        crlf, text=True
+    )
+    assert publish_proof._digest(lf) != publish_proof._digest(crlf)
+
+
 def test_stix_export_includes_required_indicator_timestamps(tmp_path):
     from titan_decoder.core.ioc_export import export_stix_minimal
 
