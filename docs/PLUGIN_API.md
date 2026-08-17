@@ -79,6 +79,7 @@ Each manifest plugin directory contains `titan-plugin.json`
 ```python
 from titan_decoder.plugins.api import DecoderPlugin, DecodeResult
 
+
 class Rot47Decoder(DecoderPlugin):
     priority = 10  # higher = tried first
 
@@ -104,13 +105,13 @@ best-scoring decoder wins the node.
 ```python
 from titan_decoder.plugins.api import AnalyzerPlugin, AnalysisArtifact
 
+
 class StringsAnalyzer(AnalyzerPlugin):
     @property
     def name(self):
         return "PrintableStrings"
 
-    def can_analyze(self, data, context=None):
-        ...
+    def can_analyze(self, data, context=None): ...
 
     def analyze(self, data, context=None):
         return [AnalysisArtifact("strings.txt", content, {"count": 3})]
@@ -125,6 +126,7 @@ unpack like the legacy `(name, bytes)` tuples. Respect
 ```python
 from titan_decoder.plugins.api import DetectionPlugin, DetectionFinding
 
+
 class MarkerDetection(DetectionPlugin):
     @property
     def name(self):
@@ -136,14 +138,16 @@ class MarkerDetection(DetectionPlugin):
 
     def detect(self, report, iocs, context=None):
         ...
-        return [DetectionFinding(
-            rule_id="EXAMPLE-001",
-            name="Example Marker",
-            description="Synthetic marker found",
-            severity="medium",              # low | medium | high | critical
-            attack_ids=("T1027",),          # optional ATT&CK techniques
-            evidence=({"node_id": 2},),     # optional evidence references
-        )]
+        return [
+            DetectionFinding(
+                rule_id="EXAMPLE-001",
+                name="Example Marker",
+                description="Synthetic marker found",
+                severity="medium",  # low | medium | high | critical
+                attack_ids=("T1027",),  # optional ATT&CK techniques
+                evidence=({"node_id": 2},),  # optional evidence references
+            )
+        ]
 ```
 
 Detection plugins run during `--enable-detections`, after the built-in rules
@@ -165,6 +169,7 @@ Rules of the road (enforced at load and validation time):
 ```python
 from titan_decoder.plugins.api import ConfigExtraction, ExtractorPlugin
 
+
 class FamilyConfigExtractor(ExtractorPlugin):
     @property
     def name(self):
@@ -174,14 +179,16 @@ class FamilyConfigExtractor(ExtractorPlugin):
         return data.startswith(b"FAMILY-CONFIG|")
 
     def extract(self, data, context=None):
-        return [ConfigExtraction(
-            family="ExampleFamily",
-            confidence=0.95,
-            values={"sleep_ms": 5000},
-            c2=("https://c2.example/gate",),
-            keys=("001122",),
-            campaign_id="red-team",
-        )]
+        return [
+            ConfigExtraction(
+                family="ExampleFamily",
+                confidence=0.95,
+                values={"sleep_ms": 5000},
+                c2=("https://c2.example/gate",),
+                keys=("001122",),
+                campaign_id="red-team",
+            )
+        ]
 ```
 
 Extractors run over every raw, decoded, and extracted artifact node. Results
@@ -199,19 +206,22 @@ calibration limits.
 ```python
 from titan_decoder.plugins.api import ReportPlugin, ReportSection
 
+
 class SummaryReport(ReportPlugin):
     @property
     def name(self):
         return "Example Summary"
 
     def build_sections(self, report, context=None):
-        return [ReportSection(
-            section_id="example_summary",
-            title="Example Plugin Summary",
-            content={"node_count": report.get("node_count", 0)},
-            order=900,                       # lower renders first
-            formats=("json", "markdown", "html"),
-        )]
+        return [
+            ReportSection(
+                section_id="example_summary",
+                title="Example Plugin Summary",
+                content={"node_count": report.get("node_count", 0)},
+                order=900,  # lower renders first
+                formats=("json", "markdown", "html"),
+            )
+        ]
 ```
 
 Sections must be JSON-serializable. They are embedded in the JSON report
