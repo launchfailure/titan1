@@ -209,11 +209,15 @@ def _write_plugin(
 def test_registry_loads_all_example_plugins():
     manager = PluginManager([EXAMPLES])
     manager.load_plugins()
-    assert len(manager.manifest_plugins) == 5
+    assert len(manager.manifest_plugins) == 7
     assert [d.name for d in manager.decoders] == ["ROT47"]
     assert [a.name for a in manager.analyzers] == ["PrintableStrings"]
     assert [d.name for d in manager.detections] == ["Example Marker"]
-    assert [e.name for e in manager.extractors] == ["Titan Beacon Config"]
+    assert {e.name for e in manager.extractors} == {
+        "Cobalt Strike Beacon Config",
+        "Remcos Config",
+        "Titan Beacon Config",
+    }
     assert [r.name for r in manager.reports] == ["Example Summary"]
     assert manager.errors == []
 

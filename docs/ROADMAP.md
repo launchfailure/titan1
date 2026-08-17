@@ -66,8 +66,9 @@ constraints: deterministic, bounded, offline-first, fail-closed.
 2. **Malware config extraction.** Family identification plus C2/config
    recovery (addresses, keys, campaign ids) now has a documented API 1.2
    extractor SDK, isolated-worker transport, validation, report integration,
-   and a complete synthetic example; next: ship and calibrate the seed set of
-   extractors for prevalent families.
+   and bounded seed extractors for Cobalt Strike Beacon and decrypted Remcos
+   settings, with real-layout positive/adversarial fixtures. Next: expand the
+   calibrated family and version matrix from measured field samples.
 3. **Format coverage depth.** .NET assembly structure, MSI/NSIS/InnoSetup
    installers, OneNote, RTF exploit structures, Excel 4.0 XLM macros, VBA
    p-code, PDF stream filters with JavaScript extraction, Mach-O, APK/DEX,

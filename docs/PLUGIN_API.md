@@ -190,6 +190,10 @@ source node ID and plugin name. Manifest extractors use the same isolated,
 offline worker as other plugin capabilities. `values` and `metadata` must be
 JSON-serializable; `confidence` must be between 0 and 1.
 
+See [CONFIG_EXTRACTORS.md](CONFIG_EXTRACTORS.md) for the bounded Cobalt Strike
+Beacon and Remcos seed implementations, accepted representations, and
+calibration limits.
+
 ## Report SDK
 
 ```python
@@ -295,7 +299,8 @@ legacy plugin.
 
 Complete working examples — one per capability — live in
 `examples/plugins/`: `rot47_decoder`, `string_analyzer`, `marker_detection`,
-`config_extractor`, and `summary_report`. All five pass `--plugin-validate` and are exercised by
+`config_extractor`, `cobalt_strike_config`, `remcos_config`, and `summary_report`.
+All seven pass `--plugin-validate` and are exercised by
 the test suite (`tests/test_plugin_sdk.py`,
 `tests/test_plugin_sdk_integration.py`).
 
