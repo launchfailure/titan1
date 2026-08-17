@@ -333,7 +333,10 @@ class BrotliDecoder(Decoder):
         return "Brotli"
 
     def _decode(self, data: bytes) -> bytes | None:
-        value = data.strip()
+        # Only discard whitespace before the textual transport label.  The
+        # bytes after ``brotli:`` are an opaque binary stream, so stripping
+        # them can remove a legitimate final compressed byte.
+        value = data.lstrip()
         if not value.lower().startswith(b"brotli:"):
             return None
         value = value[7:]
@@ -346,6 +349,11 @@ class BrotliDecoder(Decoder):
                 output.extend(decoder.process(value[offset : offset + 64 * 1024]))
                 if len(output) > self.max_output:
                     return None
+            # brotli.Decompressor.process() can return partial output without
+            # raising when the input ends before the stream does.  Never
+            # report that partial evidence as a successful decode.
+            if not decoder.is_finished():
+                return None
             return bytes(output) if output else None
         except Exception:
             return None
