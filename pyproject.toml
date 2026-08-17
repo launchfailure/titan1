@@ -40,6 +40,7 @@ titan-tui = "titan_decoder.workbench_ui.app:main"
 titan-ui = "titan_decoder.desktop_ui.app:main"
 titan-analyst = "titan_decoder.analyst.cli:main"
 titan-server = "titan_decoder.server.app:main"
+titan-plugin-catalog = "titan_decoder.ecosystem.catalog_cli:main"
 
 # Keep these lists in sync with requirements-dev.txt / requirements-optional.txt.
 [project.optional-dependencies]

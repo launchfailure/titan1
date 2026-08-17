@@ -89,10 +89,13 @@ constraints: deterministic, bounded, offline-first, fail-closed.
    instructions. Next: expand opcode and language coverage only alongside
    adversarial corpus cases and the existing hard budgets.
 6. **Proof and ecosystem.** Published benchmark runs against public corpora,
-   a public accuracy dashboard fed by calibration output, third-party audit
-   of the parsing surface (extending the fuzz harness), MISP/STIX export,
-   and a community plugin registry. Positioning: forensic-grade,
-   deterministic, offline-first, court-ready provenance.
+   a public accuracy dashboard fed by calibration output, MISP/STIX export,
+   and a provenance-pinned offline community plugin catalog now ship with a
+   deterministic CI freshness gate. The fuzz-backed parser inventory and
+   source-hash manifest are ready for independent review; publishing an actual
+   third-party assessor and report remains an external attestation step.
+   Positioning: forensic-grade, deterministic, offline-first, court-ready
+   provenance.
 
 ## Local AI assistant (shipped as Milestone 8)
 

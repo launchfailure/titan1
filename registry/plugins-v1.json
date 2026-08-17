@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "description": "Reviewable offline catalog of Titan Plugin API packages.",
+  "plugins": [
+    {
+      "id": "example.rot47",
+      "name": "ROT47 Decoder Example",
+      "version": "1.0.0",
+      "api_version": "1.0.0",
+      "capabilities": ["decoder"],
+      "description": "Reference ROT47 decoder demonstrating the manifest Plugin API.",
+      "publisher": "Titan examples",
+      "license": "AGPL-3.0-or-later",
+      "source_url": "https://github.com/pragmaconflux/titan1/tree/b84204f34c2fd353b6d82253c7ee7650895bc0a8/examples/plugins/rot47_decoder",
+      "source_commit": "b84204f34c2fd353b6d82253c7ee7650895bc0a8"
+    }
+  ]
+}

@@ -1,0 +1,927 @@
+{
+  "accuracy": {
+    "decoder_analyzer": {
+      "aggregate": {
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 10,
+        "true_positive": 10
+      },
+      "case_count": 20,
+      "cases": [
+        {
+          "can_process": true,
+          "component": "ASCII85",
+          "expected_match": true,
+          "id": "ascii85-positive",
+          "kind": "decoder",
+          "outcome": "true_positive",
+          "output_sha256": "76047422c639e6685da351084dd4ee7e509e4148d04cc157819aac5bcbe47b37",
+          "predicted_match": true
+        },
+        {
+          "can_process": false,
+          "component": "ASCII85",
+          "expected_match": false,
+          "id": "ascii85-negative",
+          "kind": "decoder",
+          "outcome": "true_negative",
+          "output_sha256": null,
+          "predicted_match": false
+        },
+        {
+          "can_process": true,
+          "component": "RawDeflate",
+          "expected_match": true,
+          "id": "raw-deflate-positive",
+          "kind": "decoder",
+          "outcome": "true_positive",
+          "output_sha256": "18b1d16c2c8a3bc86a05d7e9bcdedcd642035dca7bdcc42f4dce828086062725",
+          "predicted_match": true
+        },
+        {
+          "can_process": false,
+          "component": "RawDeflate",
+          "expected_match": false,
+          "id": "raw-deflate-negative",
+          "kind": "decoder",
+          "outcome": "true_negative",
+          "output_sha256": null,
+          "predicted_match": false
+        },
+        {
+          "can_process": true,
+          "component": "PowerShellEncodedCommand",
+          "expected_match": true,
+          "id": "powershell-encoded-positive",
+          "kind": "decoder",
+          "outcome": "true_positive",
+          "output_sha256": "1a94177e7e0ce4320c5e5cf59fdb2ead87dc889ca6b68212f61804cf8749f757",
+          "predicted_match": true
+        },
+        {
+          "can_process": false,
+          "component": "PowerShellEncodedCommand",
+          "expected_match": false,
+          "id": "powershell-encoded-negative",
+          "kind": "decoder",
+          "outcome": "true_negative",
+          "output_sha256": null,
+          "predicted_match": false
+        },
+        {
+          "can_process": true,
+          "component": "JavaScriptEscape",
+          "expected_match": true,
+          "id": "javascript-escape-positive",
+          "kind": "decoder",
+          "outcome": "true_positive",
+          "output_sha256": "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969",
+          "predicted_match": true
+        },
+        {
+          "can_process": false,
+          "component": "JavaScriptEscape",
+          "expected_match": false,
+          "id": "javascript-escape-negative",
+          "kind": "decoder",
+          "outcome": "true_negative",
+          "output_sha256": null,
+          "predicted_match": false
+        },
+        {
+          "can_process": true,
+          "component": "Base58",
+          "expected_match": true,
+          "id": "base58-positive",
+          "kind": "decoder",
+          "outcome": "true_positive",
+          "output_sha256": "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e",
+          "predicted_match": true
+        },
+        {
+          "can_process": false,
+          "component": "Base58",
+          "expected_match": false,
+          "id": "base58-negative",
+          "kind": "decoder",
+          "outcome": "true_negative",
+          "output_sha256": null,
+          "predicted_match": false
+        },
+        {
+          "can_process": true,
+          "component": "Base91",
+          "expected_match": true,
+          "id": "base91-positive",
+          "kind": "decoder",
+          "outcome": "true_positive",
+          "output_sha256": "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+          "predicted_match": true
+        },
+        {
+          "can_process": false,
+          "component": "Base91",
+          "expected_match": false,
+          "id": "base91-negative",
+          "kind": "decoder",
+          "outcome": "true_negative",
+          "output_sha256": null,
+          "predicted_match": false
+        },
+        {
+          "artifacts": [
+            "email_body_1.txt",
+            "email_summary.json"
+          ],
+          "can_process": true,
+          "component": "Email",
+          "expected_match": true,
+          "id": "email-positive",
+          "kind": "analyzer",
+          "outcome": "true_positive",
+          "predicted_match": true
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "component": "Email",
+          "expected_match": false,
+          "id": "email-negative",
+          "kind": "analyzer",
+          "outcome": "true_negative",
+          "predicted_match": false
+        },
+        {
+          "artifacts": [
+            "powershell_decoded.txt",
+            "script_summary.json"
+          ],
+          "can_process": true,
+          "component": "Script",
+          "expected_match": true,
+          "id": "script-positive",
+          "kind": "analyzer",
+          "outcome": "true_positive",
+          "predicted_match": true
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "component": "Script",
+          "expected_match": false,
+          "id": "script-negative",
+          "kind": "analyzer",
+          "outcome": "true_negative",
+          "predicted_match": false
+        },
+        {
+          "artifacts": [
+            "lnk_metadata.json"
+          ],
+          "can_process": true,
+          "component": "WindowsLNK",
+          "expected_match": true,
+          "id": "lnk-positive",
+          "kind": "analyzer",
+          "outcome": "true_positive",
+          "predicted_match": true
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "component": "WindowsLNK",
+          "expected_match": false,
+          "id": "lnk-negative",
+          "kind": "analyzer",
+          "outcome": "true_negative",
+          "predicted_match": false
+        },
+        {
+          "artifacts": [
+            "office_document_text.txt",
+            "office_summary.json"
+          ],
+          "can_process": true,
+          "component": "OfficeOOXML",
+          "expected_match": true,
+          "id": "office-positive",
+          "kind": "analyzer",
+          "outcome": "true_positive",
+          "predicted_match": true
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "component": "OfficeOOXML",
+          "expected_match": false,
+          "id": "office-negative",
+          "kind": "analyzer",
+          "outcome": "true_negative",
+          "predicted_match": false
+        }
+      ],
+      "components": {
+        "analyzer:Email": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "analyzer:OfficeOOXML": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "analyzer:Script": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "analyzer:WindowsLNK": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "decoder:ASCII85": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "decoder:Base58": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "decoder:Base91": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "decoder:JavaScriptEscape": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "decoder:PowerShellEncodedCommand": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "decoder:RawDeflate": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 1
+        }
+      },
+      "corpus": "tests/fixtures/calibration/decoder-analyzer-v1.json",
+      "corpus_name": "Titan decoder and structured-analyzer calibration v1",
+      "quality_gate": {
+        "failures": [],
+        "minimum_precision": 0.9,
+        "minimum_recall": 0.9,
+        "passed": true
+      },
+      "schema_version": "1.0",
+      "skipped": [],
+      "skipped_count": 0
+    },
+    "detection": {
+      "benign_count": 13,
+      "corpus_size": 27,
+      "malicious_count": 14,
+      "per_rule": {
+        "TITAN-001": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn": 25,
+          "tp": 2
+        },
+        "TITAN-002": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn": 25,
+          "tp": 2
+        },
+        "TITAN-003": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn": 25,
+          "tp": 2
+        },
+        "TITAN-004": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn": 25,
+          "tp": 2
+        },
+        "TITAN-005": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn": 25,
+          "tp": 2
+        },
+        "TITAN-006": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn": 25,
+          "tp": 2
+        },
+        "TITAN-007": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn": 25,
+          "tp": 2
+        }
+      },
+      "per_sample": [
+        {
+          "expected_rules": [
+            "TITAN-001"
+          ],
+          "fired_rules": [
+            "TITAN-001"
+          ],
+          "malicious": true,
+          "name": "mal_deep_base64",
+          "risk_level": "MEDIUM",
+          "risk_score": 26
+        },
+        {
+          "expected_rules": [
+            "TITAN-002"
+          ],
+          "fired_rules": [
+            "TITAN-002"
+          ],
+          "malicious": true,
+          "name": "mal_office_macro",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-003"
+          ],
+          "fired_rules": [
+            "TITAN-003"
+          ],
+          "malicious": true,
+          "name": "mal_lolbin",
+          "risk_level": "MEDIUM",
+          "risk_score": 25
+        },
+        {
+          "expected_rules": [
+            "TITAN-004"
+          ],
+          "fired_rules": [
+            "TITAN-004"
+          ],
+          "malicious": true,
+          "name": "mal_packed",
+          "risk_level": "LOW",
+          "risk_score": 15
+        },
+        {
+          "expected_rules": [
+            "TITAN-005"
+          ],
+          "fired_rules": [
+            "TITAN-005"
+          ],
+          "malicious": true,
+          "name": "mal_multistage",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-006"
+          ],
+          "fired_rules": [
+            "TITAN-006"
+          ],
+          "malicious": true,
+          "name": "mal_xor_c2",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-007"
+          ],
+          "fired_rules": [
+            "TITAN-007"
+          ],
+          "malicious": true,
+          "name": "mal_pdf_pe",
+          "risk_level": "CRITICAL",
+          "risk_score": 75
+        },
+        {
+          "expected_rules": [
+            "TITAN-001"
+          ],
+          "fired_rules": [
+            "TITAN-001"
+          ],
+          "malicious": true,
+          "name": "mal_deep_base64_v2",
+          "risk_level": "MEDIUM",
+          "risk_score": 25
+        },
+        {
+          "expected_rules": [
+            "TITAN-002"
+          ],
+          "fired_rules": [
+            "TITAN-002"
+          ],
+          "malicious": true,
+          "name": "mal_office_macro_v2",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-003"
+          ],
+          "fired_rules": [
+            "TITAN-003"
+          ],
+          "malicious": true,
+          "name": "mal_lolbin_regsvr32",
+          "risk_level": "MEDIUM",
+          "risk_score": 25
+        },
+        {
+          "expected_rules": [
+            "TITAN-004"
+          ],
+          "fired_rules": [
+            "TITAN-004"
+          ],
+          "malicious": true,
+          "name": "mal_packed_v2",
+          "risk_level": "LOW",
+          "risk_score": 18
+        },
+        {
+          "expected_rules": [
+            "TITAN-005"
+          ],
+          "fired_rules": [
+            "TITAN-005"
+          ],
+          "malicious": true,
+          "name": "mal_multistage_v2",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-006"
+          ],
+          "fired_rules": [
+            "TITAN-006"
+          ],
+          "malicious": true,
+          "name": "mal_xor_c2_v2",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-007"
+          ],
+          "fired_rules": [
+            "TITAN-007"
+          ],
+          "malicious": true,
+          "name": "mal_pdf_elf",
+          "risk_level": "CRITICAL",
+          "risk_score": 75
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_readme",
+          "risk_level": "CLEAN",
+          "risk_score": 0
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_json_config",
+          "risk_level": "CLEAN",
+          "risk_score": 0
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_single_base64",
+          "risk_level": "LOW",
+          "risk_score": 2
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_clean_pdf",
+          "risk_level": "LOW",
+          "risk_score": 2
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_clean_doc",
+          "risk_level": "LOW",
+          "risk_score": 2
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_gzip_log",
+          "risk_level": "LOW",
+          "risk_score": 4
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_source_code",
+          "risk_level": "CLEAN",
+          "risk_score": 0
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_single_url",
+          "risk_level": "LOW",
+          "risk_score": 7
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_pdf_js_only",
+          "risk_level": "LOW",
+          "risk_score": 5
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_single_base64_long",
+          "risk_level": "LOW",
+          "risk_score": 2
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_two_domains",
+          "risk_level": "LOW",
+          "risk_score": 6
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_shell_script",
+          "risk_level": "LOW",
+          "risk_score": 2
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_tool_mention",
+          "risk_level": "CLEAN",
+          "risk_score": 0
+        }
+      ],
+      "risk_separation": {
+        "benign_scores": [
+          0,
+          0,
+          0,
+          0,
+          2,
+          2,
+          2,
+          2,
+          2,
+          4,
+          5,
+          6,
+          7
+        ],
+        "malicious_scores": [
+          15,
+          18,
+          25,
+          25,
+          25,
+          26,
+          50,
+          50,
+          50,
+          50,
+          50,
+          50,
+          75,
+          75
+        ],
+        "max_benign_score": 7,
+        "min_malicious_score": 15,
+        "separated": true
+      }
+    }
+  },
+  "benchmark": {
+    "case_count": 10,
+    "cases": {
+      "big_nested_base64": {
+        "node_count": 2,
+        "time": 0.03723139999965497
+      },
+      "big_xor": {
+        "node_count": 3,
+        "time": 0.07635610000033921
+      },
+      "cfb_macro.doc": {
+        "node_count": 2,
+        "time": 0.022773400000005495
+      },
+      "gzip_text.bin": {
+        "node_count": 3,
+        "time": 0.020429399999557063
+      },
+      "high_entropy.bin": {
+        "node_count": 1,
+        "time": 0.0008907000010367483
+      },
+      "multi_ioc.txt": {
+        "node_count": 1,
+        "time": 0.005434500000774278
+      },
+      "nested_base64.txt": {
+        "node_count": 2,
+        "time": 0.004437999999936437
+      },
+      "pdf_js.pdf": {
+        "node_count": 2,
+        "time": 0.026784899999256595
+      },
+      "plain_iocs.txt": {
+        "node_count": 1,
+        "time": 0.006069400000342284
+      },
+      "xor_url.bin": {
+        "node_count": 2,
+        "time": 0.01028509999923699
+      }
+    },
+    "hardware_normalized": true,
+    "source": "tools/bench_baseline.json"
+  },
+  "ecosystem": {
+    "catalog": "registry/plugins-v1.json",
+    "catalog_entries": 1,
+    "exports": [
+      "MISP JSON",
+      "STIX 2.1"
+    ]
+  },
+  "fuzzing": {
+    "harness": "fuzz/fuzz_decoders.py",
+    "seed_count": 26,
+    "seeds": [
+      {
+        "bytes": 1024,
+        "path": "fuzz/corpus/all_nulls.bin",
+        "sha256": "5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+      },
+      {
+        "bytes": 120,
+        "path": "fuzz/corpus/base64.txt",
+        "sha256": "4e136dad7b2d2d3e224c6b591df575394c5ce6bcf677e5d9058de82b32cba691"
+      },
+      {
+        "bytes": 108,
+        "path": "fuzz/corpus/base64_nested.txt",
+        "sha256": "5ea85740e8cbfbc01d35e57e6429978abccee8ee226b76e1ee9b556a0e12042a"
+      },
+      {
+        "bytes": 63,
+        "path": "fuzz/corpus/bz2.bin",
+        "sha256": "14dc3b88fe0c793f4096613d7d84efafe47b872f57b76cb81a8976dd759c47b5"
+      },
+      {
+        "bytes": 512,
+        "path": "fuzz/corpus/cfb_magic_only.bin",
+        "sha256": "a899fb4496afa7230c378d5be03cf3461990994993110fd2dad3257111081275"
+      },
+      {
+        "bytes": 3072,
+        "path": "fuzz/corpus/cfb_multi.doc",
+        "sha256": "e2a03189d2422c88b94abdf5ab72de54b0d25f03f116206fd775084261830e80"
+      },
+      {
+        "bytes": 2560,
+        "path": "fuzz/corpus/cfb_vba.doc",
+        "sha256": "4e959a338e4e5f72fd90052199c5af201fcfd02d49b41e71c9c24f593dcd4457"
+      },
+      {
+        "bytes": 64,
+        "path": "fuzz/corpus/elf_stub.bin",
+        "sha256": "243d107b590f25beffb6503da722c387673cac5987beebbcd0e7382824e3b918"
+      },
+      {
+        "bytes": 0,
+        "path": "fuzz/corpus/empty.bin",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 43,
+        "path": "fuzz/corpus/gzip.bin",
+        "sha256": "a537e2a53cf1d34be9cab457bab74fb3992b944e6afbb0aed7857ab9ee103622"
+      },
+      {
+        "bytes": 64,
+        "path": "fuzz/corpus/hex.txt",
+        "sha256": "b1fa18b6174b511848216104e1f54d99f5b6c3151d0bcdd4f11372bfdb5674bb"
+      },
+      {
+        "bytes": 2048,
+        "path": "fuzz/corpus/high_entropy.bin",
+        "sha256": "5910077293ff1b08871c102ef3cee7401b4d8cf89838fdd58317c9382806fe58"
+      },
+      {
+        "bytes": 62,
+        "path": "fuzz/corpus/html_entities.txt",
+        "sha256": "fc89a74b7b25d971df6adc7478826b16f686d77414728d599661c1e1779b8e64"
+      },
+      {
+        "bytes": 380,
+        "path": "fuzz/corpus/mixed_junk.bin",
+        "sha256": "7e39dfeaf874b12fb9a05f57a45ffd9ab695b9349063083508d3e218f144e0f9"
+      },
+      {
+        "bytes": 276,
+        "path": "fuzz/corpus/pdf_objstm.pdf",
+        "sha256": "908718e7ec9333b96b23ed2f38370014bac65ccded450c04086ee0df1094dc49"
+      },
+      {
+        "bytes": 229,
+        "path": "fuzz/corpus/pdf_simple.pdf",
+        "sha256": "5af12c20b4ecc146483070dd11e44a03f395af7d78903406b6939aafcda68ead"
+      },
+      {
+        "bytes": 66,
+        "path": "fuzz/corpus/pdf_truncated.pdf",
+        "sha256": "eb4e72c7e198ca1d6982540ff2dd34719f0f6aaf0a2de90d5cbb0e8fa99bebea"
+      },
+      {
+        "bytes": 108,
+        "path": "fuzz/corpus/pe_stub.bin",
+        "sha256": "29f1bcff45eded69116e3d919afb42b664da352c05d72b3fac653060b1d57e88"
+      },
+      {
+        "bytes": 69,
+        "path": "fuzz/corpus/rot13.txt",
+        "sha256": "ab1df21a8480b432f1847e978d0763d227f796e03995c0e598807e215ab2466a"
+      },
+      {
+        "bytes": 96,
+        "path": "fuzz/corpus/url_encoded.txt",
+        "sha256": "5798917141e2dffbd402bcc72f22ee014704f081beab191aed5166551c80e0b4"
+      },
+      {
+        "bytes": 48,
+        "path": "fuzz/corpus/utf16le.bin",
+        "sha256": "822fa9364ffea00e9eed6d7f115b87aa8377b25c227391fb9bd43646cb09ca93"
+      },
+      {
+        "bytes": 91,
+        "path": "fuzz/corpus/uuencoded.txt",
+        "sha256": "f8e02364d0ce2d59151df3e77ca64a170bac3a8b7d8e05bb0cb7333862f90d58"
+      },
+      {
+        "bytes": 50,
+        "path": "fuzz/corpus/xor_url.bin",
+        "sha256": "45eb23a5a540e357527c03b892b88518a2c4cfb4aaccc6308fc5885603cb48d3"
+      },
+      {
+        "bytes": 92,
+        "path": "fuzz/corpus/xz.bin",
+        "sha256": "5e409d2cea16acf7cd1008357c9dec0c8ff7e6215c3b878229e8609a9f15ae5f"
+      },
+      {
+        "bytes": 22,
+        "path": "fuzz/corpus/zip_empty.bin",
+        "sha256": "8739c76e681f900923b900c9df0ef75cf421d39cabb54650c4b9ad19b6a76d85"
+      },
+      {
+        "bytes": 31,
+        "path": "fuzz/corpus/zlib.bin",
+        "sha256": "e52eff8ffc6755c33ef42083be30e6d2b516fa835a165f1c90fdafdac745758d"
+      }
+    ]
+  },
+  "schema_version": "1.0",
+  "titan_version": "2.0.2"
+}
