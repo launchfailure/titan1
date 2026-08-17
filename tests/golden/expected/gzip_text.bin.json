@@ -118,8 +118,10 @@
   "run_manifest": {
     "components": {
       "analyzers": [
+        "DEX",
         "ELF",
         "Email",
+        "Mach-O",
         "OfficeOOXML",
         "OptionalArchive",
         "PE",
@@ -173,9 +175,11 @@
       "analysis_timeout_seconds": 300,
       "analyzer_timeout_seconds": 10,
       "analyzers": {
+        "dex": true,
         "elf": true,
         "email": true,
         "lnk": true,
+        "macho": true,
         "office": true,
         "optional_archives": true,
         "pe": true,
