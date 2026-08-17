@@ -83,10 +83,11 @@ constraints: deterministic, bounded, offline-first, fail-closed.
    reference deployment. Next: production queue/object-store adapters and
    deployment manifests for multi-host operation.
 5. **Bounded emulation.** Instruction-budgeted, no-I/O emulation for
-   shellcode (Unicorn-class) and sandboxed JavaScript evaluation for
-   deobfuscation — deterministic and fail-closed by construction, extending
-   static analysis past string-building obfuscation without becoming a
-   sandbox.
+   shellcode and sandboxed JavaScript evaluation for deobfuscation now has a
+   fail-closed foundation: a constant-only JavaScript interpreter plus an x86
+   register/stack interpreter that blocks memory, system, and extended
+   instructions. Next: expand opcode and language coverage only alongside
+   adversarial corpus cases and the existing hard budgets.
 6. **Proof and ecosystem.** Published benchmark runs against public corpora,
    a public accuracy dashboard fed by calibration output, third-party audit
    of the parsing surface (extending the fuzz harness), MISP/STIX export,

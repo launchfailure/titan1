@@ -129,6 +129,7 @@
         "Steganography",
         "TAR",
         "WindowsLNK",
+        "X86ShellcodeEmulation",
         "ZIP"
       ],
       "decoders": [
@@ -142,6 +143,7 @@
         "Gzip",
         "HTMLEntity",
         "Hex",
+        "JavaScriptEmulation",
         "JavaScriptEscape",
         "LZMA",
         "OLE",
@@ -187,6 +189,7 @@
         "script": true,
         "steganography": true,
         "tar": true,
+        "x86_shellcode_emulation": true,
         "zip": true
       },
       "assurance_provider_timeout_seconds": 120,
@@ -207,6 +210,7 @@
         "gzip": true,
         "hex": true,
         "html_entity": true,
+        "javascript_emulation": true,
         "javascript_escape": true,
         "lzma": true,
         "ole": true,
