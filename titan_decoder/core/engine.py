@@ -38,12 +38,14 @@ from ..decoders.advanced import (
     Base91Decoder,
     BrotliDecoder,
     JavaScriptEscapeDecoder,
+    JavaScriptEmulationDecoder,
     PowerShellEncodedCommandDecoder,
     RawDeflateDecoder,
     ZstandardDecoder,
 )
 from .analyzers.base import Analyzer, ZipAnalyzer, TarAnalyzer, PEAnalyzer, ELFAnalyzer
 from .analyzers.steganography import SteganographyAnalyzer
+from .analyzers.emulation import X86ShellcodeEmulationAnalyzer
 from .analyzers.structured import (
     EmailAnalyzer,
     LnkAnalyzer,
@@ -228,6 +230,8 @@ class TitanEngine:
             self.decoders.append(PowerShellEncodedCommandDecoder())
         if self.config.get("decoders", {}).get("javascript_escape", True):
             self.decoders.append(JavaScriptEscapeDecoder())
+        if self.config.get("decoders", {}).get("javascript_emulation", True):
+            self.decoders.append(JavaScriptEmulationDecoder())
         if self.config.get("decoders", {}).get("base58", True):
             self.decoders.append(Base58Decoder())
         if self.config.get("decoders", {}).get("base91", True):
@@ -315,6 +319,8 @@ class TitanEngine:
             self.analyzers.append(PEAnalyzer())
         if self.config.get("analyzers", {}).get("elf", True):
             self.analyzers.append(ELFAnalyzer())
+        if self.config.get("analyzers", {}).get("x86_shellcode_emulation", True):
+            self.analyzers.append(X86ShellcodeEmulationAnalyzer())
         if self.config.get("analyzers", {}).get("steganography", True):
             media_config = {
                 "max_media_artifacts": self.config.get("max_media_artifacts", 8),

@@ -17,6 +17,7 @@ import zipfile
 from .base import Analyzer
 from ...decoders.advanced import (
     JavaScriptEscapeDecoder,
+    JavaScriptEmulationDecoder,
     PowerShellEncodedCommandDecoder,
 )
 from ...decoders.base import UnicodeEscapeDecoder
@@ -374,6 +375,7 @@ class ScriptAnalyzer(Analyzer):
         for label, decoder in (
             ("powershell_decoded.txt", PowerShellEncodedCommandDecoder()),
             ("javascript_normalized.txt", JavaScriptEscapeDecoder()),
+            ("javascript_emulated.txt", JavaScriptEmulationDecoder()),
             ("unicode_normalized.txt", UnicodeEscapeDecoder()),
         ):
             if decoder.can_decode(data):
