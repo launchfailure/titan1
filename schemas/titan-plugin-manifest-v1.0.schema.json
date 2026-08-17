@@ -48,6 +48,7 @@
           "decoder",
           "analyzer",
           "detection",
+          "extractor",
           "report"
         ]
       }

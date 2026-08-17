@@ -26,6 +26,7 @@ from .contracts import (
     AnalyzerPlugin,
     DecoderPlugin,
     DetectionPlugin,
+    ExtractorPlugin,
     PluginAnalyzer,
     PluginDecoder,
     ReportPlugin,
@@ -82,6 +83,7 @@ class PluginManager:
         self.decoders: list[PluginDecoder] = []
         self.analyzers: list[PluginAnalyzer] = []
         self.detections: list[DetectionPlugin] = []
+        self.extractors: list[ExtractorPlugin] = []
         self.reports: list[ReportPlugin] = []
         self.loaded_plugins: dict[str, Any] = {}
         self.manifest_plugins: dict[str, LoadedPlugin] = {}
@@ -108,6 +110,7 @@ class PluginManager:
         self.decoders.sort(key=_key)
         self.analyzers.sort(key=_key)
         self.detections.sort(key=_key)
+        self.extractors.sort(key=_key)
         self.reports.sort(key=_key)
 
     # Package-infrastructure modules in the built-in plugin dir that are not
@@ -180,6 +183,7 @@ class PluginManager:
             DecoderPlugin,
             AnalyzerPlugin,
             DetectionPlugin,
+            ExtractorPlugin,
             ReportPlugin,
         }
         for attr_name in dir(module):
@@ -198,6 +202,9 @@ class PluginManager:
                     self._check_rule_ids(instance)
                     self.detections.append(instance)
                     logger.info("Loaded detection plugin: %s", instance.name)
+                elif issubclass(attr, ExtractorPlugin):
+                    self.extractors.append(attr())
+                    logger.info("Loaded extractor plugin: %s", self.extractors[-1].name)
                 elif issubclass(attr, ReportPlugin):
                     self.reports.append(attr())
                     logger.info("Loaded report plugin: %s", self.reports[-1].name)
@@ -298,6 +305,9 @@ class PluginManager:
                     self._check_rule_ids(instance)
                     self.detections.append(instance)
                     registered = True
+                if isinstance(instance, ExtractorPlugin):
+                    self.extractors.append(instance)
+                    registered = True
                 if isinstance(instance, ReportPlugin):
                     self.reports.append(instance)
                     registered = True
@@ -350,6 +360,10 @@ class PluginManager:
         """Get all loaded detection plugins."""
         return self.detections.copy()
 
+    def get_extractors(self) -> list[ExtractorPlugin]:
+        """Get all loaded malware configuration extractor plugins."""
+        return self.extractors.copy()
+
     def get_reports(self) -> list[ReportPlugin]:
         """Get all loaded report plugins."""
         return self.reports.copy()
@@ -369,6 +383,7 @@ class PluginManager:
             "decoders": [d.name for d in self.decoders],
             "analyzers": [a.name for a in self.analyzers],
             "detections": [d.name for d in self.detections],
+            "extractors": [e.name for e in self.extractors],
             "reports": [r.name for r in self.reports],
             "errors": list(self.errors),
         }

@@ -1,7 +1,7 @@
 """Plugin SDK v1 contracts: base classes and typed results.
 
-This module defines the four plugin SDKs (decoder, analyzer, detection,
-report) plus the typed values they exchange with the engine. Everything here
+This module defines the five plugin SDKs (decoder, analyzer, detection,
+extractor, report) plus the typed values they exchange with the engine. Everything here
 is part of the versioned public API surface re-exported by
 ``titan_decoder.plugins.api`` — third-party plugins import only from there.
 
@@ -30,7 +30,8 @@ from typing import Any, Iterator, Mapping, Sequence
 # History: 1.0 = single-file PluginDecoder/PluginAnalyzer contract.
 #          1.1 = adds the manifest-based SDK (detection/report plugins,
 #                PluginContext, typed results) — purely additive.
-PLUGIN_API_VERSION = "1.1"
+#          1.2 = adds bounded malware configuration extractors.
+PLUGIN_API_VERSION = "1.2"
 
 
 def _api_major(version: str) -> int:
@@ -56,6 +57,7 @@ class PluginCapability(str, Enum):
     DECODER = "decoder"
     ANALYZER = "analyzer"
     DETECTION = "detection"
+    EXTRACTOR = "extractor"
     REPORT = "report"
 
 
@@ -154,6 +156,40 @@ class DetectionFinding:
             "severity": self.severity,
             "attack_ids": list(self.attack_ids),
             "evidence": [dict(item) for item in self.evidence],
+            "metadata": dict(self.metadata),
+        }
+
+
+@dataclass(frozen=True)
+class ConfigExtraction:
+    """One family-attributed configuration recovered from an artifact."""
+
+    family: str
+    confidence: float
+    values: Mapping[str, Any]
+    c2: tuple[str, ...] = ()
+    keys: tuple[str, ...] = ()
+    campaign_id: str | None = None
+    metadata: Mapping[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.family.strip():
+            raise ValueError("family must not be empty")
+        if not 0.0 <= float(self.confidence) <= 1.0:
+            raise ValueError("confidence must be between 0 and 1")
+        object.__setattr__(self, "values", dict(self.values))
+        object.__setattr__(self, "c2", tuple(sorted(set(map(str, self.c2)))))
+        object.__setattr__(self, "keys", tuple(sorted(set(map(str, self.keys)))))
+        object.__setattr__(self, "metadata", dict(self.metadata))
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "family": self.family,
+            "confidence": float(self.confidence),
+            "values": dict(self.values),
+            "c2": list(self.c2),
+            "keys": list(self.keys),
+            "campaign_id": self.campaign_id,
             "metadata": dict(self.metadata),
         }
 
@@ -309,6 +345,27 @@ class DetectionPlugin(ABC):
         iocs: Mapping[str, Any],
         context: PluginContext | None = None,
     ) -> Sequence[DetectionFinding]: ...
+
+
+class ExtractorPlugin(ABC):
+    """Malware configuration extractor SDK base class (API 1.2)."""
+
+    api_version = PLUGIN_API_VERSION
+    priority = 0
+
+    @property
+    @abstractmethod
+    def name(self) -> str: ...
+
+    @abstractmethod
+    def can_extract(
+        self, data: bytes, context: PluginContext | None = None
+    ) -> bool: ...
+
+    @abstractmethod
+    def extract(
+        self, data: bytes, context: PluginContext | None = None
+    ) -> Sequence[ConfigExtraction]: ...
 
 
 class ReportPlugin(ABC):

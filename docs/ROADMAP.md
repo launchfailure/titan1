@@ -66,9 +66,11 @@ constraints: deterministic, bounded, offline-first, fail-closed.
    near-misses, committed precision/recall metrics, and a CI quality gate;
    next: grow the corpus and rule library with measured field-derived misses.
 2. **Malware config extraction.** Family identification plus C2/config
-   recovery (addresses, keys, campaign ids) as isolated manifest plugins on
-   the existing out-of-process worker substrate, with a documented extractor
-   SDK and a seed set of extractors for prevalent families.
+   recovery (addresses, keys, campaign ids) now has a documented API 1.2
+   extractor SDK, isolated-worker transport, validation, report integration,
+   and bounded seed extractors for Cobalt Strike Beacon and decrypted Remcos
+   settings, with real-layout positive/adversarial fixtures. Next: expand the
+   calibrated family and version matrix from measured field samples.
 3. **Format coverage depth.** .NET assembly structure, MSI/NSIS/InnoSetup
    installers, OneNote, RTF exploit structures, Excel 4.0 XLM macros, VBA
    p-code, PDF stream filters with JavaScript extraction, Mach-O, APK/DEX,

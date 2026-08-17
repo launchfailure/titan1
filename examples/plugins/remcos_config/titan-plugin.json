@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "id": "titan.extractor.remcos",
+  "name": "Remcos Config Extractor",
+  "version": "1.0.0",
+  "api_version": "1.2.0",
+  "entry_point": "plugin:RemcosConfigExtractor",
+  "capabilities": ["extractor"],
+  "description": "Bounded extractor for decrypted Remcos settings envelopes.",
+  "author": "Titan contributors",
+  "license": "AGPL-3.0-or-later",
+  "permissions": [],
+  "dependencies": {}
+}

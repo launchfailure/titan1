@@ -33,6 +33,7 @@ def test_engine_loads_manifest_plugins_from_config_dir():
         "example.rot47",
         "example.strings",
         "example.marker",
+        "example.config-extractor",
         "example.summary",
     }
 
@@ -79,6 +80,35 @@ def test_detection_plugins_run_in_detection_stage():
     # Plugin findings persist in the report and feed risk scoring.
     assert hit in report["detections"]
     assert risk is not None
+
+
+def test_config_extractor_runs_over_artifact_payloads():
+    engine = TitanEngine(Config())
+    engine.plugin_manager = _manager()
+    engine.run_analysis(
+        b"TITAN-BEACON|c2=https://c2.example/gate|campaign=red|key=001122"
+    )
+    report = {"meta": {}, "nodes": [], "iocs": {}}
+
+    cli.run_config_extractors_stage(_args(quiet=True), Config(), report, engine)
+
+    assert report["config_extractions"] == [
+        {
+            "family": "TitanBeacon",
+            "confidence": 1.0,
+            "values": {
+                "c2": "https://c2.example/gate",
+                "campaign": "red",
+                "key": "001122",
+            },
+            "c2": ["https://c2.example/gate"],
+            "keys": ["001122"],
+            "campaign_id": "red",
+            "metadata": {"format": "synthetic-example-v1"},
+            "node_id": 0,
+            "plugin": "Titan Beacon Config",
+        }
+    ]
 
 
 def test_detection_plugin_failure_never_aborts_stage(tmp_path, capsys):
@@ -141,7 +171,7 @@ def test_cli_plugin_list_mode(capsys):
     args = _args(plugin_list=True, plugin_dir=[EXAMPLES])
     assert cli.handle_info_commands(args, Config()) == 0
     listing = json.loads(capsys.readouterr().out)
-    assert listing["api_version"] == "1.1"
+    assert listing["api_version"] == "1.2"
     assert {p["id"] for p in listing["manifest_plugins"]} >= {"example.rot47"}
     assert "ROT47" in listing["decoders"]
 

@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "id": "example.config-extractor",
+  "name": "Titan Beacon Config Extractor",
+  "version": "1.0.0",
+  "api_version": "1.2.0",
+  "entry_point": "plugin:TitanBeaconConfigExtractor",
+  "capabilities": ["extractor"],
+  "description": "Example bounded extractor for a synthetic beacon configuration envelope.",
+  "author": "Titan examples",
+  "license": "AGPL-3.0-or-later",
+  "permissions": [],
+  "dependencies": {}
+}

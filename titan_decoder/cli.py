@@ -974,6 +974,7 @@ def attach_evidence_stage(args, report, evidence_result) -> None:
 # or report sections per run, mirroring the per-pack rule limit.
 MAX_PLUGIN_FINDINGS = 200
 MAX_PLUGIN_SECTIONS = 20
+MAX_PLUGIN_EXTRACTIONS = 100
 
 
 def _plugin_context(config, args):
@@ -1024,6 +1025,53 @@ def _run_detection_plugins(args, config, report, iocs, engine):
             data["source"] = {"type": "plugin", "plugin": str(plugin.name)}
             results.append(data)
     return results
+
+
+def run_config_extractors_stage(args, config, report, engine) -> None:
+    """Run isolated config extractors over every artifact-graph payload."""
+    manager = getattr(engine, "plugin_manager", None)
+    if manager is None or not getattr(manager, "extractors", None):
+        return
+
+    context = _plugin_context(config, args)
+    results: list[dict[str, Any]] = []
+    for plugin in manager.get_extractors():
+        for node_id, payload in engine.artifact_payloads():
+            if len(results) >= MAX_PLUGIN_EXTRACTIONS:
+                break
+            try:
+                if not plugin.can_extract(payload, context):
+                    continue
+                extracted = list(plugin.extract(payload, context))
+            except Exception as exc:
+                if not args.quiet:
+                    print(
+                        f"Warning: config extractor {plugin.name} failed: {exc}",
+                        file=sys.stderr,
+                    )
+                continue
+            for value in extracted[:MAX_PLUGIN_EXTRACTIONS]:
+                data = value.to_dict() if hasattr(value, "to_dict") else None
+                if not isinstance(data, dict):
+                    continue
+                data["node_id"] = int(node_id)
+                data["plugin"] = str(plugin.name)
+                try:
+                    json.dumps(data)
+                except (TypeError, ValueError):
+                    continue
+                results.append(data)
+                if len(results) >= MAX_PLUGIN_EXTRACTIONS:
+                    break
+    if results:
+        results.sort(
+            key=lambda item: (
+                item.get("family", ""),
+                item.get("node_id", -1),
+                item.get("plugin", ""),
+            )
+        )
+        report["config_extractions"] = results
 
 
 def _run_yara_stage(args, config, report, detections, engine):
@@ -1787,6 +1835,7 @@ def main():
 
     report, engine = run_analysis_stage(args, config, data)
     attach_evidence_stage(args, report, evidence_result)
+    run_config_extractors_stage(args, config, report, engine)
     detections, risk_assessment = run_detections_stage(
         args, config, report, evidence_result, engine=engine
     )

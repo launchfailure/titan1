@@ -128,11 +128,12 @@
       ],
       "plugins": {
         "analyzers": [],
-        "api_version": "1.1",
+        "api_version": "1.2",
         "decoders": [],
         "detections": [],
         "errors": [],
         "execution_mode": "isolated",
+        "extractors": [],
         "legacy_plugins_in_process": false,
         "loaded_plugins": [],
         "manifest_plugins": [],
