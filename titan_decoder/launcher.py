@@ -24,8 +24,8 @@ def _desktop(arguments: list[str]) -> int:
     from titan_decoder.desktop_ui.app import main
 
     sys.argv = ["titan", *arguments]
-    result = main()
-    return result if isinstance(result, int) else 0
+    main()
+    return 0
 
 
 def _usage() -> str:
