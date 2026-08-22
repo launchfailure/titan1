@@ -14,6 +14,11 @@ def test_package_registers_only_the_titan_command() -> None:
     with (Path(__file__).parents[1] / "pyproject.toml").open("rb") as stream:
         project = tomllib.load(stream)["project"]
     assert project["scripts"] == {"titan": "titan_decoder.launcher:main"}
+    assert project["dependencies"] == []
+    assert project["optional-dependencies"]["desktop-ui"] == [
+        "PySide6>=6.6,<7",
+        "psutil>=5,<8",
+    ]
 
 
 def test_no_arguments_open_the_desktop(monkeypatch: pytest.MonkeyPatch) -> None:

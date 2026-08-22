@@ -20,7 +20,7 @@ From the repo root:
 
 - Editable install (recommended while you’re developing):
 
-  - `pip install -e '.[formats]'`
+  - `pip install -e '.[desktop-ui,formats]'`
 
 - Optional enrichment dependencies:
 

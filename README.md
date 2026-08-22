@@ -89,7 +89,7 @@ Titan requires Python 3.10 or newer.
 ### Install from GitHub
 
 ```bash
-pip install "git+https://github.com/pragmaconflux/titan1.git"
+pip install "titan-decoder[desktop-ui] @ git+https://github.com/pragmaconflux/titan1.git"
 ```
 
 ### Editable developer install
@@ -99,7 +99,7 @@ git clone https://github.com/pragmaconflux/titan1.git
 cd titan1
 python -m venv .venv
 source .venv/bin/activate
-pip install -e '.[dev,formats]'
+pip install -e '.[dev,desktop-ui,formats]'
 ```
 
 Install optional Brotli, Zstandard, 7z, RAR, ISO, and CAB support with
@@ -311,7 +311,7 @@ See [docs/REPORT_SCHEMA.md](docs/REPORT_SCHEMA.md).
 ## Testing and development
 
 ```bash
-pip install -e '.[dev]'
+pip install -e '.[dev,desktop-ui]'
 python -m pytest
 ruff check .
 mypy titan_decoder
