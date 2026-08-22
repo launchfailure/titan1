@@ -208,11 +208,16 @@ def test_dense_scrollable_shell_and_quick_start_actions():
 
 
 def test_single_titan_command_is_packaged():
-    import tomllib
-
-    with Path("pyproject.toml").open("rb") as stream:
-        project = tomllib.load(stream)["project"]
-    assert project["scripts"] == {"titan": "titan_decoder.launcher:main"}
+    text = Path("pyproject.toml").read_text(encoding="utf-8")
+    scripts = text.split("[project.scripts]", 1)[1].split(
+        "[project.optional-dependencies]", 1
+    )[0]
+    registered = [
+        line.strip()
+        for line in scripts.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    assert registered == ['titan = "titan_decoder.launcher:main"']
 
 
 def test_terminal_drop_path_normalization():

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import tomllib
 
 import pytest
 
@@ -11,14 +10,18 @@ from titan_decoder import launcher
 def test_package_registers_only_the_titan_command() -> None:
     from pathlib import Path
 
-    with (Path(__file__).parents[1] / "pyproject.toml").open("rb") as stream:
-        project = tomllib.load(stream)["project"]
-    assert project["scripts"] == {"titan": "titan_decoder.launcher:main"}
-    assert project["dependencies"] == []
-    assert project["optional-dependencies"]["desktop-ui"] == [
-        "PySide6>=6.6,<7",
-        "psutil>=5,<8",
+    text = (Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8")
+    scripts = text.split("[project.scripts]", 1)[1].split(
+        "[project.optional-dependencies]", 1
+    )[0]
+    registered = [
+        line.strip()
+        for line in scripts.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
     ]
+    assert registered == ['titan = "titan_decoder.launcher:main"']
+    assert "dependencies = []" in text
+    assert 'desktop-ui = [\n    "PySide6>=6.6,<7",\n    "psutil>=5,<8",\n]' in text
 
 
 def test_no_arguments_open_the_desktop(monkeypatch: pytest.MonkeyPatch) -> None:
