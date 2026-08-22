@@ -107,7 +107,7 @@ self-contained HTML page with the machine-readable view embedded.
 ## CLI usage
 
 ```bash
-titan-decoder --file sample.bin \
+titan cli --file sample.bin \
   --correlation-db cases.sqlite3 \
   --correlation-out correlation.json \
   --campaign-out campaigns.json \

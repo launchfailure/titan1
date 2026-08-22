@@ -207,10 +207,12 @@ def test_dense_scrollable_shell_and_quick_start_actions():
     asyncio.run(exercise())
 
 
-def test_short_integrated_ui_command_is_packaged():
-    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert 'titan-ui = "titan_decoder.desktop_ui.app:main"' in pyproject
-    assert 'titan-tui = "titan_decoder.workbench_ui.app:main"' in pyproject
+def test_single_titan_command_is_packaged():
+    import tomllib
+
+    with Path("pyproject.toml").open("rb") as stream:
+        project = tomllib.load(stream)["project"]
+    assert project["scripts"] == {"titan": "titan_decoder.launcher:main"}
 
 
 def test_terminal_drop_path_normalization():

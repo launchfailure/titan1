@@ -26,37 +26,37 @@ From the repo root:
 
   - `pip install -r requirements-optional.txt`
 
-Use `titan-decoder --doctor` after installation. The `optional_formats`
+Use `titan cli --doctor` after installation. The `optional_formats`
 section identifies missing or broken Brotli, Zstandard, 7z, RAR, ISO, and CAB
 libraries instead of allowing those features to fail silently.
 
-Installing Titan provides these command-line entry points; optional interfaces
-require their matching extras:
+Installing Titan provides one entry point, `titan`. It opens the native desktop
+workbench by default. Optional and advanced interfaces are subcommands:
 
-- **`titan`** — the interactive, menu-driven UI (see below). Easiest way in.
-- **`titan-ui`** — the native PySide6 desktop workbench. On Windows, see
+- **`titan`** / **`titan gui`** — the native PySide6 desktop workbench. On Windows, see
   [WINDOWS_DESKTOP_UI.md](WINDOWS_DESKTOP_UI.md) for the Debian-backed setup.
-- **`titan-tui`** / **`titan-workbench-ui`** — the optional Textual terminal
+- **`titan tui`** — the optional Textual terminal
   workbench installed with `.[workbench-ui]`.
-- **`titan-workbench`** — explore completed JSON reports: decode trees, graphs, IOCs, timelines, search, investigation workspaces, exports. See [ANALYST_WORKBENCH.md](ANALYST_WORKBENCH.md).
-- **`titan-analyst`** — ask grounded questions about completed reports ("Why is this High Risk?"); deterministic by default, optional local model backend. See [LOCAL_AI_ANALYST.md](LOCAL_AI_ANALYST.md).
-- **`titan-decoder`** — the scriptable CLI used throughout the rest of this guide.
+- **`titan workbench`** — explore completed JSON reports: decode trees, graphs, IOCs, timelines, search, investigation workspaces, exports. See [ANALYST_WORKBENCH.md](ANALYST_WORKBENCH.md).
+- **`titan analyst`** — ask grounded questions about completed reports ("Why is this High Risk?"); deterministic by default, optional local model backend. See [LOCAL_AI_ANALYST.md](LOCAL_AI_ANALYST.md).
+- **`titan cli`** — the scriptable CLI used throughout the rest of this guide.
 
 Run the CLI:
 
-- `titan-decoder --help`
+- `titan cli --help`
 
-If the commands aren’t on your PATH yet, you can run them as modules:
+If `titan` is not on your PATH yet, advanced users can run modules directly:
 
-- `python -m titan_decoder.cli --help`   (the `titan-decoder` CLI)
-- `python -m titan_decoder.interactive`  (the `titan` UI)
+- `python -m titan_decoder.cli --help`   (the `titan cli` CLI)
+- `python -m titan_decoder.interactive`  (the advanced terminal menu)
 
-## Interactive mode (the `titan` command)
+## Interactive terminal mode
 
-If you’d rather not memorize flags, just run:
+The native workbench is the default interface. For the legacy stdlib-only
+terminal menu, run:
 
 ```bash
-titan          # or: titan-decoder --interactive   (same thing)
+titan cli --interactive
 ```
 
 You get a dashboard (session and system status panels) and a menu
@@ -84,24 +84,24 @@ report (the same structure documented below).
 it enables the opt-in decoders (Base32/UUencode/Quoted-Printable/ASN.1), searches
 deeper, and keeps weaker/shorter decodes. It’s handy for hands-on testing but
 noisier for real triage. It is **session-only** — it never changes the defaults
-used by `titan-decoder` or a real analysis run.
+used by `titan cli` or a real analysis run.
 
 It’s the same engine and decoders as the CLI, so anything you can do here you can
-also script with `titan-decoder` (below).
+also script with `titan cli` (below).
 
 ## The 3 “starter” commands (copy/paste)
 
 ### 1) Basic: analyze one file → JSON report
 
-- `titan-decoder --file suspicious.bin --out report.json`
+- `titan cli --file suspicious.bin --out report.json`
 
 ### 2) Triage: show progress + run detections/risk scoring
 
-- `titan-decoder --file suspicious.bin --out report.json --progress --enable-detections`
+- `titan cli --file suspicious.bin --out report.json --progress --enable-detections`
 
 ### 3) Investigator bundle: IOCs + timeline + case report + forensics
 
-- `titan-decoder --file evidence.bin --enable-detections \
+- `titan cli --file evidence.bin --enable-detections \
   --out report.json \
   --forensics-out forensics.json \
   --ioc-out iocs.json --ioc-format misp \
@@ -111,45 +111,45 @@ also script with `titan-decoder` (below).
 Optional output modes:
 
 - Include a decision trace in the JSON report (helpful for debugging scoring/pruning):
-  - `titan-decoder --file suspicious.bin --trace --out report.json`
+  - `titan cli --file suspicious.bin --trace --out report.json`
 
 - Print the deterministic Intelligence Layer explanation:
-  - `titan-decoder --file suspicious.bin --enable-detections --explain --out report.json`
+  - `titan cli --file suspicious.bin --enable-detections --explain --out report.json`
 
 - Write the Intelligence Layer result separately:
-  - `titan-decoder --file suspicious.bin --enable-detections --intelligence-out intelligence.json --out report.json`
+  - `titan cli --file suspicious.bin --enable-detections --intelligence-out intelligence.json --out report.json`
 
   This is deterministic analysis, not a generative AI model. See [INTELLIGENCE_LAYER.md](INTELLIGENCE_LAYER.md).
 
 - Save a shareable HTML case report:
-  - `titan-decoder --file evidence.bin --report-out case_report.html --report-format html`
+  - `titan cli --file evidence.bin --report-out case_report.html --report-format html`
 
 - Stream newline-delimited JSON events (easy ingestion into other tools):
-  - `titan-decoder --file suspicious.bin --out report.json --jsonl-out events.jsonl --enable-detections --quiet`
+  - `titan cli --file suspicious.bin --out report.json --jsonl-out events.jsonl --enable-detections --quiet`
 
 - Run a self-check (prints a JSON diagnostic report; great for bug reports):
-  - `titan-decoder --doctor`
+  - `titan cli --doctor`
 
 - Store runs locally and search later (IOC/value history):
-  - Store: `titan-decoder --file suspicious.bin --out report.json --vault-store --quiet`
-  - Search: `titan-decoder --vault-search http://example.com`
-  - Search only a specific IOC type: `titan-decoder --vault-search http://example.com --vault-search-type urls`
-  - List recent runs: `titan-decoder --vault-list-recent 20`
-  - Prune old runs: `titan-decoder --vault-prune-days 30`
+  - Store: `titan cli --file suspicious.bin --out report.json --vault-store --quiet`
+  - Search: `titan cli --vault-search http://example.com`
+  - Search only a specific IOC type: `titan cli --vault-search http://example.com --vault-search-type urls`
+  - List recent runs: `titan cli --vault-list-recent 20`
+  - Prune old runs: `titan cli --vault-prune-days 30`
 
 - Quiet mode (keeps stdout/stderr clean for pipelines):
-  - `titan-decoder --file suspicious.bin --out report.json --quiet`
+  - `titan cli --file suspicious.bin --out report.json --quiet`
 
 CI/pipeline mode:
 
 - Fail the process if risk is HIGH/CRITICAL (non-zero exit code):
-  - `titan-decoder --file suspicious.bin --enable-detections --fail-on-risk-level HIGH --out report.json`
+  - `titan cli --file suspicious.bin --enable-detections --fail-on-risk-level HIGH --out report.json`
 
 Offline mode:
 
 - Default recommendation: run offline unless you explicitly need enrichment.
 - Force offline even if your config enables enrichment:
-  - `titan-decoder --file suspicious.bin --offline --out report.json`
+  - `titan cli --file suspicious.bin --offline --out report.json`
 - If you pass both `--enable-enrichment` and `--offline`, Titan will skip enrichment.
 
 Note: `--offline` also enables a best-effort process-local network kill switch (blocks outbound socket calls) to reduce the risk of accidental network access.
@@ -158,9 +158,9 @@ Enrichment caching:
 
 - When enrichment is enabled, Titan can use a local SQLite cache to make enrichment results repeatable across runs.
 - Set a cache location explicitly (recommended for CI/workspaces):
-  - `titan-decoder --file suspicious.bin --enable-enrichment --enrichment-cache-path ./enrichment_cache.db --out report.json`
+  - `titan cli --file suspicious.bin --enable-enrichment --enrichment-cache-path ./enrichment_cache.db --out report.json`
 - Force a refresh (bypass cache) if you need to re-query providers:
-  - `titan-decoder --file suspicious.bin --enable-enrichment --refresh-enrichment --out report.json`
+  - `titan cli --file suspicious.bin --enable-enrichment --refresh-enrichment --out report.json`
 
 ## IR evidence ingestion (A/B/C workflows)
 
@@ -191,7 +191,7 @@ Supported `KIND` values:
 Example:
 
 ```bash
-titan-decoder --file suspicious.bin --out report.json --enable-detections \
+titan cli --file suspicious.bin --out report.json --enable-detections \
   --evidence dns:./logs/dns.csv \
   --evidence proxy:./logs/proxy.csv \
   --evidence firewall:./logs/flows.csv \
@@ -204,7 +204,7 @@ logs on their own. The report is produced with `node_count: 0` and the normalize
 evidence attached:
 
 ```bash
-titan-decoder --out report.json \
+titan cli --out report.json \
   --evidence dns:./logs/dns.csv \
   --evidence proxy:./logs/proxy.csv
 ```
@@ -212,7 +212,7 @@ titan-decoder --out report.json \
 Export a normalized evidence timeline (from the ingested `--evidence` sources):
 
 ```bash
-titan-decoder --file suspicious.bin --out report.json \
+titan cli --file suspicious.bin --out report.json \
   --evidence proxy:./logs/proxy.csv \
   --evidence-timeline-out evidence_timeline.csv --evidence-timeline-format csv
 ```
@@ -279,7 +279,7 @@ Save as `my_pack.json`:
 
 Run with the pack:
 
-- `titan-decoder --file suspicious.bin --enable-detections --rules-pack ./my_pack.json --out report.json`
+- `titan cli --file suspicious.bin --enable-detections --rules-pack ./my_pack.json --out report.json`
 
 Notes:
 
@@ -292,16 +292,16 @@ Notes:
 If you understand the *concept* but aren’t sure how to operate the tool, use this exact workflow:
 
 1. Run a triage analysis:
-  - `titan-decoder --file <sample> --out report.json --progress --enable-detections`
+  - `titan cli --file <sample> --out report.json --progress --enable-detections`
 2. Open `report.json` and answer these 4 questions:
   - How deep did it go? (look at max `depth` in `nodes`)
   - Did any decoder get a good score? (look for high `decode_score`)
   - Do the previews become readable script/URLs/commands anywhere?
   - What IOCs were extracted? (look at `iocs`)
 3. If it looks “too shallow” (few nodes), re-run deeper:
-  - `titan-decoder --file <sample> --profile full --out report.json --enable-detections`
+  - `titan cli --file <sample> --profile full --out report.json --enable-detections`
 4. If it looks “too noisy/too slow”, re-run fast:
-  - `titan-decoder --file <sample> --profile fast --out report.json --enable-detections`
+  - `titan cli --file <sample> --profile fast --out report.json --enable-detections`
 
 This is the fastest path from “I don’t know what I’m seeing” to “I have a lead.”
 
@@ -356,7 +356,7 @@ PY`
 
 Analyze many files and produce one report per file:
 
-- `titan-decoder --batch ./input_dir --batch-pattern "*.bin" --out ./reports`
+- `titan cli --batch ./input_dir --batch-pattern "*.bin" --out ./reports`
 
 Output example per file:
 
@@ -534,7 +534,7 @@ This is meant for *triage* (what to prioritize), not a courtroom-grade conclusio
 
 PII redaction in logs is enabled by default.
 
-- To disable it (e.g., in a private lab where you want raw logs): `titan-decoder --no-redaction ...`
+- To disable it (e.g., in a private lab where you want raw logs): `titan cli --no-redaction ...`
 
 The report JSON itself may still contain strings in `content_preview`, so treat the report as sensitive.
 

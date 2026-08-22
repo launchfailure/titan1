@@ -5,7 +5,7 @@ This is the friendly "just run ``titan``" experience: instead of remembering
 CLI flags, the user gets a menu where they can pick a decoder (or let the engine
 auto-detect), paste a test payload or point at a file, and see the decoded
 result. It is a thin presentation layer over the exact same engine and decoders
-the ``titan-decoder`` CLI drives — no analysis logic lives here.
+the ``titan cli`` interface drives — no analysis logic lives here.
 
 Kept dependency-light (stdlib only) and structured so the pure pieces (the
 decoder registry, result formatting) are unit-testable without a real TTY, and
@@ -746,7 +746,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         prog="titan",
         description=(
             "Interactive Titan console. Run with no arguments for the "
-            "menu-driven experience; use titan-decoder for the scriptable CLI."
+            "menu-driven experience; use 'titan cli' for the scriptable CLI."
         ),
     )
     parser.add_argument("--version", action="version", version=f"titan {TITAN_VERSION}")

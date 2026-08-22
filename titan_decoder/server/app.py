@@ -1,4 +1,4 @@
-"""Dependency-free REST surface and worker command for ``titan-server``."""
+"""Dependency-free REST surface and worker command for ``titan server``."""
 
 from __future__ import annotations
 
@@ -118,7 +118,7 @@ def _worker_loop(service: TitanService, worker: str, stop: threading.Event) -> N
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="titan-server")
+    parser = argparse.ArgumentParser(prog="titan server")
     parser.add_argument("--mode", choices=("all", "serve", "worker"), default="all")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8787)

@@ -32,7 +32,7 @@ Validation and limits
 ---------------------
 Rule definitions are validated (``validate_rule_def``) both at load time —
 the engine skips invalid or duplicate rules with a logged warning — and by
-``titan-decoder --rules-validate``, which reports every problem per rule and
+``titan cli --rules-validate``, which reports every problem per rule and
 exits non-zero. Enforced constraints:
 
 - at most ``MAX_RULES_PER_PACK`` rules per pack (the whole pack is rejected
