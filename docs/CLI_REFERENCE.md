@@ -1,17 +1,18 @@
 # CLI Reference
 
-Titan exposes two console commands after installation:
+Titan exposes one executable after installation:
 
-- `titan` starts the interactive menu.
-- `titan-decoder` runs the scriptable analysis pipeline.
+- `titan` opens the native desktop workbench.
+- `titan cli` accesses the advanced scriptable analysis pipeline through the
+  same executable.
 
-The command-line interface is intentionally file- and pipeline-oriented. Run `titan-decoder --help` for the authoritative option list for the installed version. For hands-on walkthroughs and report interpretation, see [USAGE.md](USAGE.md).
+The command-line interface is intentionally file- and pipeline-oriented. Run `titan cli --help` for the authoritative option list for the installed version. For hands-on walkthroughs and report interpretation, see [USAGE.md](USAGE.md).
 
 ## Input modes
 
 ```bash
-titan-decoder --file sample.bin
-titan-decoder --batch ./samples --batch-pattern '*.bin'
+titan cli --file sample.bin
+titan cli --batch ./samples --batch-pattern '*.bin'
 ```
 
 `--file` analyzes one object. `--batch` walks matching files and writes one report per input. Input size, recursion, node, memory, and timeout limits still apply.
@@ -19,11 +20,11 @@ titan-decoder --batch ./samples --batch-pattern '*.bin'
 ## Primary outputs
 
 ```bash
-titan-decoder --file sample.bin --out report.json
-titan-decoder --file sample.bin --jsonl-out events.jsonl
-titan-decoder --file sample.bin --report-out case.md --report-format markdown
-titan-decoder --file sample.bin --report-out case.html --report-format html
-titan-decoder --file sample.bin --graph graph.json --graph-format json
+titan cli --file sample.bin --out report.json
+titan cli --file sample.bin --jsonl-out events.jsonl
+titan cli --file sample.bin --report-out case.md --report-format markdown
+titan cli --file sample.bin --report-out case.html --report-format html
+titan cli --file sample.bin --graph graph.json --graph-format json
 ```
 
 Use `--stdout none` when a pipeline should not emit the full JSON report to standard output. Status messages are written to standard error; `--quiet` suppresses non-error status output.
@@ -31,9 +32,9 @@ Use `--stdout none` when a pipeline should not emit the full JSON report to stan
 ## Analysis controls
 
 ```bash
-titan-decoder --file sample.bin --profile fast
-titan-decoder --file sample.bin --profile full --max-depth 8 --max-artifacts 200
-titan-decoder --file sample.bin --trace --seed 1234
+titan cli --file sample.bin --profile fast
+titan cli --file sample.bin --profile full --max-depth 8 --max-artifacts 200
+titan cli --file sample.bin --trace --seed 1234
 ```
 
 Profiles select coherent presets. Explicit flags override configuration where supported. Decision traces increase report size and are intended for debugging or reproducibility work.
@@ -41,11 +42,11 @@ Profiles select coherent presets. Explicit flags override configuration where su
 ## Deep scan and quarantine
 
 ```bash
-titan-decoder --deep-scan ./incoming --offline --deep-scan-out summary.json
-titan-decoder --deep-scan ./incoming --offline \
+titan cli --deep-scan ./incoming --offline --deep-scan-out summary.json
+titan cli --deep-scan ./incoming --offline \
   --quarantine-verdict malicious --quarantine-action copy
-titan-decoder --quarantine-list
-titan-decoder --quarantine-restore RECORD_ID --quarantine-destination restored.bin
+titan cli --quarantine-list
+titan cli --quarantine-restore RECORD_ID --quarantine-destination restored.bin
 ```
 
 Deep Scan recursively performs static analysis and writes one report per file;
@@ -58,7 +59,7 @@ as a confirmed-malware verdict. See
 ## Decoder/analyzer calibration
 
 ```bash
-titan-decoder \
+titan cli \
   --calibrate tests/fixtures/calibration/decoder-analyzer-v1.json \
   --calibration-out calibration.json
 ```
@@ -70,11 +71,11 @@ exits non-zero when the gate fails. See [CALIBRATION.md](CALIBRATION.md).
 ## Detections, Intelligence, and policy exits
 
 ```bash
-titan-decoder --file sample.bin --enable-detections --out report.json
-titan-decoder --file sample.bin --enable-detections --explain
-titan-decoder --file sample.bin --intelligence-out intelligence.json
-titan-decoder --file sample.bin --enable-detections --fail-on-risk-level HIGH
-titan-decoder --file sample.bin --enable-detections --yara-rules rules/ --yara-rules extra.yar
+titan cli --file sample.bin --enable-detections --out report.json
+titan cli --file sample.bin --enable-detections --explain
+titan cli --file sample.bin --intelligence-out intelligence.json
+titan cli --file sample.bin --enable-detections --fail-on-risk-level HIGH
+titan cli --file sample.bin --enable-detections --yara-rules rules/ --yara-rules extra.yar
 ```
 
 The Intelligence object is attached to every normal report. Detection and risk inputs are richer when `--enable-detections` is set. `--fail-on-risk-level` is intended for CI and returns a non-zero status when the configured threshold is met or exceeded.
@@ -84,7 +85,7 @@ The Intelligence object is attached to every normal report. Detection and risk i
 ## Evidence ingestion
 
 ```bash
-titan-decoder --file sample.bin \
+titan cli --file sample.bin \
   --evidence dns:exports/dns.csv \
   --evidence proxy:exports/proxy.jsonl \
   --evidence firewall:exports/flows.csv \
@@ -97,10 +98,10 @@ Supported kinds are `dns`, `proxy`, `firewall`, `vpn`, `auth`, `dhcp`, and `gene
 ## IOC and forensic exports
 
 ```bash
-titan-decoder --file sample.bin --ioc-out iocs.json --ioc-format json
-titan-decoder --file sample.bin --ioc-out iocs.csv --ioc-format csv
-titan-decoder --file sample.bin --ioc-out iocs.json --ioc-format misp
-titan-decoder --file sample.bin --forensics-out forensics.json
+titan cli --file sample.bin --ioc-out iocs.json --ioc-format json
+titan cli --file sample.bin --ioc-out iocs.csv --ioc-format csv
+titan cli --file sample.bin --ioc-out iocs.json --ioc-format misp
+titan cli --file sample.bin --forensics-out forensics.json
 ```
 
 IOC formats are export representations, not additional analysis passes.
@@ -108,8 +109,8 @@ IOC formats are export representations, not additional analysis passes.
 ## Enrichment and offline mode
 
 ```bash
-titan-decoder --file sample.bin --enable-enrichment
-titan-decoder --file sample.bin --offline --enable-enrichment
+titan cli --file sample.bin --enable-enrichment
+titan cli --file sample.bin --offline --enable-enrichment
 ```
 
 Enrichment is explicit and optional. `--offline` prevents network-backed enrichment and should be used for isolated or evidentiary environments.
@@ -117,7 +118,7 @@ Enrichment is explicit and optional. `--offline` prevents network-backed enrichm
 ## Cross-case correlation (Phase 5)
 
 ```bash
-titan-decoder --file sample.bin \
+titan cli --file sample.bin \
   --correlation-db cases.sqlite3 \
   --correlation-out correlation.json \
   --campaign-out campaigns.json \
@@ -147,17 +148,17 @@ without persisting the current analysis). The analyst view renders as
 Cross-case search runs standalone (no input file) and exits:
 
 ```bash
-titan-decoder --correlation-db cases.sqlite3 --correlation-search c2.example
-titan-decoder --correlation-db cases.sqlite3 --correlation-search domains:c2.example \
+titan cli --correlation-db cases.sqlite3 --correlation-search c2.example
+titan cli --correlation-db cases.sqlite3 --correlation-search domains:c2.example \
   --correlation-search urls:https://c2.example/gate.php
 ```
 
 ## Graph formats
 
 ```bash
-titan-decoder --file sample.bin --graph graph.json --graph-format json
-titan-decoder --file sample.bin --graph graph.dot --graph-format dot
-titan-decoder --file sample.bin --graph graph.mmd --graph-format mermaid
+titan cli --file sample.bin --graph graph.json --graph-format json
+titan cli --file sample.bin --graph graph.dot --graph-format dot
+titan cli --file sample.bin --graph graph.mmd --graph-format mermaid
 ```
 
 When Intelligence is present, all formats include graph-level assessment metadata and ranked-artifact annotations. See [GRAPH_EXPORTS.md](GRAPH_EXPORTS.md).
@@ -165,9 +166,9 @@ When Intelligence is present, all formats include graph-level assessment metadat
 ## Plugins
 
 ```bash
-titan-decoder --plugin-validate path/to/plugin
-titan-decoder --plugin-list --plugin-dir examples/plugins
-titan-decoder --file sample.bin --plugin-dir ~/my-plugins --enable-detections
+titan cli --plugin-validate path/to/plugin
+titan cli --plugin-list --plugin-dir examples/plugins
+titan cli --file sample.bin --plugin-dir ~/my-plugins --enable-detections
 ```
 
 `--plugin-validate` deep-validates a manifest plugin (manifest contract, API
@@ -182,11 +183,11 @@ standalone modes and analysis runs. See [PLUGIN_API.md](PLUGIN_API.md).
 ## Diagnostics and discovery
 
 ```bash
-titan-decoder --doctor
-titan-decoder --list-decoders
-titan-decoder --list-analyzers
-titan-decoder --list-rule-packs
-titan-decoder --print-schema-version
+titan cli --doctor
+titan cli --list-decoders
+titan cli --list-analyzers
+titan cli --list-rule-packs
+titan cli --print-schema-version
 ```
 
 These commands are side-effect-light and suitable for installation checks and

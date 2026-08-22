@@ -5,7 +5,7 @@ found. It never performs decoding, detection, attribution, or enrichment,
 and it never invents evidence.
 
 ```bash
-titan-analyst --report report.json --ask "Why is this High Risk?"
+titan analyst --report report.json --ask "Why is this High Risk?"
 ```
 
 ## Grounding architecture
@@ -58,7 +58,7 @@ The first model backend is an OpenAI-compatible local HTTP endpoint
 (llama.cpp's server and similar local runtimes):
 
 ```bash
-titan-analyst --report report.json \
+titan analyst --report report.json \
   --backend local-openai \
   --endpoint http://127.0.0.1:8080/v1/chat/completions \
   --model local-model \
@@ -71,7 +71,7 @@ structured response.
 ## Safety model
 
 - **Optional and off by default** — nothing AI-related runs unless
-  `titan-analyst` is launched with `--backend local-openai`.
+  `titan analyst` is launched with `--backend local-openai`.
 - **Loopback-only by default** — non-loopback endpoints are refused unless
   `--allow-remote-endpoint` is passed explicitly, which prints a warning
   that ledger evidence will leave the host. There is no autonomous network

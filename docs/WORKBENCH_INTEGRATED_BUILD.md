@@ -10,7 +10,7 @@ different interfaces with different optional dependencies.
 
 ```bash
 python -m pip install -e '.[desktop-ui,formats]'
-titan-ui
+titan gui
 ```
 
 On Windows, use the two-environment setup and `Titan-Windows.cmd` launcher
@@ -22,11 +22,11 @@ through WSL.
 
 ```bash
 python -m pip install -e '.[workbench-ui]'
-titan-tui
+titan tui
 ```
 
-`titan-workbench-ui` is an equivalent alias for `titan-tui`. Neither command is
-an alias for the native `titan-ui` application.
+`titan tui` opens the terminal interface; `titan` and `titan gui` open the
+native desktop application.
 
 ## Textual terminal file drops
 

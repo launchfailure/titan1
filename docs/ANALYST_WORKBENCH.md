@@ -4,7 +4,7 @@ The Analyst Workbench is a terminal application for exploring completed
 Titan JSON reports:
 
 ```bash
-titan-workbench        # or: python -m titan_decoder.workbench.app
+titan workbench        # or: python -m titan_decoder.workbench.app
 ```
 
 It sits strictly *above* the deterministic engine: reports are loaded
@@ -60,7 +60,7 @@ without changing the underlying models, search, or export modules.
 ## Typical session
 
 ```
-titan-workbench
+titan workbench
   workbench> 1          # load ~/.titan_decoder/reports (or any directory)
   workbench> 2          # pick the case to focus
   workbench> /          # search "c2.example" across everything loaded

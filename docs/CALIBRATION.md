@@ -22,7 +22,7 @@ email, scripts, Windows LNK, and OOXML.
 ## Run the gate
 
 ```bash
-titan-decoder \
+titan cli \
   --calibrate tests/fixtures/calibration/decoder-analyzer-v1.json \
   --calibration-out calibration.json
 ```

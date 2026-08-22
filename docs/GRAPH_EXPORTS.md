@@ -5,9 +5,9 @@ Titan exports the analysis graph in JSON, Graphviz DOT, and Mermaid.
 ## Commands
 
 ```bash
-titan-decoder --file sample.bin --graph graph.json --graph-format json
-titan-decoder --file sample.bin --graph graph.dot --graph-format dot
-titan-decoder --file sample.bin --graph graph.mmd --graph-format mermaid
+titan cli --file sample.bin --graph graph.json --graph-format json
+titan cli --file sample.bin --graph graph.dot --graph-format dot
+titan cli --file sample.bin --graph graph.mmd --graph-format mermaid
 ```
 
 ## Legacy-compatible core

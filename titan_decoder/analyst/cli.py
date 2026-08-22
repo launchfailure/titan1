@@ -1,4 +1,4 @@
-"""The ``titan-analyst`` command: grounded Q&A over completed reports.
+"""The ``titan analyst`` command: grounded Q&A over completed reports.
 
 The AI analyst is optional by design — the default backend is
 ``deterministic``, which needs no model and produces citation-carrying
@@ -36,7 +36,7 @@ def _load_reports(paths) -> list[dict]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="titan-analyst",
+        prog="titan analyst",
         description="Grounded Local AI Analyst over completed Titan reports",
     )
     parser.add_argument(

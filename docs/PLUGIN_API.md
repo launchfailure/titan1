@@ -239,8 +239,8 @@ access when set), `max_input_bytes`, `max_output_bytes`, `max_children`, and
 ## Validation
 
 ```bash
-titan-decoder --plugin-validate path/to/plugin        # repeatable; exits non-zero on failure
-titan-decoder --plugin-list --plugin-dir examples/plugins
+titan cli --plugin-validate path/to/plugin        # repeatable; exits non-zero on failure
+titan cli --plugin-list --plugin-dir examples/plugins
 ```
 
 `--plugin-validate` checks the manifest contract, API compatibility, the

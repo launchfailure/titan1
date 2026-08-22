@@ -78,11 +78,11 @@ Artifact ranking is separate from report classification. Nodes gain points for p
 ## CLI
 
 ```bash
-titan-decoder --file suspicious.bin --enable-detections --explain --out report.json
+titan cli --file suspicious.bin --enable-detections --explain --out report.json
 ```
 
 ```bash
-titan-decoder --file suspicious.bin --enable-detections \
+titan cli --file suspicious.bin --enable-detections \
   --intelligence-out intelligence.json --out report.json
 ```
 

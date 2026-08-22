@@ -11,7 +11,7 @@ from titan_decoder.ecosystem.catalog import compatible_plugins, load_catalog
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="titan-plugin-catalog")
+    parser = argparse.ArgumentParser(prog="titan plugin-catalog")
     parser.add_argument("catalog", type=Path)
     parser.add_argument("--api-version", default=PLUGIN_API_VERSION)
     args = parser.parse_args(argv)

@@ -21,7 +21,7 @@ samples and is not a real-time antivirus engine.
 Scan offline and write a summary plus one JSON report per file:
 
 ```bash
-titan-decoder --deep-scan ./incoming --offline \
+titan cli --deep-scan ./incoming --offline \
   --deep-scan-reports ./scan-reports \
   --deep-scan-out ./scan-summary.json
 ```
@@ -29,7 +29,7 @@ titan-decoder --deep-scan ./incoming --offline \
 Copy confirmed malicious results into the default vault:
 
 ```bash
-titan-decoder --deep-scan ./incoming --offline \
+titan cli --deep-scan ./incoming --offline \
   --quarantine-verdict malicious --quarantine-action copy
 ```
 
@@ -46,8 +46,8 @@ quarantine event has a separate record containing the original path, verdict,
 size, timestamp, report path, requested action, and source-removal outcome.
 
 ```bash
-titan-decoder --quarantine-list
-titan-decoder --quarantine-restore RECORD_ID \
+titan cli --quarantine-list
+titan cli --quarantine-restore RECORD_ID \
   --quarantine-destination ./restored/sample.bin
 ```
 

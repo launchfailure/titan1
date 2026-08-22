@@ -23,7 +23,8 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Security",
 ]
-# Core engine is intentionally dependency-light.
+# Keep headless CLI and service installations dependency-light. The normal
+# desktop install uses the desktop-ui extra documented in the README.
 dependencies = []
 
 [project.urls]
@@ -32,15 +33,7 @@ Source = "https://github.com/pragmaconflux/titan1"
 Issues = "https://github.com/pragmaconflux/titan1/issues"
 
 [project.scripts]
-titan = "titan_decoder.interactive:main"
-titan-decoder = "titan_decoder.cli:main"
-titan-workbench = "titan_decoder.workbench.app:main"
-titan-workbench-ui = "titan_decoder.workbench_ui.app:main"
-titan-tui = "titan_decoder.workbench_ui.app:main"
-titan-ui = "titan_decoder.desktop_ui.app:main"
-titan-analyst = "titan_decoder.analyst.cli:main"
-titan-server = "titan_decoder.server.app:main"
-titan-plugin-catalog = "titan_decoder.ecosystem.catalog_cli:main"
+titan = "titan_decoder.launcher:main"
 
 # Keep these lists in sync with requirements-dev.txt / requirements-optional.txt.
 [project.optional-dependencies]
