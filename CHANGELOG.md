@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+Detection-depth hardening:
+
+- Derive detection-quality coverage from the live built-in rule registry so a
+  new `TITAN-*` rule cannot silently ship without published calibration.
+- Expand the deterministic labeled corpus from 27 to 39 cases, add two positive
+  and two targeted benign near-miss cases for `TITAN-008`, and require every
+  built-in rule to maintain at least two of each.
+- Make the evaluator fail closed on precision, recall, corpus coverage, label
+  integrity, targeted near-miss, or risk-separation regressions.
+- Stop treating routine `-NoProfile`, `cmd.exe /c`, and `cscript //nologo`
+  administration as LOLBin abuse by themselves.
+- Require executable or packer context for `TITAN-004`, keeping ordinary
+  ciphertext as an entropy risk signal instead of a detection false positive.
+- Publish built-in detection counts and per-rule corpus depth in the proof
+  dashboard.
+
 First-class YARA integration:
 
 - Scan every artifact-graph node — raw, decoded, and extracted content —

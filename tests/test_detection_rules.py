@@ -55,7 +55,6 @@ def test_lolbin_fires_with_abuse_context():
     # A LOLBin name together with a strong abuse token should fire.
     assert _lolbin_fires("powershell -nop -w hidden -enc SQBFAFgA")
     assert _lolbin_fires("regsvr32 /s /i:file.sct scrobj.dll")
-    assert _lolbin_fires("cmd.exe /c whoami & echo done")
 
 
 def test_lolbin_does_not_fire_on_bare_mention():
@@ -66,6 +65,48 @@ def test_lolbin_does_not_fire_on_bare_mention():
     )
     assert not _lolbin_fires("This script uses wscript to display a dialog.")
     assert not _lolbin_fires("See the PowerShell docs for details.")
+
+
+def test_lolbin_does_not_fire_on_routine_admin_flags():
+    # These flags are common in legitimate automation. They need stronger abuse
+    # evidence before Titan promotes them to a detection.
+    assert not _lolbin_fires(
+        r"powershell.exe -NoProfile -File C:\Admin\Rotate-Logs.ps1"
+    )
+    assert not _lolbin_fires("cmd.exe /c echo nightly backup complete")
+    assert not _lolbin_fires("cscript //nologo inventory.vbs")
+
+
+def test_opaque_payload_requires_executable_or_packer_context():
+    engine = CorrelationRulesEngine()
+
+    generic_ciphertext = {
+        "nodes": [
+            {
+                "entropy": 7.95,
+                "content_preview": "random encrypted backup bytes",
+                "decode_score": 0.0,
+            }
+        ]
+    }
+    generic_ids = {
+        item["rule_id"] for item in engine.evaluate_all(generic_ciphertext, {})
+    }
+    assert "TITAN-004" not in generic_ids
+
+    opaque_executable = {
+        "nodes": [
+            {
+                "entropy": 7.95,
+                "content_preview": "MZ" + "X" * 100,
+                "decode_score": 0.0,
+            }
+        ]
+    }
+    executable_ids = {
+        item["rule_id"] for item in engine.evaluate_all(opaque_executable, {})
+    }
+    assert "TITAN-004" in executable_ids
 
 
 def test_custom_rule_addition():

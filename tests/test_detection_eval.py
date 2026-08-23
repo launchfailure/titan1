@@ -13,7 +13,12 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from tools.eval_detections import evaluate  # noqa: E402
+from tools.eval_detections import (  # noqa: E402
+    MIN_NEAR_MISS_SAMPLES,
+    MIN_POSITIVE_SAMPLES,
+    built_in_rule_ids,
+    evaluate,
+)
 
 
 def test_detection_eval_separates_classes():
@@ -36,9 +41,24 @@ def test_no_rule_precision_regression():
     assert not weak, f"rules with precision < 0.8: {weak}"
 
 
-def test_every_rule_has_a_positive_sample():
-    # The corpus should exercise each built-in rule at least once, otherwise
-    # recall for that rule is untested.
+def test_detection_quality_gate_passes():
+    metrics = evaluate()
+    assert metrics["quality_gate"]["passed"], metrics["quality_gate"]["failures"]
+
+
+def test_quality_metrics_cover_the_live_builtin_rule_set():
+    metrics = evaluate()
+    assert set(metrics["per_rule"]) == set(built_in_rule_ids())
+
+
+def test_every_rule_has_positive_and_targeted_near_miss_depth():
+    # Generic true negatives are not enough. Each rule needs multiple labeled
+    # positives and benign cases deliberately placed near its trigger boundary.
     metrics = evaluate()
     for rule, m in metrics["per_rule"].items():
-        assert m["tp"] + m["fn"] >= 1, f"{rule} has no positive sample in the corpus"
+        assert m["positive_samples"] >= MIN_POSITIVE_SAMPLES, (
+            f"{rule} has only {m['positive_samples']} positive samples"
+        )
+        assert m["targeted_near_miss_samples"] >= MIN_NEAR_MISS_SAMPLES, (
+            f"{rule} has only {m['targeted_near_miss_samples']} targeted near-misses"
+        )

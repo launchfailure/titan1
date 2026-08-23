@@ -1,74 +1,108 @@
 {
-  "corpus_size": 27,
-  "benign_count": 13,
-  "malicious_count": 14,
+  "schema_version": "2.0",
+  "corpus_size": 39,
+  "benign_count": 23,
+  "malicious_count": 16,
   "per_rule": {
     "TITAN-001": {
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 37,
       "precision": 1.0,
       "recall": 1.0,
-      "f1": 1.0
+      "f1": 1.0,
+      "positive_samples": 2,
+      "targeted_near_miss_samples": 2
     },
     "TITAN-002": {
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 37,
       "precision": 1.0,
       "recall": 1.0,
-      "f1": 1.0
+      "f1": 1.0,
+      "positive_samples": 2,
+      "targeted_near_miss_samples": 2
     },
     "TITAN-003": {
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 37,
       "precision": 1.0,
       "recall": 1.0,
-      "f1": 1.0
+      "f1": 1.0,
+      "positive_samples": 2,
+      "targeted_near_miss_samples": 3
     },
     "TITAN-004": {
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 37,
       "precision": 1.0,
       "recall": 1.0,
-      "f1": 1.0
+      "f1": 1.0,
+      "positive_samples": 2,
+      "targeted_near_miss_samples": 2
     },
     "TITAN-005": {
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 37,
       "precision": 1.0,
       "recall": 1.0,
-      "f1": 1.0
+      "f1": 1.0,
+      "positive_samples": 2,
+      "targeted_near_miss_samples": 3
     },
     "TITAN-006": {
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 37,
       "precision": 1.0,
       "recall": 1.0,
-      "f1": 1.0
+      "f1": 1.0,
+      "positive_samples": 2,
+      "targeted_near_miss_samples": 2
     },
     "TITAN-007": {
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 37,
       "precision": 1.0,
       "recall": 1.0,
-      "f1": 1.0
+      "f1": 1.0,
+      "positive_samples": 2,
+      "targeted_near_miss_samples": 2
+    },
+    "TITAN-008": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 37,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "positive_samples": 2,
+      "targeted_near_miss_samples": 2
     }
   },
+  "quality_gate": {
+    "passed": true,
+    "minimum_precision": 0.8,
+    "minimum_recall": 0.8,
+    "minimum_positive_samples_per_rule": 2,
+    "minimum_targeted_near_misses_per_rule": 2,
+    "failures": []
+  },
   "risk_separation": {
-    "max_benign_score": 7,
+    "max_benign_score": 10,
     "min_malicious_score": 15,
     "separated": true,
     "benign_scores": [
@@ -77,18 +111,30 @@
       0,
       0,
       0,
+      0,
+      0,
+      0,
+      2,
+      2,
       2,
       2,
       2,
       2,
       4,
+      4,
       5,
       6,
-      7
+      7,
+      8,
+      10,
+      10,
+      10
     ],
     "malicious_scores": [
       15,
-      18,
+      20,
+      25,
+      25,
       25,
       25,
       25,
@@ -110,6 +156,7 @@
       "expected_rules": [
         "TITAN-001"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-001"
       ],
@@ -122,6 +169,7 @@
       "expected_rules": [
         "TITAN-002"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-002"
       ],
@@ -134,6 +182,7 @@
       "expected_rules": [
         "TITAN-003"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-003"
       ],
@@ -146,6 +195,7 @@
       "expected_rules": [
         "TITAN-004"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-004"
       ],
@@ -158,6 +208,7 @@
       "expected_rules": [
         "TITAN-005"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-005"
       ],
@@ -170,6 +221,7 @@
       "expected_rules": [
         "TITAN-006"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-006"
       ],
@@ -182,6 +234,7 @@
       "expected_rules": [
         "TITAN-007"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-007"
       ],
@@ -194,6 +247,7 @@
       "expected_rules": [
         "TITAN-001"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-001"
       ],
@@ -206,6 +260,7 @@
       "expected_rules": [
         "TITAN-002"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-002"
       ],
@@ -218,6 +273,7 @@
       "expected_rules": [
         "TITAN-003"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-003"
       ],
@@ -230,10 +286,11 @@
       "expected_rules": [
         "TITAN-004"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-004"
       ],
-      "risk_score": 18,
+      "risk_score": 20,
       "risk_level": "LOW"
     },
     {
@@ -242,6 +299,7 @@
       "expected_rules": [
         "TITAN-005"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-005"
       ],
@@ -254,6 +312,7 @@
       "expected_rules": [
         "TITAN-006"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-006"
       ],
@@ -266,6 +325,7 @@
       "expected_rules": [
         "TITAN-007"
       ],
+      "near_miss_rules": [],
       "fired_rules": [
         "TITAN-007"
       ],
@@ -273,9 +333,36 @@
       "risk_level": "CRITICAL"
     },
     {
+      "name": "mal_png_appended_payload",
+      "malicious": true,
+      "expected_rules": [
+        "TITAN-008"
+      ],
+      "near_miss_rules": [],
+      "fired_rules": [
+        "TITAN-008"
+      ],
+      "risk_score": 25,
+      "risk_level": "MEDIUM"
+    },
+    {
+      "name": "mal_png_lsb_payload",
+      "malicious": true,
+      "expected_rules": [
+        "TITAN-008"
+      ],
+      "near_miss_rules": [],
+      "fired_rules": [
+        "TITAN-008"
+      ],
+      "risk_score": 25,
+      "risk_level": "MEDIUM"
+    },
+    {
       "name": "ben_readme",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [],
       "fired_rules": [],
       "risk_score": 0,
       "risk_level": "CLEAN"
@@ -284,6 +371,7 @@
       "name": "ben_json_config",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [],
       "fired_rules": [],
       "risk_score": 0,
       "risk_level": "CLEAN"
@@ -292,14 +380,18 @@
       "name": "ben_single_base64",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-001"
+      ],
       "fired_rules": [],
-      "risk_score": 2,
+      "risk_score": 4,
       "risk_level": "LOW"
     },
     {
       "name": "ben_clean_pdf",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [],
       "fired_rules": [],
       "risk_score": 2,
       "risk_level": "LOW"
@@ -308,6 +400,9 @@
       "name": "ben_clean_doc",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-002"
+      ],
       "fired_rules": [],
       "risk_score": 2,
       "risk_level": "LOW"
@@ -316,6 +411,7 @@
       "name": "ben_gzip_log",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [],
       "fired_rules": [],
       "risk_score": 4,
       "risk_level": "LOW"
@@ -324,6 +420,7 @@
       "name": "ben_source_code",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [],
       "fired_rules": [],
       "risk_score": 0,
       "risk_level": "CLEAN"
@@ -332,6 +429,10 @@
       "name": "ben_single_url",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-005",
+        "TITAN-006"
+      ],
       "fired_rules": [],
       "risk_score": 7,
       "risk_level": "LOW"
@@ -340,6 +441,9 @@
       "name": "ben_pdf_js_only",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-007"
+      ],
       "fired_rules": [],
       "risk_score": 5,
       "risk_level": "LOW"
@@ -348,6 +452,9 @@
       "name": "ben_single_base64_long",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-001"
+      ],
       "fired_rules": [],
       "risk_score": 2,
       "risk_level": "LOW"
@@ -356,6 +463,9 @@
       "name": "ben_two_domains",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-005"
+      ],
       "fired_rules": [],
       "risk_score": 6,
       "risk_level": "LOW"
@@ -364,17 +474,131 @@
       "name": "ben_shell_script",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [],
       "fired_rules": [],
-      "risk_score": 0,
-      "risk_level": "CLEAN"
+      "risk_score": 2,
+      "risk_level": "LOW"
     },
     {
       "name": "ben_tool_mention",
       "malicious": false,
       "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-003"
+      ],
       "fired_rules": [],
       "risk_score": 0,
       "risk_level": "CLEAN"
+    },
+    {
+      "name": "ben_powershell_maintenance",
+      "malicious": false,
+      "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-003"
+      ],
+      "fired_rules": [],
+      "risk_score": 0,
+      "risk_level": "CLEAN"
+    },
+    {
+      "name": "ben_cmd_batch",
+      "malicious": false,
+      "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-003"
+      ],
+      "fired_rules": [],
+      "risk_score": 0,
+      "risk_level": "CLEAN"
+    },
+    {
+      "name": "ben_encrypted_backup",
+      "malicious": false,
+      "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-004"
+      ],
+      "fired_rules": [],
+      "risk_score": 10,
+      "risk_level": "LOW"
+    },
+    {
+      "name": "ben_encrypted_message",
+      "malicious": false,
+      "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-004"
+      ],
+      "fired_rules": [],
+      "risk_score": 10,
+      "risk_level": "LOW"
+    },
+    {
+      "name": "ben_macro_without_network",
+      "malicious": false,
+      "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-002"
+      ],
+      "fired_rules": [],
+      "risk_score": 2,
+      "risk_level": "LOW"
+    },
+    {
+      "name": "ben_two_ioc_types",
+      "malicious": false,
+      "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-005"
+      ],
+      "fired_rules": [],
+      "risk_score": 8,
+      "risk_level": "LOW"
+    },
+    {
+      "name": "ben_xor_without_network",
+      "malicious": false,
+      "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-006"
+      ],
+      "fired_rules": [],
+      "risk_score": 0,
+      "risk_level": "CLEAN"
+    },
+    {
+      "name": "ben_executable_not_pdf",
+      "malicious": false,
+      "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-007"
+      ],
+      "fired_rules": [],
+      "risk_score": 2,
+      "risk_level": "LOW"
+    },
+    {
+      "name": "ben_clean_png",
+      "malicious": false,
+      "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-008"
+      ],
+      "fired_rules": [],
+      "risk_score": 0,
+      "risk_level": "CLEAN"
+    },
+    {
+      "name": "ben_png_unframed_lsb_noise",
+      "malicious": false,
+      "expected_rules": [],
+      "near_miss_rules": [
+        "TITAN-008"
+      ],
+      "fired_rules": [],
+      "risk_score": 10,
+      "risk_level": "LOW"
     }
   ]
 }

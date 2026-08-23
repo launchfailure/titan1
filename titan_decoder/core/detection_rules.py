@@ -189,12 +189,17 @@ class CorrelationRulesEngine:
             )
         )
 
-        # Rule 4: High entropy data with low decoding success
+        # Rule 4: High-entropy executable/packer context with low decode success.
+        # Generic ciphertext and incompressible user data remain entropy signals
+        # in risk scoring but are not, by themselves, detections.
         self.rules.append(
             DetectionRule(
                 rule_id="TITAN-004",
-                name="Encrypted or Packed Payload",
-                description="High entropy data with minimal successful decoding",
+                name="Opaque Executable Payload",
+                description=(
+                    "High-entropy executable or packer content with minimal "
+                    "successful decoding"
+                ),
                 severity="low",
                 detect_fn=lambda report, iocs: self._detect_encrypted_payload(report),
                 attack_ids=["T1027"],
@@ -327,8 +332,6 @@ class CorrelationRulesEngine:
     _LOLBIN_CONTEXT = (
         "-enc",
         "-encodedcommand",
-        "-nop",
-        "-noprofile",
         "-w hidden",
         "-windowstyle hidden",
         "-exec bypass",
@@ -338,13 +341,10 @@ class CorrelationRulesEngine:
         "downloadstring",
         "downloadfile",
         "net.webclient",
-        "/c ",
-        "/k ",
         "scrobj.dll",
         "javascript:",
         "vbscript:",
         "/i:",
-        "//nologo",
         ".sct",
     )
 
@@ -364,7 +364,13 @@ class CorrelationRulesEngine:
         return any(ctx in text for ctx in self._LOLBIN_CONTEXT)
 
     def _detect_encrypted_payload(self, report: Dict[str, Any]) -> bool:
-        """Detect high entropy payloads with minimal decoding."""
+        """Detect opaque executable/packer content with minimal decoding.
+
+        Entropy alone cannot distinguish packed malware from encrypted backups,
+        compressed user data, or cryptographic material. Requiring executable
+        magic or a packer marker keeps the rule actionable while the separate
+        entropy risk signal still records generic high-entropy inputs.
+        """
         nodes = report.get("nodes", [])
 
         if not nodes:
@@ -372,11 +378,23 @@ class CorrelationRulesEngine:
 
         root = nodes[0]
         root_entropy = root.get("entropy", 0)
+        root_preview = str(root.get("content_preview") or "")
+        has_executable_magic = root_preview.startswith(("MZ", "\x7fELF", "ELF"))
+        has_packer_marker = any(
+            "upx" in str(node.get("content_preview") or "").lower() for node in nodes
+        )
 
-        # High entropy at root with few successful decodes
+        # High entropy at root with few successful decodes and concrete binary
+        # context. A raw random/ciphertext blob intentionally stays below this
+        # detection boundary.
         successful_decodes = sum(1 for n in nodes if n.get("decode_score", 0) > 0.5)
 
-        return root_entropy > 7.5 and len(nodes) < 5 and successful_decodes <= 1
+        return (
+            root_entropy > 7.5
+            and len(nodes) < 5
+            and successful_decodes <= 1
+            and (has_executable_magic or has_packer_marker)
+        )
 
     def _detect_multistage_infra(
         self, report: Dict[str, Any], iocs: Dict[str, Any]

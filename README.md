@@ -335,6 +335,7 @@ See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 |---|---|
 | [Documentation index](docs/DOCUMENTATION_INDEX.md) | Complete operator, developer, and maintainer map |
 | [Project charter](docs/PROJECT_CHARTER.md) | Mission, core principles, scope, and governance |
+| [Depth-hardening program](docs/DEPTH_HARDENING.md) | Ordered plan for content, corpus, parser, assurance, and trust depth |
 | [Architecture](docs/ARCHITECTURE.md) | Components, boundaries, and system diagrams |
 | [CLI reference](docs/CLI_REFERENCE.md) | Command groups, outputs, and examples |
 | [Windows desktop workbench](docs/WINDOWS_DESKTOP_UI.md) | Native setup, Debian bridge, drag-and-drop, and troubleshooting |
@@ -356,7 +357,11 @@ See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Project status
 
-Titan is under active development. The deterministic core, report contracts, and safety bounds take priority over feature breadth. Planned work is tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
+Titan is under active development. The deterministic core, report contracts,
+and safety bounds take priority over feature breadth. Major surface expansion is
+currently deferred in favor of the
+[depth-hardening program](docs/DEPTH_HARDENING.md); longer-term work remains in
+[docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## License
 
