@@ -17,6 +17,7 @@ Re-run after changing rules or weights and refresh ``docs/detection_metrics.json
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -79,8 +80,22 @@ def evaluate() -> Dict:
     malicious_scores: List[int] = []
     label_failures: List[str] = []
     near_miss_failures: List[str] = []
+    seen_names: set[str] = set()
+    seen_payloads: Dict[str, str] = {}
 
     for sample in corpus:
+        if sample.name in seen_names:
+            label_failures.append(f"{sample.name}: duplicate sample name")
+        seen_names.add(sample.name)
+        payload_hash = hashlib.sha256(sample.data).hexdigest()
+        previous_name = seen_payloads.get(payload_hash)
+        if previous_name is not None:
+            label_failures.append(
+                f"{sample.name}: duplicate payload also used by {previous_name}"
+            )
+        else:
+            seen_payloads[payload_hash] = sample.name
+
         unknown_expected = sorted(sample.expected_rules - known_rules)
         unknown_near_misses = sorted(sample.near_miss_rules - known_rules)
         overlap = sorted(sample.expected_rules & sample.near_miss_rules)
@@ -102,6 +117,20 @@ def evaluate() -> Dict:
             )
 
         report = engine.run_analysis(sample.data)
+        observed_decoders = {
+            str(node.get("decoder_used") or "").lower()
+            for node in report.get("nodes", [])
+            if node.get("decoder_used")
+        }
+        missing_decoders = sorted(
+            decoder
+            for decoder in sample.required_decoders
+            if decoder.lower() not in observed_decoders
+        )
+        if missing_decoders:
+            label_failures.append(
+                f"{sample.name}: required decoders not observed {missing_decoders}"
+            )
         iocs = build_ioc_summary(report, None)
         detections = rules_engine.evaluate_all(report, iocs)
         fired = {d["rule_id"] for d in detections}
@@ -138,6 +167,8 @@ def evaluate() -> Dict:
                 "malicious": sample.malicious,
                 "expected_rules": sorted(sample.expected_rules),
                 "near_miss_rules": sorted(sample.near_miss_rules),
+                "required_decoders": sorted(sample.required_decoders),
+                "observed_decoders": sorted(observed_decoders),
                 "fired_rules": sorted(fired),
                 "risk_score": risk["risk_score"],
                 "risk_level": risk["risk_level"],

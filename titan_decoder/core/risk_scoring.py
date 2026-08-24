@@ -21,10 +21,10 @@ class RiskScoringEngine:
     ``tools/corpus_samples.py`` via ``tools/eval_detections.py`` (results
     committed in ``docs/detection_metrics.json`` and summarized in
     ``docs/DETECTION_QUALITY.md``). As of the last run over the expanded corpus
-    (16 malicious / 23 benign, two positives and at least two targeted benign
+    (16 malicious / 27 benign, two positives and at least two targeted benign
     near-misses per rule): every built-in rule (TITAN-001..008) scores precision
     1.000 / recall 1.000, and the overall risk score cleanly separates the
-    classes — benign samples score at most 10 while every malicious sample
+    classes — benign samples score at most 12 while every malicious sample
     scores at least 15 (no overlap). ``tests/test_detection_eval.py`` asserts
     rule-set parity, corpus depth, and this separation so a weight or rule
     change that regresses it fails CI. Re-run the harness and refresh the metrics

@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Dict, Any, List, Callable, Sequence
 import logging
 from pathlib import Path
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +166,7 @@ class CorrelationRulesEngine:
             DetectionRule(
                 rule_id="TITAN-002",
                 name="Office Macro with Network IOCs",
-                description="OLE file with embedded content and network indicators",
+                description="OLE macro content with network indicators",
                 severity="high",
                 detect_fn=lambda report, iocs: self._detect_office_macro_network(
                     report, iocs
@@ -211,7 +212,9 @@ class CorrelationRulesEngine:
             DetectionRule(
                 rule_id="TITAN-005",
                 name="Multi-Stage Infrastructure",
-                description="Multiple IOC types suggest multi-stage attack infrastructure",
+                description=(
+                    "Multiple IOC types with C2, beacon, or exfiltration context"
+                ),
                 severity="high",
                 detect_fn=lambda report, iocs: self._detect_multistage_infra(
                     report, iocs
@@ -267,6 +270,64 @@ class CorrelationRulesEngine:
 
         logger.info(f"Loaded {len(self.rules)} correlation rules")
 
+    @staticmethod
+    def _node_id(node: Dict[str, Any]) -> Any:
+        """Return either supported report-schema node identifier."""
+        if node.get("id") is not None:
+            return node.get("id")
+        return node.get("node_id")
+
+    @classmethod
+    def _descendant_nodes(
+        cls, nodes: List[Dict[str, Any]], root: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Return *root* and nodes descended from it.
+
+        Correlation rules must not combine evidence from sibling decode branches.
+        Reports always carry ``id``/``parent``; the one-node fallback preserves
+        safe behavior for small hand-built reports that omit graph identifiers.
+        """
+        root_id = cls._node_id(root)
+        if root_id is None:
+            return [root]
+
+        children: Dict[Any, List[Dict[str, Any]]] = {}
+        for node in nodes:
+            parent = node.get("parent") if "parent" in node else node.get("parent_id")
+            if parent is not None:
+                children.setdefault(parent, []).append(node)
+
+        selected: List[Dict[str, Any]] = []
+        queue = [root]
+        visited: set[tuple[str, Any]] = set()
+        while queue:
+            node = queue.pop()
+            node_id = cls._node_id(node)
+            visit_key = (
+                ("node", node_id) if node_id is not None else ("object", id(node))
+            )
+            if visit_key in visited:
+                continue
+            visited.add(visit_key)
+            selected.append(node)
+            if node_id is not None:
+                queue.extend(children.get(node_id, ()))
+        return selected
+
+    @staticmethod
+    def _content_text(nodes: Sequence[Dict[str, Any]]) -> str:
+        return "\n".join(str(node.get("content_preview") or "") for node in nodes)
+
+    @staticmethod
+    def _ioc_markers(iocs: Dict[str, Any], *keys: str) -> List[str]:
+        markers: List[str] = []
+        for key in keys:
+            values = iocs.get(key) or []
+            if isinstance(values, str):
+                values = [values]
+            markers.extend(str(value).lower() for value in values if value)
+        return markers
+
     def _detect_deep_base64(self, report: Dict[str, Any]) -> bool:
         """Detect multiple layers of Base64 encoding.
 
@@ -280,37 +341,67 @@ class CorrelationRulesEngine:
         sample from a plain single-layer base64 with no false positives.
         """
         nodes = report.get("nodes", [])
-        max_depth = 0
-        layer_score = 0
 
-        for node in nodes:
-            decoder = (node.get("decoder_used", "") or "").lower()
+        def weight(node: Dict[str, Any]) -> int:
+            decoder = str(node.get("decoder_used") or "").lower()
             if "recursivebase64" in decoder:
-                layer_score += 2  # collapsed multi-layer peel
-                max_depth = max(max_depth, node.get("depth", 0))
-            elif "base64" in decoder:
-                layer_score += 1
-                max_depth = max(max_depth, node.get("depth", 0))
+                return 2  # collapsed multi-layer peel
+            if "base64" in decoder:
+                return 1
+            return 0
 
-        return layer_score >= 3 or max_depth >= 4
+        # A legacy hand-built report may omit graph ids. Only treat it as one
+        # path when every node has a unique depth; otherwise branch correlation
+        # is unknowable and the safe result is no match.
+        if nodes and not any(self._node_id(node) is not None for node in nodes):
+            depths = [node.get("depth") for node in nodes]
+            if None in depths or len(set(depths)) != len(depths):
+                return False
+            return sum(weight(node) for node in nodes) >= 3
+
+        # Propagate the Base64 layer score down each lineage independently.
+        # Three unrelated single-layer Base64 branches must not add up to a
+        # deep-nesting detection.
+        scores: Dict[Any, int] = {}
+        for node in sorted(nodes, key=lambda item: int(item.get("depth") or 0)):
+            node_id = self._node_id(node)
+            if node_id is None:
+                continue
+            parent = node.get("parent") if "parent" in node else node.get("parent_id")
+            scores[node_id] = scores.get(parent, 0) + weight(node)
+            if scores[node_id] >= 3:
+                return True
+        return False
 
     def _detect_office_macro_network(
         self, report: Dict[str, Any], iocs: Dict[str, Any]
     ) -> bool:
         """Detect Office documents with macros and network IOCs."""
         nodes = report.get("nodes", [])
-        has_ole = any(
-            "ole"
-            in (
-                (node.get("method", "") or "") + " " + (node.get("decoder_used") or "")
-            ).lower()
-            for node in nodes
-        )
-        has_network = bool(
-            iocs.get("urls") or iocs.get("ipv4_public") or iocs.get("domains")
-        )
+        network_markers = self._ioc_markers(iocs, "urls", "ipv4_public", "domains")
+        if not network_markers:
+            return False
 
-        return has_ole and has_network
+        macro_markers = (
+            "macros/vba/",
+            "attribute vb_name",
+            "_vba_project",
+            "vba project",
+        )
+        for node in nodes:
+            operation = (
+                str(node.get("method") or "")
+                + " "
+                + str(node.get("decoder_used") or "")
+            ).lower()
+            if "ole" not in operation:
+                continue
+            text = self._content_text(self._descendant_nodes(nodes, node)).lower()
+            has_macro = any(marker in text for marker in macro_markers)
+            has_network = any(marker in text for marker in network_markers)
+            if has_macro and has_network:
+                return True
+        return False
 
     # Living-off-the-land binaries commonly abused for execution.
     _LOLBINS = (
@@ -327,25 +418,23 @@ class CorrelationRulesEngine:
     # ("open PowerShell", "run cmd.exe") is common in benign documentation and
     # must NOT fire; the rule requires the LOLBin to co-occur with one of these
     # download-cradle / hidden-exec / script-COM tokens, which are rare in benign
-    # prose. Kept as substrings so they match inside command lines regardless of
-    # surrounding quoting.
-    _LOLBIN_CONTEXT = (
-        "-enc",
-        "-encodedcommand",
-        "-w hidden",
-        "-windowstyle hidden",
-        "-exec bypass",
-        "executionpolicy bypass",
-        "iex",
-        "invoke-expression",
-        "downloadstring",
-        "downloadfile",
-        "net.webclient",
-        "scrobj.dll",
-        "javascript:",
-        "vbscript:",
-        "/i:",
-        ".sct",
+    # prose. Regex token boundaries prevent benign options such as ``-Encoding``
+    # from being mistaken for the encoded-command abbreviation ``-enc``.
+    _LOLBIN_CONTEXT = tuple(
+        re.compile(pattern, re.IGNORECASE)
+        for pattern in (
+            r"(?<![\w-])-(?:enc|encodedcommand)(?=$|[\s:=])",
+            r"(?<![\w-])-(?:w|windowstyle)\s+hidden\b",
+            r"(?<![\w-])-(?:exec|executionpolicy)\s+bypass\b",
+            r"(?<![\w-])iex(?=$|[\s;(])",
+            r"\binvoke-expression\b",
+            r"\bdownload(?:string|file)\b",
+            r"\bnet\.webclient\b",
+            r"\bscrobj\.dll\b",
+            r"\b(?:java|vb)script:",
+            r"(?<!\w)/i:(?:https?://|\S*\.sct\b)",
+            r"\.sct\b",
+        )
     )
 
     def _detect_lolbin_pattern(self, report: Dict[str, Any]) -> bool:
@@ -356,12 +445,13 @@ class CorrelationRulesEngine:
         This avoids the false positive where a benign document merely mentions
         "PowerShell" or "cmd.exe": the name alone is insufficient.
         """
-        nodes = report.get("nodes", [])
-        text = "\n".join(node.get("content_preview", "").lower() for node in nodes)
-
-        if not any(lolbin in text for lolbin in self._LOLBINS):
-            return False
-        return any(ctx in text for ctx in self._LOLBIN_CONTEXT)
+        for node in report.get("nodes", []):
+            text = str(node.get("content_preview") or "").lower()
+            if not any(lolbin in text for lolbin in self._LOLBINS):
+                continue
+            if any(pattern.search(text) for pattern in self._LOLBIN_CONTEXT):
+                return True
+        return False
 
     def _detect_encrypted_payload(self, report: Dict[str, Any]) -> bool:
         """Detect opaque executable/packer content with minimal decoding.
@@ -409,37 +499,59 @@ class CorrelationRulesEngine:
             ]
         )
 
-        return ioc_types >= 3
+        if ioc_types < 3:
+            return False
+
+        # Common documentation and inventory records legitimately contain a
+        # URL, host/IP, and support email. Require high-signal staging context
+        # before promoting that IOC diversity to a behavioral detection.
+        text = self._content_text(report.get("nodes", []))
+        return bool(
+            re.search(
+                r"\b(?:c2|command[- ]and[- ]control|beacon(?:ing)?|"
+                r"exfil(?:trate|tration|trated|trating)?)\b",
+                text,
+                re.IGNORECASE,
+            )
+        )
 
     def _detect_xor_with_network(
         self, report: Dict[str, Any], iocs: Dict[str, Any]
     ) -> bool:
         """Detect XOR encoding with network indicators."""
         nodes = report.get("nodes", [])
-        has_xor = any(
-            "xor" in (node.get("decoder_used") or "").lower() for node in nodes
-        )
-        has_network = bool(iocs.get("urls") or iocs.get("ipv4_public"))
-
-        return has_xor and has_network
+        network_markers = self._ioc_markers(iocs, "urls", "ipv4_public")
+        if not network_markers:
+            return False
+        for node in nodes:
+            if "xor" not in str(node.get("decoder_used") or "").lower():
+                continue
+            text = self._content_text(self._descendant_nodes(nodes, node)).lower()
+            if any(marker in text for marker in network_markers):
+                return True
+        return False
 
     def _detect_malicious_pdf(self, report: Dict[str, Any]) -> bool:
         """Detect PDFs with embedded executables."""
         nodes = report.get("nodes", [])
-        has_pdf = any(
-            "pdf"
-            in (
-                (node.get("method", "") or "") + " " + (node.get("decoder_used") or "")
-            ).lower()
-            for node in nodes
-        )
-
-        # Look for PE/ELF signatures in decoded content
         for node in nodes:
-            preview = node.get("content_preview", "")
-            if "MZ" in preview or "ELF" in preview:
-                return has_pdf
-
+            operation = (
+                str(node.get("method") or "")
+                + " "
+                + str(node.get("decoder_used") or "")
+            ).lower()
+            if "pdf" not in operation:
+                continue
+            for descendant in self._descendant_nodes(nodes, node):
+                preview = str(descendant.get("content_preview") or "")
+                # Require binary magic at the start of content or an extracted
+                # stream line. Plain prose that merely discusses "MZ" or "ELF"
+                # is not embedded executable evidence.
+                if re.search(
+                    r"(?:\A|[\r\n])(?:MZ(?=[\x00-\x1f\x7f-\xff])|\x7fELF)",
+                    preview,
+                ):
+                    return True
         return False
 
     def _detect_hidden_media_payload(self, report: Dict[str, Any]) -> bool:

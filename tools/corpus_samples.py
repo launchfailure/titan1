@@ -47,6 +47,10 @@ class Sample:
     # adversarial negative coverage instead of receiving credit only from
     # unrelated clean files.
     near_miss_rules: Set[str] = field(default_factory=set)
+    # Optional proof that a near-miss reached the intended processing boundary.
+    # For example, a benign XOR case is weak if the XOR decoder never accepted
+    # it; the evaluator fails when a declared decoder precondition disappears.
+    required_decoders: Set[str] = field(default_factory=set)
 
 
 def _nested_base64(payload: bytes, layers: int) -> bytes:
@@ -339,6 +343,7 @@ def build_corpus() -> List[Sample]:
             base64.b64encode(b"The quarterly report is attached for your review."),
             malicious=False,
             near_miss_rules={"TITAN-001"},
+            required_decoders={"Base64"},
         )
     )
 
@@ -361,6 +366,7 @@ def build_corpus() -> List[Sample]:
             ),
             malicious=False,
             near_miss_rules={"TITAN-002"},
+            required_decoders={"OLE"},
         )
     )
 
@@ -416,6 +422,7 @@ def build_corpus() -> List[Sample]:
             js_pdf,
             malicious=False,
             near_miss_rules={"TITAN-007"},
+            required_decoders={"PDF"},
         )
     )
 
@@ -429,6 +436,7 @@ def build_corpus() -> List[Sample]:
             ),
             malicious=False,
             near_miss_rules={"TITAN-001"},
+            required_decoders={"Base64"},
         )
     )
 
@@ -475,6 +483,14 @@ def build_corpus() -> List[Sample]:
     )
     samples.append(
         Sample(
+            "ben_powershell_encoding",
+            b"powershell.exe -Encoding utf8 -File C:\\Admin\\Export-Report.ps1",
+            malicious=False,
+            near_miss_rules={"TITAN-003"},
+        )
+    )
+    samples.append(
+        Sample(
             "ben_cmd_batch",
             b"cmd.exe /c echo nightly backup completed successfully",
             malicious=False,
@@ -514,6 +530,26 @@ def build_corpus() -> List[Sample]:
             build_cfb([("Macros/VBA/Module1", benign_vba)]),
             malicious=False,
             near_miss_rules={"TITAN-002"},
+            required_decoders={"OLE"},
+        )
+    )
+
+    # A normal OLE document may contain a hyperlink. Container + network alone
+    # is not macro evidence.
+    samples.append(
+        Sample(
+            "ben_ole_hyperlink_without_macro",
+            build_cfb(
+                [
+                    (
+                        "WordDocument",
+                        b"Employee handbook: https://intranet.example/policies",
+                    )
+                ]
+            ),
+            malicious=False,
+            near_miss_rules={"TITAN-002"},
+            required_decoders={"OLE"},
         )
     )
 
@@ -529,13 +565,19 @@ def build_corpus() -> List[Sample]:
 
     # XOR transformation without any recovered network observable must not be
     # promoted to the C2-specific TITAN-006 rule.
-    benign_xor = b"local preference theme=dark retries=3 no remote endpoint"
+    benign_xor = (
+        b"local_setting = enabled\n"
+        b"retry_count = 3\n"
+        b"color_theme = dark\n"
+        b"user_profile = standard\n"
+    )
     samples.append(
         Sample(
             "ben_xor_without_network",
             bytes(value ^ 0x5A for value in benign_xor),
             malicious=False,
             near_miss_rules={"TITAN-006"},
+            required_decoders={"XOR"},
         )
     )
 
@@ -546,6 +588,45 @@ def build_corpus() -> List[Sample]:
             b"MZ" + b"\x00" * 256 + b"signed internal utility fixture",
             malicious=False,
             near_miss_rules={"TITAN-007"},
+        )
+    )
+
+    # A PDF training document can discuss executable formats without embedding
+    # executable bytes. Textual "MZ"/"ELF" mentions are not binary magic.
+    format_pdf = build_pdf(
+        [
+            (1, b"<< /Type /Catalog /Pages 2 0 R >>"),
+            (2, b"<< /Type /Pages /Kids [] /Count 0 >>"),
+            (
+                4,
+                flate_stream(
+                    b"",
+                    b"Training manual: MZ is a DOS header and ELF is a Unix format.",
+                ),
+            ),
+        ]
+    )
+    samples.append(
+        Sample(
+            "ben_pdf_executable_format_prose",
+            format_pdf,
+            malicious=False,
+            near_miss_rules={"TITAN-007"},
+            required_decoders={"PDF"},
+        )
+    )
+
+    # Public documentation/inventory records commonly contain three or more IOC
+    # categories. Without C2, beacon, or exfiltration language, this is benign.
+    samples.append(
+        Sample(
+            "ben_documented_service_inventory",
+            (
+                b"Official docs https://docs.example.com/service\n"
+                b"Support support@example.com\n"
+            ),
+            malicious=False,
+            near_miss_rules={"TITAN-005"},
         )
     )
 

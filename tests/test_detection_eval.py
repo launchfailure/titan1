@@ -19,6 +19,8 @@ from tools.eval_detections import (  # noqa: E402
     built_in_rule_ids,
     evaluate,
 )
+from tools.corpus_samples import Sample  # noqa: E402
+import tools.eval_detections as detection_eval  # noqa: E402
 
 
 def test_detection_eval_separates_classes():
@@ -62,3 +64,30 @@ def test_every_rule_has_positive_and_targeted_near_miss_depth():
         assert m["targeted_near_miss_samples"] >= MIN_NEAR_MISS_SAMPLES, (
             f"{rule} has only {m['targeted_near_miss_samples']} targeted near-misses"
         )
+
+
+def test_corpus_integrity_rejects_duplicate_payloads(monkeypatch):
+    samples = [
+        Sample("first", b"same payload", malicious=False),
+        Sample("second", b"same payload", malicious=False),
+    ]
+    monkeypatch.setattr(detection_eval, "build_corpus", lambda: samples)
+
+    failures = detection_eval.evaluate()["quality_gate"]["failures"]
+    assert any("duplicate payload also used by first" in item for item in failures)
+
+
+def test_near_miss_required_decoder_must_be_observed(monkeypatch):
+    samples = [
+        Sample(
+            "weak_xor_near_miss",
+            b"ordinary undecoded text",
+            malicious=False,
+            near_miss_rules={"TITAN-006"},
+            required_decoders={"XOR"},
+        )
+    ]
+    monkeypatch.setattr(detection_eval, "build_corpus", lambda: samples)
+
+    failures = detection_eval.evaluate()["quality_gate"]["failures"]
+    assert any("required decoders not observed ['XOR']" in item for item in failures)

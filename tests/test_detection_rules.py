@@ -13,10 +13,10 @@ def test_load_starter_rules():
 def test_deep_base64_detection():
     report = {
         "nodes": [
-            {"depth": 0, "decoder_used": "Base64"},
-            {"depth": 1, "decoder_used": "Base64"},
-            {"depth": 2, "decoder_used": "Base64"},
-            {"depth": 3, "decoder_used": "Base64"},
+            {"id": 0, "parent": None, "depth": 0, "decoder_used": "Base64"},
+            {"id": 1, "parent": 0, "depth": 1, "decoder_used": "Base64"},
+            {"id": 2, "parent": 1, "depth": 2, "decoder_used": "Base64"},
+            {"id": 3, "parent": 2, "depth": 3, "decoder_used": "Base64"},
         ]
     }
     iocs = {}
@@ -27,14 +27,34 @@ def test_deep_base64_detection():
     assert any(d["rule_id"] == "TITAN-001" for d in detections)
 
 
+def test_deep_base64_does_not_add_unrelated_branches():
+    report = {
+        "nodes": [
+            {"id": 1, "parent": None, "depth": 0, "decoder_used": "Base64"},
+            {"id": 2, "parent": None, "depth": 0, "decoder_used": "Base64"},
+            {"id": 3, "parent": None, "depth": 0, "decoder_used": "Base64"},
+        ]
+    }
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, {})
+    }
+    assert "TITAN-001" not in ids
+
+
 def test_office_macro_network_detection():
     report = {
         "nodes": [
-            {"method": "ANALYZE_OLE", "content_preview": "VBA content"},
+            {
+                "method": "ANALYZE_OLE",
+                "content_preview": (
+                    "=== stream: Macros/VBA/Module1 ===\n"
+                    'Attribute VB_Name = "Module1"\nhttps://malicious.example'
+                ),
+            },
         ]
     }
     iocs = {
-        "urls": ["http://malicious.com"],
+        "urls": ["https://malicious.example"],
         "ipv4_public": ["1.2.3.4"],
     }
 
@@ -42,6 +62,30 @@ def test_office_macro_network_detection():
     detections = engine.evaluate_all(report, iocs)
 
     assert any(d["rule_id"] == "TITAN-002" for d in detections)
+
+
+def test_office_rule_requires_macro_and_network_in_same_ole_lineage():
+    report = {
+        "nodes": [
+            {
+                "id": 0,
+                "parent": None,
+                "method": "DECODE_OLE",
+                "decoder_used": "OLE",
+                "content_preview": "=== stream: WordDocument ===",
+            },
+            {
+                "id": 1,
+                "parent": 0,
+                "content_preview": "Company handbook: https://intranet.example",
+            },
+        ]
+    }
+    iocs = {"urls": ["https://intranet.example"], "domains": ["intranet.example"]}
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, iocs)
+    }
+    assert "TITAN-002" not in ids
 
 
 def _lolbin_fires(preview: str) -> bool:
@@ -75,6 +119,93 @@ def test_lolbin_does_not_fire_on_routine_admin_flags():
     )
     assert not _lolbin_fires("cmd.exe /c echo nightly backup complete")
     assert not _lolbin_fires("cscript //nologo inventory.vbs")
+    assert not _lolbin_fires("powershell.exe -Encoding utf8 -File Export.ps1")
+
+
+def test_lolbin_does_not_join_context_from_unrelated_nodes():
+    report = {
+        "nodes": [
+            {"id": 1, "content_preview": "PowerShell administration guide"},
+            {"id": 2, "content_preview": "JavaScript: URL syntax reference"},
+        ]
+    }
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, {})
+    }
+    assert "TITAN-003" not in ids
+
+
+def test_multistage_rule_requires_attack_context():
+    report = {
+        "nodes": [
+            {
+                "id": 0,
+                "content_preview": (
+                    "Docs https://docs.example.com support support@example.com"
+                ),
+            }
+        ]
+    }
+    iocs = {
+        "urls": ["https://docs.example.com"],
+        "domains": ["docs.example.com"],
+        "emails": ["support@example.com"],
+    }
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, iocs)
+    }
+    assert "TITAN-005" not in ids
+
+
+def test_xor_network_rule_requires_same_lineage():
+    report = {
+        "nodes": [
+            {"id": 0, "parent": None, "content_preview": "container"},
+            {
+                "id": 1,
+                "parent": 0,
+                "decoder_used": "XOR",
+                "content_preview": "opaque local settings",
+            },
+            {
+                "id": 2,
+                "parent": 0,
+                "content_preview": "https://docs.example.com",
+            },
+        ]
+    }
+    ids = {
+        item["rule_id"]
+        for item in CorrelationRulesEngine().evaluate_all(
+            report, {"urls": ["https://docs.example.com"]}
+        )
+    }
+    assert "TITAN-006" not in ids
+
+
+def test_pdf_rule_requires_binary_magic_not_prose_mentions():
+    report = {
+        "nodes": [
+            {
+                "id": 0,
+                "parent": None,
+                "method": "DECODE_PDF",
+                "decoder_used": "PDF",
+                "content_preview": "%PDF-1.7",
+            },
+            {
+                "id": 1,
+                "parent": 0,
+                "content_preview": (
+                    "Training manual: MZ is the DOS header and ELF is a Unix format."
+                ),
+            },
+        ]
+    }
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, {})
+    }
+    assert "TITAN-007" not in ids
 
 
 def test_opaque_payload_requires_executable_or_packer_context():

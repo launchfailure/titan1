@@ -351,8 +351,8 @@
       "skipped_count": 0
     },
     "detection": {
-      "benign_count": 23,
-      "corpus_size": 39,
+      "benign_count": 27,
+      "corpus_size": 43,
       "malicious_count": 16,
       "per_rule": {
         "TITAN-001": {
@@ -363,7 +363,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "targeted_near_miss_samples": 2,
-          "tn": 37,
+          "tn": 41,
           "tp": 2
         },
         "TITAN-002": {
@@ -373,8 +373,8 @@
           "positive_samples": 2,
           "precision": 1.0,
           "recall": 1.0,
-          "targeted_near_miss_samples": 2,
-          "tn": 37,
+          "targeted_near_miss_samples": 3,
+          "tn": 41,
           "tp": 2
         },
         "TITAN-003": {
@@ -384,8 +384,8 @@
           "positive_samples": 2,
           "precision": 1.0,
           "recall": 1.0,
-          "targeted_near_miss_samples": 3,
-          "tn": 37,
+          "targeted_near_miss_samples": 4,
+          "tn": 41,
           "tp": 2
         },
         "TITAN-004": {
@@ -396,7 +396,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "targeted_near_miss_samples": 2,
-          "tn": 37,
+          "tn": 41,
           "tp": 2
         },
         "TITAN-005": {
@@ -406,8 +406,8 @@
           "positive_samples": 2,
           "precision": 1.0,
           "recall": 1.0,
-          "targeted_near_miss_samples": 3,
-          "tn": 37,
+          "targeted_near_miss_samples": 4,
+          "tn": 41,
           "tp": 2
         },
         "TITAN-006": {
@@ -418,7 +418,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "targeted_near_miss_samples": 2,
-          "tn": 37,
+          "tn": 41,
           "tp": 2
         },
         "TITAN-007": {
@@ -428,8 +428,8 @@
           "positive_samples": 2,
           "precision": 1.0,
           "recall": 1.0,
-          "targeted_near_miss_samples": 2,
-          "tn": 37,
+          "targeted_near_miss_samples": 3,
+          "tn": 41,
           "tp": 2
         },
         "TITAN-008": {
@@ -440,7 +440,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "targeted_near_miss_samples": 2,
-          "tn": 37,
+          "tn": 41,
           "tp": 2
         }
       },
@@ -455,6 +455,11 @@
           "malicious": true,
           "name": "mal_deep_base64",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "base64",
+            "recursivebase64"
+          ],
+          "required_decoders": [],
           "risk_level": "MEDIUM",
           "risk_score": 26
         },
@@ -468,6 +473,10 @@
           "malicious": true,
           "name": "mal_office_macro",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "ole"
+          ],
+          "required_decoders": [],
           "risk_level": "HIGH",
           "risk_score": 50
         },
@@ -481,6 +490,10 @@
           "malicious": true,
           "name": "mal_lolbin",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "script"
+          ],
+          "required_decoders": [],
           "risk_level": "MEDIUM",
           "risk_score": 25
         },
@@ -494,6 +507,8 @@
           "malicious": true,
           "name": "mal_packed",
           "near_miss_rules": [],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 15
         },
@@ -507,6 +522,8 @@
           "malicious": true,
           "name": "mal_multistage",
           "near_miss_rules": [],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "HIGH",
           "risk_score": 50
         },
@@ -520,6 +537,10 @@
           "malicious": true,
           "name": "mal_xor_c2",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "xor"
+          ],
+          "required_decoders": [],
           "risk_level": "HIGH",
           "risk_score": 50
         },
@@ -533,6 +554,10 @@
           "malicious": true,
           "name": "mal_pdf_pe",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "pdf"
+          ],
+          "required_decoders": [],
           "risk_level": "CRITICAL",
           "risk_score": 75
         },
@@ -546,6 +571,11 @@
           "malicious": true,
           "name": "mal_deep_base64_v2",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "base64",
+            "recursivebase64"
+          ],
+          "required_decoders": [],
           "risk_level": "MEDIUM",
           "risk_score": 25
         },
@@ -559,6 +589,10 @@
           "malicious": true,
           "name": "mal_office_macro_v2",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "ole"
+          ],
+          "required_decoders": [],
           "risk_level": "HIGH",
           "risk_score": 50
         },
@@ -572,6 +606,8 @@
           "malicious": true,
           "name": "mal_lolbin_regsvr32",
           "near_miss_rules": [],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "MEDIUM",
           "risk_score": 25
         },
@@ -585,6 +621,10 @@
           "malicious": true,
           "name": "mal_packed_v2",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "elf"
+          ],
+          "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 20
         },
@@ -598,6 +638,8 @@
           "malicious": true,
           "name": "mal_multistage_v2",
           "near_miss_rules": [],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "HIGH",
           "risk_score": 50
         },
@@ -611,6 +653,10 @@
           "malicious": true,
           "name": "mal_xor_c2_v2",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "xor"
+          ],
+          "required_decoders": [],
           "risk_level": "HIGH",
           "risk_score": 50
         },
@@ -624,6 +670,11 @@
           "malicious": true,
           "name": "mal_pdf_elf",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "pdf",
+            "xor"
+          ],
+          "required_decoders": [],
           "risk_level": "CRITICAL",
           "risk_score": 75
         },
@@ -637,6 +688,10 @@
           "malicious": true,
           "name": "mal_png_appended_payload",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "steganography"
+          ],
+          "required_decoders": [],
           "risk_level": "MEDIUM",
           "risk_score": 25
         },
@@ -650,6 +705,10 @@
           "malicious": true,
           "name": "mal_png_lsb_payload",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "steganography"
+          ],
+          "required_decoders": [],
           "risk_level": "MEDIUM",
           "risk_score": 25
         },
@@ -659,6 +718,8 @@
           "malicious": false,
           "name": "ben_readme",
           "near_miss_rules": [],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "CLEAN",
           "risk_score": 0
         },
@@ -668,6 +729,8 @@
           "malicious": false,
           "name": "ben_json_config",
           "near_miss_rules": [],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "CLEAN",
           "risk_score": 0
         },
@@ -679,6 +742,13 @@
           "near_miss_rules": [
             "TITAN-001"
           ],
+          "observed_decoders": [
+            "base64",
+            "x86shellcodeemulation"
+          ],
+          "required_decoders": [
+            "Base64"
+          ],
           "risk_level": "LOW",
           "risk_score": 4
         },
@@ -688,6 +758,10 @@
           "malicious": false,
           "name": "ben_clean_pdf",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "pdf"
+          ],
+          "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 2
         },
@@ -699,6 +773,12 @@
           "near_miss_rules": [
             "TITAN-002"
           ],
+          "observed_decoders": [
+            "ole"
+          ],
+          "required_decoders": [
+            "OLE"
+          ],
           "risk_level": "LOW",
           "risk_score": 2
         },
@@ -708,6 +788,11 @@
           "malicious": false,
           "name": "ben_gzip_log",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "base64",
+            "zlib"
+          ],
+          "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 4
         },
@@ -717,6 +802,8 @@
           "malicious": false,
           "name": "ben_source_code",
           "near_miss_rules": [],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "CLEAN",
           "risk_score": 0
         },
@@ -729,6 +816,8 @@
             "TITAN-005",
             "TITAN-006"
           ],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 7
         },
@@ -739,6 +828,12 @@
           "name": "ben_pdf_js_only",
           "near_miss_rules": [
             "TITAN-007"
+          ],
+          "observed_decoders": [
+            "pdf"
+          ],
+          "required_decoders": [
+            "PDF"
           ],
           "risk_level": "LOW",
           "risk_score": 5
@@ -751,6 +846,12 @@
           "near_miss_rules": [
             "TITAN-001"
           ],
+          "observed_decoders": [
+            "base64"
+          ],
+          "required_decoders": [
+            "Base64"
+          ],
           "risk_level": "LOW",
           "risk_score": 2
         },
@@ -762,6 +863,8 @@
           "near_miss_rules": [
             "TITAN-005"
           ],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 6
         },
@@ -771,6 +874,10 @@
           "malicious": false,
           "name": "ben_shell_script",
           "near_miss_rules": [],
+          "observed_decoders": [
+            "script"
+          ],
+          "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 2
         },
@@ -782,6 +889,8 @@
           "near_miss_rules": [
             "TITAN-003"
           ],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "CLEAN",
           "risk_score": 0
         },
@@ -793,6 +902,21 @@
           "near_miss_rules": [
             "TITAN-003"
           ],
+          "observed_decoders": [],
+          "required_decoders": [],
+          "risk_level": "CLEAN",
+          "risk_score": 0
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_powershell_encoding",
+          "near_miss_rules": [
+            "TITAN-003"
+          ],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "CLEAN",
           "risk_score": 0
         },
@@ -804,6 +928,8 @@
           "near_miss_rules": [
             "TITAN-003"
           ],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "CLEAN",
           "risk_score": 0
         },
@@ -815,6 +941,8 @@
           "near_miss_rules": [
             "TITAN-004"
           ],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 10
         },
@@ -826,6 +954,8 @@
           "near_miss_rules": [
             "TITAN-004"
           ],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 10
         },
@@ -837,8 +967,31 @@
           "near_miss_rules": [
             "TITAN-002"
           ],
+          "observed_decoders": [
+            "ole"
+          ],
+          "required_decoders": [
+            "OLE"
+          ],
           "risk_level": "LOW",
           "risk_score": 2
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_ole_hyperlink_without_macro",
+          "near_miss_rules": [
+            "TITAN-002"
+          ],
+          "observed_decoders": [
+            "ole"
+          ],
+          "required_decoders": [
+            "OLE"
+          ],
+          "risk_level": "LOW",
+          "risk_score": 9
         },
         {
           "expected_rules": [],
@@ -848,6 +1001,8 @@
           "near_miss_rules": [
             "TITAN-005"
           ],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 8
         },
@@ -859,8 +1014,14 @@
           "near_miss_rules": [
             "TITAN-006"
           ],
-          "risk_level": "CLEAN",
-          "risk_score": 0
+          "observed_decoders": [
+            "xor"
+          ],
+          "required_decoders": [
+            "XOR"
+          ],
+          "risk_level": "LOW",
+          "risk_score": 2
         },
         {
           "expected_rules": [],
@@ -870,8 +1031,42 @@
           "near_miss_rules": [
             "TITAN-007"
           ],
+          "observed_decoders": [
+            "xor"
+          ],
+          "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 2
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_pdf_executable_format_prose",
+          "near_miss_rules": [
+            "TITAN-007"
+          ],
+          "observed_decoders": [
+            "pdf"
+          ],
+          "required_decoders": [
+            "PDF"
+          ],
+          "risk_level": "LOW",
+          "risk_score": 2
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_documented_service_inventory",
+          "near_miss_rules": [
+            "TITAN-005"
+          ],
+          "observed_decoders": [],
+          "required_decoders": [],
+          "risk_level": "LOW",
+          "risk_score": 12
         },
         {
           "expected_rules": [],
@@ -881,6 +1076,8 @@
           "near_miss_rules": [
             "TITAN-008"
           ],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "CLEAN",
           "risk_score": 0
         },
@@ -892,6 +1089,8 @@
           "near_miss_rules": [
             "TITAN-008"
           ],
+          "observed_decoders": [],
+          "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 10
         }
@@ -920,15 +1119,19 @@
           2,
           2,
           2,
+          2,
+          2,
           4,
           4,
           5,
           6,
           7,
           8,
+          9,
           10,
           10,
-          10
+          10,
+          12
         ],
         "malicious_scores": [
           15,
@@ -948,7 +1151,7 @@
           75,
           75
         ],
-        "max_benign_score": 10,
+        "max_benign_score": 12,
         "min_malicious_score": 15,
         "separated": true
       },
