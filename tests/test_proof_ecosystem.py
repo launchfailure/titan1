@@ -1,5 +1,6 @@
 import copy
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -53,6 +54,25 @@ def test_proof_bundle_is_current_and_audit_scope_is_honest():
         "status": "ready-for-independent-review",
     }
     assert audit["source_files"]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "docs/proof/metrics.json",
+        "docs/proof/parser-audit-scope.json",
+        "docs/proof/index.html",
+    ],
+)
+def test_generated_proof_files_enforce_lf_checkouts(path):
+    result = subprocess.run(
+        ["git", "check-attr", "eol", "--", path],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert result.stdout.strip() == f"{path}: eol: lf"
 
 
 def test_proof_text_hashes_are_independent_of_checkout_line_endings(tmp_path):

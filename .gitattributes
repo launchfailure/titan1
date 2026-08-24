@@ -1,0 +1,6 @@
+# The proof freshness gate compares generated artifacts byte-for-byte. Keep
+# their checkout representation identical to the publisher's canonical LF
+# output even when a Windows Git installation enables core.autocrlf.
+docs/proof/metrics.json text eol=lf
+docs/proof/parser-audit-scope.json text eol=lf
+docs/proof/index.html text eol=lf
