@@ -87,7 +87,7 @@
     },
     {
       "path": "titan_decoder/decoders/advanced.py",
-      "sha256": "369be3f01a55b55f23f3ae1d694fc37258d41a944e8a20da2dc700fc997af57e"
+      "sha256": "c0210ded0a52bd6fd6668081929f6bc97246712f6f3ca516df055c1b5e4367a3"
     },
     {
       "path": "titan_decoder/decoders/base.py",

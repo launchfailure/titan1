@@ -2,6 +2,15 @@
 
 This roadmap separates shipped features from planned work.
 
+## Current priority: depth before breadth
+
+Major feature-surface expansion is paused while Titan deepens its shipped
+capabilities. The ordered measurement, corpus, parser, fuzzing, code-assurance,
+operational, and independent-validation work is tracked in
+[DEPTH_HARDENING.md](DEPTH_HARDENING.md). The enterprise-competitiveness items
+below remain useful context, but unfinished breadth items are deferred until the
+depth program's foundations and assurance ratchets are established.
+
 ## Shipped
 
 - Recursive decoder/analyzer graph

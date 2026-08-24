@@ -17,6 +17,7 @@ Re-run after changing rules or weights and refresh ``docs/detection_metrics.json
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -34,15 +35,27 @@ from titan_decoder.core.risk_scoring import RiskScoringEngine  # noqa: E402
 from titan_decoder.core.ioc_export import build_ioc_summary  # noqa: E402
 
 
-ALL_RULES = [
-    "TITAN-001",
-    "TITAN-002",
-    "TITAN-003",
-    "TITAN-004",
-    "TITAN-005",
-    "TITAN-006",
-    "TITAN-007",
-]
+MIN_PRECISION = 0.8
+MIN_RECALL = 0.8
+MIN_POSITIVE_SAMPLES = 2
+MIN_NEAR_MISS_SAMPLES = 2
+
+
+def built_in_rule_ids(
+    rules_engine: CorrelationRulesEngine | None = None,
+) -> List[str]:
+    """Return the live built-in rule set in deterministic order.
+
+    The evaluator deliberately derives this list from the engine. A newly
+    shipped ``TITAN-*`` rule therefore fails the corpus-coverage gate until it
+    receives labeled positives and adversarial near-misses; it cannot silently
+    disappear from the published metrics because somebody forgot to update a
+    second hard-coded list.
+    """
+    engine = rules_engine or CorrelationRulesEngine()
+    return sorted(
+        rule.rule_id for rule in engine.rules if rule.rule_id.startswith("TITAN-")
+    )
 
 
 def evaluate() -> Dict:
@@ -52,25 +65,88 @@ def evaluate() -> Dict:
     engine = TitanEngine(cfg)
     rules_engine = CorrelationRulesEngine()
     risk_engine = RiskScoringEngine()
+    all_rules = built_in_rule_ids(rules_engine)
+    known_rules = set(all_rules)
 
     corpus = build_corpus()
 
     # Per-rule confusion-matrix counts.
-    counts = {r: {"tp": 0, "fp": 0, "fn": 0, "tn": 0} for r in ALL_RULES}
+    counts = {r: {"tp": 0, "fp": 0, "fn": 0, "tn": 0} for r in all_rules}
+    coverage = {
+        r: {"positive_samples": 0, "targeted_near_miss_samples": 0} for r in all_rules
+    }
     per_sample = []
     benign_scores: List[int] = []
     malicious_scores: List[int] = []
+    label_failures: List[str] = []
+    near_miss_failures: List[str] = []
+    seen_names: set[str] = set()
+    seen_payloads: Dict[str, str] = {}
 
     for sample in corpus:
+        if sample.name in seen_names:
+            label_failures.append(f"{sample.name}: duplicate sample name")
+        seen_names.add(sample.name)
+        payload_hash = hashlib.sha256(sample.data).hexdigest()
+        previous_name = seen_payloads.get(payload_hash)
+        if previous_name is not None:
+            label_failures.append(
+                f"{sample.name}: duplicate payload also used by {previous_name}"
+            )
+        else:
+            seen_payloads[payload_hash] = sample.name
+
+        unknown_expected = sorted(sample.expected_rules - known_rules)
+        unknown_near_misses = sorted(sample.near_miss_rules - known_rules)
+        overlap = sorted(sample.expected_rules & sample.near_miss_rules)
+        if unknown_expected:
+            label_failures.append(
+                f"{sample.name}: unknown expected rules {unknown_expected}"
+            )
+        if unknown_near_misses:
+            label_failures.append(
+                f"{sample.name}: unknown near-miss rules {unknown_near_misses}"
+            )
+        if overlap:
+            label_failures.append(
+                f"{sample.name}: rules cannot be positive and near-miss labels {overlap}"
+            )
+        if sample.malicious and sample.near_miss_rules:
+            label_failures.append(
+                f"{sample.name}: near-miss labels are only valid on benign samples"
+            )
+
         report = engine.run_analysis(sample.data)
+        observed_decoders = {
+            str(node.get("decoder_used") or "").lower()
+            for node in report.get("nodes", [])
+            if node.get("decoder_used")
+        }
+        missing_decoders = sorted(
+            decoder
+            for decoder in sample.required_decoders
+            if decoder.lower() not in observed_decoders
+        )
+        if missing_decoders:
+            label_failures.append(
+                f"{sample.name}: required decoders not observed {missing_decoders}"
+            )
         iocs = build_ioc_summary(report, None)
         detections = rules_engine.evaluate_all(report, iocs)
         fired = {d["rule_id"] for d in detections}
         risk = risk_engine.compute_risk_score(report, iocs, detections)
 
-        for rule in ALL_RULES:
+        for rule in all_rules:
             expected = rule in sample.expected_rules
             got = rule in fired
+            if expected:
+                coverage[rule]["positive_samples"] += 1
+            if rule in sample.near_miss_rules:
+                coverage[rule]["targeted_near_miss_samples"] += 1
+                if got:
+                    near_miss_failures.append(
+                        f"{sample.name}: targeted near-miss fired {rule}"
+                    )
             if expected and got:
                 counts[rule]["tp"] += 1
             elif expected and not got:
@@ -90,6 +166,9 @@ def evaluate() -> Dict:
                 "name": sample.name,
                 "malicious": sample.malicious,
                 "expected_rules": sorted(sample.expected_rules),
+                "near_miss_rules": sorted(sample.near_miss_rules),
+                "required_decoders": sorted(sample.required_decoders),
+                "observed_decoders": sorted(observed_decoders),
                 "fired_rules": sorted(fired),
                 "risk_score": risk["risk_score"],
                 "risk_level": risk["risk_level"],
@@ -111,16 +190,50 @@ def evaluate() -> Dict:
             "f1": round(f1, 3),
         }
 
-    per_rule = {r: {**counts[r], **prf(counts[r])} for r in ALL_RULES}
+    per_rule = {r: {**counts[r], **prf(counts[r]), **coverage[r]} for r in all_rules}
 
     max_benign = max(benign_scores) if benign_scores else 0
     min_malicious = min(malicious_scores) if malicious_scores else 0
 
+    gate_failures = [*label_failures, *near_miss_failures]
+    for rule, metrics in per_rule.items():
+        if metrics["precision"] < MIN_PRECISION:
+            gate_failures.append(
+                f"{rule}: precision {metrics['precision']:.3f} < {MIN_PRECISION:.3f}"
+            )
+        if metrics["recall"] < MIN_RECALL:
+            gate_failures.append(
+                f"{rule}: recall {metrics['recall']:.3f} < {MIN_RECALL:.3f}"
+            )
+        if metrics["positive_samples"] < MIN_POSITIVE_SAMPLES:
+            gate_failures.append(
+                f"{rule}: {metrics['positive_samples']} positive samples "
+                f"< {MIN_POSITIVE_SAMPLES}"
+            )
+        if metrics["targeted_near_miss_samples"] < MIN_NEAR_MISS_SAMPLES:
+            gate_failures.append(
+                f"{rule}: {metrics['targeted_near_miss_samples']} targeted "
+                f"near-misses < {MIN_NEAR_MISS_SAMPLES}"
+            )
+    if min_malicious <= max_benign:
+        gate_failures.append(
+            f"risk overlap: max benign {max_benign} >= min malicious {min_malicious}"
+        )
+
     return {
+        "schema_version": "2.0",
         "corpus_size": len(corpus),
         "benign_count": len(benign_scores),
         "malicious_count": len(malicious_scores),
         "per_rule": per_rule,
+        "quality_gate": {
+            "passed": not gate_failures,
+            "minimum_precision": MIN_PRECISION,
+            "minimum_recall": MIN_RECALL,
+            "minimum_positive_samples_per_rule": MIN_POSITIVE_SAMPLES,
+            "minimum_targeted_near_misses_per_rule": MIN_NEAR_MISS_SAMPLES,
+            "failures": gate_failures,
+        },
         "risk_separation": {
             "max_benign_score": max_benign,
             "min_malicious_score": min_malicious,
@@ -141,13 +254,14 @@ def _print_table(metrics: Dict) -> None:
         f"({metrics['malicious_count']} malicious, {metrics['benign_count']} benign)\n"
     )
     print(
-        f"{'Rule':<12}{'TP':>4}{'FP':>4}{'FN':>4}{'TN':>4}"
+        f"{'Rule':<12}{'TP':>4}{'FP':>4}{'FN':>4}{'TN':>4}{'Pos':>5}{'Near':>6}"
         f"{'Prec':>8}{'Recall':>8}{'F1':>7}"
     )
     print("-" * 72)
     for rule, m in metrics["per_rule"].items():
         print(
             f"{rule:<12}{m['tp']:>4}{m['fp']:>4}{m['fn']:>4}{m['tn']:>4}"
+            f"{m['positive_samples']:>5}{m['targeted_near_miss_samples']:>6}"
             f"{m['precision']:>8.3f}{m['recall']:>8.3f}{m['f1']:>7.3f}"
         )
     print("-" * 72)
@@ -159,6 +273,10 @@ def _print_table(metrics: Dict) -> None:
     )
     print(f"  benign scores:    {sep['benign_scores']}")
     print(f"  malicious scores: {sep['malicious_scores']}")
+    gate = metrics["quality_gate"]
+    print(f"\nQuality gate: {'PASSED' if gate['passed'] else 'FAILED'}")
+    for failure in gate["failures"]:
+        print(f"  - {failure}")
 
 
 def append_history(metrics: dict, path: str) -> None:
@@ -171,7 +289,7 @@ def append_history(metrics: dict, path: str) -> None:
 
     summary = {
         "version": __version__,
-        "schema": "detection-quality/1",
+        "schema": "detection-quality/2",
         "corpus_size": metrics["corpus_size"],
         "macro_precision": round(
             sum(m["precision"] for m in metrics["per_rule"].values())
@@ -184,10 +302,16 @@ def append_history(metrics: dict, path: str) -> None:
             3,
         ),
         "per_rule": {
-            r: {"precision": m["precision"], "recall": m["recall"]}
+            r: {
+                "precision": m["precision"],
+                "recall": m["recall"],
+                "positive_samples": m["positive_samples"],
+                "targeted_near_miss_samples": m["targeted_near_miss_samples"],
+            }
             for r, m in metrics["per_rule"].items()
         },
         "risk_separated": metrics["risk_separation"]["separated"],
+        "quality_gate_passed": metrics["quality_gate"]["passed"],
     }
     # De-duplicate by version: replace any existing entry for this version.
     lines = []
@@ -229,11 +353,7 @@ def main() -> int:
     if args.append_history:
         append_history(metrics, args.append_history)
 
-    # Non-zero exit if any rule has precision below 0.8 (a regression signal).
-    weak = [r for r, m in metrics["per_rule"].items() if m["precision"] < 0.8]
-    if weak:
-        print(f"\nWARNING: rules with precision < 0.8: {weak}")
-    return 0
+    return 0 if metrics["quality_gate"]["passed"] else 1
 
 
 if __name__ == "__main__":

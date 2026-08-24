@@ -17,6 +17,7 @@ from __future__ import annotations
 import base64
 import os
 import random
+import struct
 import sys
 import zlib
 from dataclasses import dataclass, field
@@ -41,6 +42,15 @@ class Sample:
     data: bytes
     malicious: bool
     expected_rules: Set[str] = field(default_factory=set)
+    # Benign cases intentionally placed close to one or more rule boundaries.
+    # Tracking these labels separately proves that every built-in rule has
+    # adversarial negative coverage instead of receiving credit only from
+    # unrelated clean files.
+    near_miss_rules: Set[str] = field(default_factory=set)
+    # Optional proof that a near-miss reached the intended processing boundary.
+    # For example, a benign XOR case is weak if the XOR decoder never accepted
+    # it; the evaluator fails when a declared decoder precondition disappears.
+    required_decoders: Set[str] = field(default_factory=set)
 
 
 def _nested_base64(payload: bytes, layers: int) -> bytes:
@@ -48,6 +58,44 @@ def _nested_base64(payload: bytes, layers: int) -> bytes:
     for _ in range(layers):
         out = base64.b64encode(out)
     return out
+
+
+def _png_chunk(kind: bytes, payload: bytes) -> bytes:
+    body = kind + payload
+    return (
+        len(payload).to_bytes(4, "big")
+        + body
+        + (zlib.crc32(body) & 0xFFFFFFFF).to_bytes(4, "big")
+    )
+
+
+def _png(width: int, height: int, pixels: bytes) -> bytes:
+    """Build a deterministic RGB PNG for media-rule calibration."""
+    if len(pixels) != width * height * 3:
+        raise ValueError("RGB pixel buffer does not match PNG dimensions")
+    rows = b"".join(
+        b"\x00" + pixels[row * width * 3 : (row + 1) * width * 3]
+        for row in range(height)
+    )
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + _png_chunk(b"IHDR", ihdr)
+        + _png_chunk(b"IDAT", zlib.compress(rows))
+        + _png_chunk(b"IEND", b"")
+    )
+
+
+def _lsb_carrier(payload: bytes, carrier_size: int) -> bytes:
+    """Encode Titan's explicit test frame into bounded pixel LSBs."""
+    framed = b"TITANSTEG\x00" + len(payload).to_bytes(4, "big") + payload
+    bits = [(value >> shift) & 1 for value in framed for shift in range(7, -1, -1)]
+    if len(bits) > carrier_size:
+        raise ValueError("payload does not fit in synthetic LSB carrier")
+    return bytes(
+        0x80 | (bits[index] if index < len(bits) else 0)
+        for index in range(carrier_size)
+    )
 
 
 def build_corpus() -> List[Sample]:
@@ -91,13 +139,13 @@ def build_corpus() -> List[Sample]:
         )
     )
 
-    # TITAN-004: encrypted/packed payload — high entropy, few decodes. Seeded
-    # (not os.urandom) so the evaluation is deterministic and the committed
-    # metrics are reproducible.
+    # TITAN-004: opaque executable payload — executable magic plus high entropy
+    # and few decodes. Seeded (not os.urandom) so the evaluation is
+    # deterministic and the committed metrics are reproducible.
     samples.append(
         Sample(
             "mal_packed",
-            random.Random(0x5EED).randbytes(2048),
+            b"MZ" + random.Random(0x5EED).randbytes(4096),
             malicious=True,
             expected_rules={"TITAN-004"},
         )
@@ -193,11 +241,11 @@ def build_corpus() -> List[Sample]:
         )
     )
 
-    # TITAN-004 v2: high-entropy packed blob (seeded for determinism).
+    # TITAN-004 v2: high-entropy ELF-like payload (seeded for determinism).
     samples.append(
         Sample(
             "mal_packed_v2",
-            random.Random(0xC0FFEE).randbytes(4096),
+            b"\x7fELF\x02\x01\x01" + random.Random(0xC0FFEE).randbytes(4096),
             malicious=True,
             expected_rules={"TITAN-004"},
         )
@@ -246,6 +294,28 @@ def build_corpus() -> List[Sample]:
         )
     )
 
+    # TITAN-008: executable bytes appended beyond a valid PNG terminator.
+    hidden_executable = b"MZ" + b"synthetic hidden executable marker"
+    samples.append(
+        Sample(
+            "mal_png_appended_payload",
+            _png(1, 1, b"\x80\x80\x80") + hidden_executable,
+            malicious=True,
+            expected_rules={"TITAN-008"},
+        )
+    )
+
+    # TITAN-008 v2: framed C2 content hidden in image least-significant bits.
+    hidden_c2 = b"https://hidden-c2.example/payload"
+    samples.append(
+        Sample(
+            "mal_png_lsb_payload",
+            _png(32, 16, _lsb_carrier(hidden_c2, 32 * 16 * 3)),
+            malicious=True,
+            expected_rules={"TITAN-008"},
+        )
+    )
+
     # --- Benign samples -----------------------------------------------------
 
     samples.append(
@@ -272,6 +342,8 @@ def build_corpus() -> List[Sample]:
             "ben_single_base64",
             base64.b64encode(b"The quarterly report is attached for your review."),
             malicious=False,
+            near_miss_rules={"TITAN-001"},
+            required_decoders={"Base64"},
         )
     )
 
@@ -293,6 +365,8 @@ def build_corpus() -> List[Sample]:
                 [("WordDocument", b"Meeting notes: agenda, action items, none.")]
             ),
             malicious=False,
+            near_miss_rules={"TITAN-002"},
+            required_decoders={"OLE"},
         )
     )
 
@@ -324,6 +398,7 @@ def build_corpus() -> List[Sample]:
             "ben_single_url",
             b"See our documentation at https://docs.example.com/getting-started for setup.",
             malicious=False,
+            near_miss_rules={"TITAN-005", "TITAN-006"},
         )
     )
 
@@ -341,7 +416,15 @@ def build_corpus() -> List[Sample]:
             ),
         ]
     )
-    samples.append(Sample("ben_pdf_js_only", js_pdf, malicious=False))
+    samples.append(
+        Sample(
+            "ben_pdf_js_only",
+            js_pdf,
+            malicious=False,
+            near_miss_rules={"TITAN-007"},
+            required_decoders={"PDF"},
+        )
+    )
 
     # Deeply *nested directories* description, but only a single base64 layer —
     # must NOT trip deep-base64 nesting.
@@ -352,6 +435,8 @@ def build_corpus() -> List[Sample]:
                 b"Release notes: many nested modules and layers of configuration, all benign."
             ),
             malicious=False,
+            near_miss_rules={"TITAN-001"},
+            required_decoders={"Base64"},
         )
     )
 
@@ -361,6 +446,7 @@ def build_corpus() -> List[Sample]:
             "ben_two_domains",
             b"# hosts\nprimary = cdn.example.com\nmirror = mirror.example.net\n",
             malicious=False,
+            near_miss_rules={"TITAN-005"},
         )
     )
 
@@ -382,6 +468,186 @@ def build_corpus() -> List[Sample]:
             b"Troubleshooting guide: on Windows, open PowerShell or cmd.exe and run\n"
             b"the installer. PowerShell 5.1+ is required; wscript is not used.\n",
             malicious=False,
+            near_miss_rules={"TITAN-003"},
+        )
+    )
+
+    # Routine administration flags are not sufficient abuse evidence.
+    samples.append(
+        Sample(
+            "ben_powershell_maintenance",
+            b"powershell.exe -NoProfile -File C:\\Admin\\Rotate-Logs.ps1",
+            malicious=False,
+            near_miss_rules={"TITAN-003"},
+        )
+    )
+    samples.append(
+        Sample(
+            "ben_powershell_encoding",
+            b"powershell.exe -Encoding utf8 -File C:\\Admin\\Export-Report.ps1",
+            malicious=False,
+            near_miss_rules={"TITAN-003"},
+        )
+    )
+    samples.append(
+        Sample(
+            "ben_cmd_batch",
+            b"cmd.exe /c echo nightly backup completed successfully",
+            malicious=False,
+            near_miss_rules={"TITAN-003"},
+        )
+    )
+
+    # Ordinary encrypted or incompressible data is high entropy but has no
+    # executable/packer context. It must remain a generic entropy signal, not a
+    # TITAN-004 detection.
+    samples.append(
+        Sample(
+            "ben_encrypted_backup",
+            random.Random(0xBACC).randbytes(4096),
+            malicious=False,
+            near_miss_rules={"TITAN-004"},
+        )
+    )
+    samples.append(
+        Sample(
+            "ben_encrypted_message",
+            random.Random(0xA35).randbytes(2048),
+            malicious=False,
+            near_miss_rules={"TITAN-004"},
+        )
+    )
+
+    # Macro-capable container without network content, and network text with no
+    # Office container, exercise both halves of TITAN-002 independently.
+    benign_vba = (
+        b'Attribute VB_Name = "Module1"\r\n'
+        b'Sub AutoOpen()\r\n  MsgBox "Quarterly report ready"\r\nEnd Sub\r\n'
+    )
+    samples.append(
+        Sample(
+            "ben_macro_without_network",
+            build_cfb([("Macros/VBA/Module1", benign_vba)]),
+            malicious=False,
+            near_miss_rules={"TITAN-002"},
+            required_decoders={"OLE"},
+        )
+    )
+
+    # A normal OLE document may contain a hyperlink. Container + network alone
+    # is not macro evidence.
+    samples.append(
+        Sample(
+            "ben_ole_hyperlink_without_macro",
+            build_cfb(
+                [
+                    (
+                        "WordDocument",
+                        b"Employee handbook: https://intranet.example/policies",
+                    )
+                ]
+            ),
+            malicious=False,
+            near_miss_rules={"TITAN-002"},
+            required_decoders={"OLE"},
+        )
+    )
+
+    # Two observable categories are below TITAN-005's three-category threshold.
+    samples.append(
+        Sample(
+            "ben_two_ioc_types",
+            b"mirror updates.example.com\ncontact admin@example.com\n",
+            malicious=False,
+            near_miss_rules={"TITAN-005"},
+        )
+    )
+
+    # XOR transformation without any recovered network observable must not be
+    # promoted to the C2-specific TITAN-006 rule.
+    benign_xor = (
+        b"local_setting = enabled\n"
+        b"retry_count = 3\n"
+        b"color_theme = dark\n"
+        b"user_profile = standard\n"
+    )
+    samples.append(
+        Sample(
+            "ben_xor_without_network",
+            bytes(value ^ 0x5A for value in benign_xor),
+            malicious=False,
+            near_miss_rules={"TITAN-006"},
+            required_decoders={"XOR"},
+        )
+    )
+
+    # Executable magic outside a PDF is not evidence for TITAN-007.
+    samples.append(
+        Sample(
+            "ben_executable_not_pdf",
+            b"MZ" + b"\x00" * 256 + b"signed internal utility fixture",
+            malicious=False,
+            near_miss_rules={"TITAN-007"},
+        )
+    )
+
+    # A PDF training document can discuss executable formats without embedding
+    # executable bytes. Textual "MZ"/"ELF" mentions are not binary magic.
+    format_pdf = build_pdf(
+        [
+            (1, b"<< /Type /Catalog /Pages 2 0 R >>"),
+            (2, b"<< /Type /Pages /Kids [] /Count 0 >>"),
+            (
+                4,
+                flate_stream(
+                    b"",
+                    b"Training manual: MZ is a DOS header and ELF is a Unix format.",
+                ),
+            ),
+        ]
+    )
+    samples.append(
+        Sample(
+            "ben_pdf_executable_format_prose",
+            format_pdf,
+            malicious=False,
+            near_miss_rules={"TITAN-007"},
+            required_decoders={"PDF"},
+        )
+    )
+
+    # Public documentation/inventory records commonly contain three or more IOC
+    # categories. Without C2, beacon, or exfiltration language, this is benign.
+    samples.append(
+        Sample(
+            "ben_documented_service_inventory",
+            (
+                b"Official docs https://docs.example.com/service\n"
+                b"Support support@example.com\n"
+            ),
+            malicious=False,
+            near_miss_rules={"TITAN-005"},
+        )
+    )
+
+    # Clean and unframed images exercise the hidden-media boundary. Random LSBs
+    # do not become evidence unless Titan's explicit frame or a recognized
+    # embedded payload is recovered.
+    samples.append(
+        Sample(
+            "ben_clean_png",
+            _png(2, 2, b"\x80" * 12),
+            malicious=False,
+            near_miss_rules={"TITAN-008"},
+        )
+    )
+    random_pixels = random.Random(0x1A6E).randbytes(16 * 16 * 3)
+    samples.append(
+        Sample(
+            "ben_png_unframed_lsb_noise",
+            _png(16, 16, random_pixels),
+            malicious=False,
+            near_miss_rules={"TITAN-008"},
         )
     )
 

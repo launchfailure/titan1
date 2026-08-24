@@ -1,6 +1,10 @@
 {
   "schema_version": "1.0",
   "name": "Titan decoder and structured-analyzer calibration v1",
+  "require_registry_parity": true,
+  "required_case_classes": {
+    "analyzer": ["malformed", "truncated"]
+  },
   "cases": [
     {
       "id": "ascii85-positive",
@@ -151,6 +155,761 @@
       "component": "OfficeOOXML",
       "data_text": "not an OOXML package",
       "expected_match": false
+    },
+    {
+      "id": "base64-positive",
+      "kind": "decoder",
+      "component": "Base64",
+      "data_text": "QmFzZTY0IGNhbGlicmF0aW9uIHBheWxvYWQh",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "8cb0852bfba60e69ced6938f6e04938c1cc55942070a36630cf2db6b557c1201"
+    },
+    {
+      "id": "base64-negative",
+      "kind": "decoder",
+      "component": "Base64",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "base64url-positive",
+      "kind": "decoder",
+      "component": "Base64URL",
+      "data_text": "VVJMLXNhZmUgY2FsaWJyYXRpb24gcGF5bG9hZCAvP3g9Mfv_",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "95fcdd4e24a6e9fe9eb4f4dadba189ed6c0e00775acecf009a544a0ed297e2ab"
+    },
+    {
+      "id": "base64url-negative",
+      "kind": "decoder",
+      "component": "Base64URL",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "brotli-positive",
+      "kind": "decoder",
+      "component": "Brotli",
+      "data_base64": "YnJvdGxpOhsYAPgdCTbOcmF9kLTVLTE0cCKowvLqB00ikUsM",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "86b5038960972f1c1f3530bfe26344b8e1fb275a473bed358985a8fce6e09bd7",
+      "required_modules": [
+        "brotli"
+      ]
+    },
+    {
+      "id": "brotli-negative",
+      "kind": "decoder",
+      "component": "Brotli",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "bz2-positive",
+      "kind": "decoder",
+      "component": "Bz2",
+      "data_base64": "QlpoOTFBWSZTWY2KiLwAAAUdgEABkBAQAD5n1HAgACKGj0UaME21QoAMRppo0TrExZdGVk3d+DYu32Um/jAy9HcFYutDpKH8XckU4UJCNioi8A==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "c7cd8d0c3503adf8a83f29dc33bed01ef6aee8070eb9327c020be7b7af199143"
+    },
+    {
+      "id": "bz2-negative",
+      "kind": "decoder",
+      "component": "Bz2",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "gzip-positive",
+      "kind": "decoder",
+      "component": "Gzip",
+      "data_base64": "H4sIAAAAAAACA3OvyixQSE7MyUwqSizJzM9TKEiszMlPTFHIKCkpsNLXTwfK66VWJOYW5KTqJwIA1IB4tC4AAAA=",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "079f2d64f9ecb1b8e09fa5f02a6792a49ac5d5b35069d415450dc02bf1436c59"
+    },
+    {
+      "id": "gzip-negative",
+      "kind": "decoder",
+      "component": "Gzip",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "html-entity-positive",
+      "kind": "decoder",
+      "component": "HTMLEntity",
+      "data_text": "command=calc&#46;exe &amp; http&#58;&#47;&#47;entity.example",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "a1a8f3f2441d44887b21b739a403defe20e4aa9a9e3e73a76a1db8359a22d45b"
+    },
+    {
+      "id": "html-entity-negative",
+      "kind": "decoder",
+      "component": "HTMLEntity",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "hex-positive",
+      "kind": "decoder",
+      "component": "Hex",
+      "data_text": "4865782063616c6962726174696f6e207061796c6f616421",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "45d405094866bde2820e1b7fa4df72a3572f731ecfa828c8fbeea34ca0c2245d"
+    },
+    {
+      "id": "hex-negative",
+      "kind": "decoder",
+      "component": "Hex",
+      "data_text": "not hexadecimal!",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "javascript-emulation-positive",
+      "kind": "decoder",
+      "component": "JavaScriptEmulation",
+      "data_text": "var scheme=String.fromCharCode(104,116,116,112);var target=scheme+decodeURIComponent('%3a%2f%2fstage.example%2fa');eval(target)",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "ccafb03fd7441400dea94b1622ea57b6cb1ac8e06009cac65d4b3c21aa2af625"
+    },
+    {
+      "id": "javascript-emulation-negative",
+      "kind": "decoder",
+      "component": "JavaScriptEmulation",
+      "data_text": "console.log('plain calibration')",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "lzma-positive",
+      "kind": "decoder",
+      "component": "LZMA",
+      "data_base64": "/Td6WFoAAATm1rRGAgAhARYAAAB0L+WjAQAtTFpNQSBjYWxpYnJhdGlvbiBwYXlsb2FkIGh0dHA6Ly9sem1hLmV4YW1wbGUvYQAAAPbMtkLE5Y7UAAFGLmdQc1oftvN9AQAAAAAEWVo=",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "78f6eb20238725fc4e882ed0129dfab8815eef2e2c4c96c5ff0db4a67026b14c"
+    },
+    {
+      "id": "lzma-negative",
+      "kind": "decoder",
+      "component": "LZMA",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "rot13-positive",
+      "kind": "decoder",
+      "component": "ROT13",
+      "data_text": "uryyb pnyvoengvba nanylfg",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "ff2bfe8458c25f7ce2f2ac27d96e22a0a7867569bd0996e29d8db37a00ee6294"
+    },
+    {
+      "id": "rot13-negative",
+      "kind": "decoder",
+      "component": "ROT13",
+      "data_text": "1234",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "recursive-base64-positive",
+      "kind": "decoder",
+      "component": "RecursiveBase64",
+      "data_text": "VW1WamRYSnphWFpsSUdOaGJHbGljbUYwYVc5dUlIQmhlV3h2WVdRaA==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "40720fb2d38c44ff769c9682cb5303508962d0b550d3e96ffd5a19d6c24d7d07"
+    },
+    {
+      "id": "recursive-base64-negative",
+      "kind": "decoder",
+      "component": "RecursiveBase64",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "url-positive",
+      "kind": "decoder",
+      "component": "URLDecoder",
+      "data_text": "http%3A%2F%2Furl.example%2Fpath%3Fx%3D1",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "e3cf64df3bc3c962a851d7fb5948e258e59d21ed9d400e2af9b9e15272246e5a"
+    },
+    {
+      "id": "url-negative",
+      "kind": "decoder",
+      "component": "URLDecoder",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "utf16-positive",
+      "kind": "decoder",
+      "component": "UTF16",
+      "data_base64": "VQBUAEYAMQA2ACAAYwBhAGwAaQBiAHIAYQB0AGkAbwBuACAAaAB0AHQAcAA6AC8ALwB1AHQAZgAxADYALgBlAHgAYQBtAHAAbABlAC8AYQA=",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "b97ee8a389c48afcaaa9189a4f4a06071024eaba2cc37350da17f65ce120cb22"
+    },
+    {
+      "id": "utf16-negative",
+      "kind": "decoder",
+      "component": "UTF16",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "unicode-escape-positive",
+      "kind": "decoder",
+      "component": "UnicodeEscape",
+      "data_text": "\\u0068\\u0074\\u0074\\u0070\\u003a\\u002f\\u002funicode.example\\u002fa",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "3e5e8422c0f9e19868cd4b4712e6702a27e124b030f1865518d2050d02c4afef"
+    },
+    {
+      "id": "unicode-escape-negative",
+      "kind": "decoder",
+      "component": "UnicodeEscape",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "xor-positive",
+      "kind": "decoder",
+      "component": "XOR",
+      "data_text": "954<3=z9hg2..*`uu\"5(t?\";7*6?u9hu*;4?6",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "c77d07aff83bb3faa06a2c784cfde5b6ea1c6e1b907ebdf6c575e18d02aa192b"
+    },
+    {
+      "id": "xor-negative",
+      "kind": "decoder",
+      "component": "XOR",
+      "data_text": "short",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "zlib-positive",
+      "kind": "decoder",
+      "component": "ZLIB",
+      "data_base64": "eJyLyslMUkhOBJJFiSWZ+XkKBYmVOfmJKQoZJSUFVvr6VUAZvdSKxNyCnFT9RACVQxEX",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "cd8bf8831603a2a0cd0931fb604126e1219c42591fce197e5b44f4554ef2f523"
+    },
+    {
+      "id": "zlib-negative",
+      "kind": "decoder",
+      "component": "ZLIB",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "zstandard-positive",
+      "kind": "decoder",
+      "component": "Zstandard",
+      "data_base64": "KLUv/QRY6QAAWnN0YW5kYXJkIGNhbGlicmF0aW9uIHBheWxvYWRyGsTs",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "d870123f47526c5b4ba6b1feedee4e33481acd5b18880be4e2f14b7bb4fc900b",
+      "required_modules": [
+        "zstandard"
+      ]
+    },
+    {
+      "id": "zstandard-negative",
+      "kind": "decoder",
+      "component": "Zstandard",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "pe-positive",
+      "kind": "analyzer",
+      "component": "PE",
+      "data_base64": "TVoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABQRQAATAEBAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": [
+        "pe_metadata.json"
+      ]
+    },
+    {
+      "id": "pe-negative",
+      "kind": "analyzer",
+      "component": "PE",
+      "data_text": "plain non-format calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "elf-positive",
+      "kind": "analyzer",
+      "component": "ELF",
+      "data_base64": "f0VMRgIBAQAAAAAAAAAAAAIAPgABAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAOAAAAEAAAAAAAA==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": [
+        "elf_metadata.json"
+      ]
+    },
+    {
+      "id": "elf-negative",
+      "kind": "analyzer",
+      "component": "ELF",
+      "data_text": "plain non-format calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "macho-positive",
+      "kind": "analyzer",
+      "component": "Mach-O",
+      "data_base64": "z/rt/gcAAAEDAAAAAgAAAAIAAADQAAAAAAAgAAAAAAAZAAAAmAAAAF9fVEVYVAAAAAAAAAAAAAAAAAAAAQAAAAAQAAAAAAAAAAAAAAAAAAAlAAAAAAAAAAcAAAAFAAAAAQAAAAAAAABfX3RleHQAAAAAAAAAAAAAX19URVhUAAAAAAAAAAAAAFAPAAABAAAAJQAAAAAAAADwAAAABAAAAAAAAAAAAAAAAAQAgAAAAAAAAAAAAAAAAAwAAAA4AAAAGAAAAAAAAAAAAAAAAAAAAC91c3IvbGliL2xpYlN5c3RlbS5CLmR5bGliAAAAAAAATWFjaC1PIHBheWxvYWQgaHR0cDovL21hY2hvLmV4YW1wbGUveA==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": [
+        "macho_metadata.json"
+      ]
+    },
+    {
+      "id": "macho-negative",
+      "kind": "analyzer",
+      "component": "Mach-O",
+      "data_text": "plain non-format calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "dex-positive",
+      "kind": "analyzer",
+      "component": "DEX",
+      "data_base64": "ZGV4CjAzNQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACmAAAAcAAAAHhWNBIAAAAAAAAAAAAAAAACAAAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAuAAAAeAAAAHgAAACMAAAAEkxjb20vZXhhbXBsZS9NYWluOwAYaHR0cHM6Ly9kZXguZXhhbXBsZS9nYXRlAA==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": [
+        "dex_metadata.json",
+        "dex_strings.txt"
+      ]
+    },
+    {
+      "id": "dex-negative",
+      "kind": "analyzer",
+      "component": "DEX",
+      "data_text": "plain non-format calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "zip-positive",
+      "kind": "analyzer",
+      "component": "ZIP",
+      "data_base64": "UEsDBBQAAAAAAAAAIQBVN3xnGAAAABgAAAAMAAAAZXZpZGVuY2UudHh0WklQIGNhbGlicmF0aW9uIGV2aWRlbmNlUEsBAhQDFAAAAAAAAAAhAFU3fGcYAAAAGAAAAAwAAAAAAAAAAAAAAIABAAAAAGV2aWRlbmNlLnR4dFBLBQYAAAAAAQABADoAAABCAAAAAAA=",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": [
+        "evidence.txt"
+      ]
+    },
+    {
+      "id": "zip-negative",
+      "kind": "analyzer",
+      "component": "ZIP",
+      "data_text": "plain non-format calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "tar-positive",
+      "kind": "analyzer",
+      "component": "TAR",
+      "data_base64": "ZXZpZGVuY2UudHh0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAwMDA2NDQAMDAwMDAwMAAwMDAwMDAwADAwMDAwMDAwMDMwADAwMDAwMDAwMDAwADAxMDI2MQAgMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB1c3RhcgAwMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABUQVIgY2FsaWJyYXRpb24gZXZpZGVuY2UAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": [
+        "evidence.txt"
+      ]
+    },
+    {
+      "id": "tar-negative",
+      "kind": "analyzer",
+      "component": "TAR",
+      "data_text": "plain non-format calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "x86-shellcode-positive",
+      "kind": "analyzer",
+      "component": "X86ShellcodeEmulation",
+      "data_base64": "aGNvbQBodmlsLmg6Ly9laGh0dHDNgA==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": [
+        "x86_emulation.json",
+        "x86_emulated_strings.txt"
+      ]
+    },
+    {
+      "id": "x86-shellcode-negative",
+      "kind": "analyzer",
+      "component": "X86ShellcodeEmulation",
+      "data_text": "plain non-format calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "steganography-positive",
+      "kind": "analyzer",
+      "component": "Steganography",
+      "data_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNoaGgAAAMEAYFL09IQAAAAAElFTkSuQmCCTVpoaWRkZW4gY2FsaWJyYXRpb24gZXhlY3V0YWJsZSBtYXJrZXI=",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": [
+        "steg_png_appended_payload.exe"
+      ]
+    },
+    {
+      "id": "steganography-negative",
+      "kind": "analyzer",
+      "component": "Steganography",
+      "data_text": "plain non-format calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "optional-archive-positive",
+      "kind": "analyzer",
+      "component": "OptionalArchive",
+      "data_base64": "N3q8ryccbm90LWEtdmFsaWQtYXJjaGl2ZQ==",
+      "expected_recognition": true
+    },
+    {
+      "id": "optional-archive-negative",
+      "kind": "analyzer",
+      "component": "OptionalArchive",
+      "data_text": "plain non-archive calibration text",
+      "expected_recognition": false
+    },
+    {
+      "id": "ole-positive",
+      "kind": "decoder",
+      "component": "OLE",
+      "data_base64": "0M8R4KGxGuEAAAAAAAAAAAAAAAAAAAAAPgADAP7/CQAGAAAAAAAAAAAAAAABAAAAAQAAAAAAAAAAEAAAAwAAAAEAAAD+////AAAAAAAAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9/////v////7////+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////1IAbwBvAHQAIABFAG4AdAByAHkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWAAUA//////////8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAEAAAAAAAAAAUABhAHkAbABvAGEAZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAgH///////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAT0xFIGNhbGlicmF0aW9uIHBheWxvYWQgaHR0cDovL29sZS5leGFtcGxlL2EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////w==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "965517030b0ba7fc9ff380e25e65a45ece78ac16bf6e6259a1409d9ddfadb5c9"
+    },
+    {
+      "id": "ole-negative",
+      "kind": "decoder",
+      "component": "OLE",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "pdf-positive",
+      "kind": "decoder",
+      "component": "PDF",
+      "data_base64": "JVBERi0xLjQKMSAwIG9iago8PCAvTGVuZ3RoIDUxIC9GaWx0ZXIgL0ZsYXRlRGVjb2RlID4+CnN0cmVhbQp4nAtwcVNITszJTCpKLMnMz1MoLilKTcxVyCgpKbDS1y9ISdNLrUjMLchJ1U8EAFN6D4sKZW5kc3RyZWFtCmVuZG9iagp0cmFpbGVyCjw8IC9TaXplIDIgPj4KJSVFT0YK",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "9bbe6ca19e3fd7e4fe1621a567f3ad75892a9aa43300f0b65be92a5524f61cbd"
+    },
+    {
+      "id": "pdf-negative",
+      "kind": "decoder",
+      "component": "PDF",
+      "data_text": "plain unencoded calibration text",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "pem-positive",
+      "kind": "decoder",
+      "component": "PEM",
+      "data_text": "-----BEGIN CERTIFICATE-----\nUEVNIGNhbGlicmF0aW9uIHBheWxvYWQgaHR0cDovL3BlbS5leGFtcGxlL2E=\n-----END CERTIFICATE-----\n",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "6b6e76d7bb6edd21100cf0c02fe06f87cc1d176a4d81377a724e3a1936c165ec"
+    },
+    {
+      "id": "pem-negative",
+      "kind": "decoder",
+      "component": "PEM",
+      "data_text": "plain text without armor",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "email-malformed",
+      "kind": "analyzer",
+      "component": "Email",
+      "case_class": "malformed",
+      "data_text": "From: sender@example.org\r\nContent-Type: multipart/mixed; boundary=\"unterminated\r\n\r\n--unterminated",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["email_summary.json"]
+    },
+    {
+      "id": "email-truncated",
+      "kind": "analyzer",
+      "component": "Email",
+      "case_class": "truncated",
+      "data_text": "From: sender@example.org\r\nTo: analyst@example.org\r\nSubject: Calibration\r\nCon",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "script-malformed",
+      "kind": "analyzer",
+      "component": "Script",
+      "case_class": "malformed",
+      "data_text": "powershell.exe -EncodedCommand !!!not-base64!!!",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["script_summary.json"]
+    },
+    {
+      "id": "script-truncated",
+      "kind": "analyzer",
+      "component": "Script",
+      "case_class": "truncated",
+      "data_text": "powershell.exe -NoProfile -EncodedCommand",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["script_summary.json"]
+    },
+    {
+      "id": "lnk-malformed",
+      "kind": "analyzer",
+      "component": "WindowsLNK",
+      "case_class": "malformed",
+      "data_base64": "TAAAAAEUAgAAAAAAwAAAAAAAAEb//////////////////////////////////////////////////////////////////////////w==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["lnk_metadata.json"]
+    },
+    {
+      "id": "lnk-truncated",
+      "kind": "analyzer",
+      "component": "WindowsLNK",
+      "case_class": "truncated",
+      "data_base64": "TAAAAAEUAgAAAAAAwAAAAAAAAEYgAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANIEAAAAAAAAAQAAAAAAAAAAAAAAAAAA",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "office-malformed",
+      "kind": "analyzer",
+      "component": "OfficeOOXML",
+      "case_class": "malformed",
+      "data_base64": "UEsDBBQAAAAAALtxGF3TefA3EAAAABAAAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbDxUeXBlcz48T3ZlcnJpZGVQSwMEFAAAAAAAu3EYXccuzNkTAAAAEwAAABEAAAB3b3JkL2RvY3VtZW50LnhtbDx3OmRvY3VtZW50Pjxicm9rZW5QSwECFAMUAAAAAAC7cRhd03nwNxAAAAAQAAAAEwAAAAAAAAAAAAAAgAEAAAAAW0NvbnRlbnRfVHlwZXNdLnhtbFBLAQIUAxQAAAAAALtxGF3HLszZEwAAABMAAAARAAAAAAAAAAAAAACAAUEAAAB3b3JkL2RvY3VtZW50LnhtbFBLBQYAAAAAAgACAIAAAACDAAAAAAA=",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["office_summary.json", "office_document_text.txt"]
+    },
+    {
+      "id": "office-truncated",
+      "kind": "analyzer",
+      "component": "OfficeOOXML",
+      "case_class": "truncated",
+      "data_base64": "UEsDBBQAAAAAAINh9VzqpRaoaQAAAGkAAAATAAAA",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "pe-malformed",
+      "kind": "analyzer",
+      "component": "PE",
+      "case_class": "malformed",
+      "data_base64": "TVoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAFBFAAAAAP//AAAAAAAAAAAAAAAAAAAAAA==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["pe_metadata.json"]
+    },
+    {
+      "id": "pe-truncated",
+      "kind": "analyzer",
+      "component": "PE",
+      "case_class": "truncated",
+      "data_base64": "TVoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAA",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "elf-malformed",
+      "kind": "analyzer",
+      "component": "ELF",
+      "case_class": "malformed",
+      "data_base64": "f0VMRgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["elf_metadata.json"]
+    },
+    {
+      "id": "elf-truncated",
+      "kind": "analyzer",
+      "component": "ELF",
+      "case_class": "truncated",
+      "data_base64": "f0VMRgIBAQAAAAAAAAAAAAIAPgABAAAAABAAAAAAAAA=",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "macho-malformed",
+      "kind": "analyzer",
+      "component": "Mach-O",
+      "case_class": "malformed",
+      "data_base64": "zvrt/gcAAAADAAAAAgAAAAEAAAAIAAAAAAAAAAEAAAAAAAAA",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "macho-truncated",
+      "kind": "analyzer",
+      "component": "Mach-O",
+      "case_class": "truncated",
+      "data_base64": "z/rt/gcAAAEDAAAAAgAAAAIAAADQAAAAAAAgAA==",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "dex-malformed",
+      "kind": "analyzer",
+      "component": "DEX",
+      "case_class": "malformed",
+      "data_base64": "ZGV4CjAzNQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHhWNBIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "dex-truncated",
+      "kind": "analyzer",
+      "component": "DEX",
+      "case_class": "truncated",
+      "data_base64": "ZGV4CjAzNQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACmAAAAcAAAAHhWNBIAAAAAAAAAAAAAAAACAAAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAuAAAAeAAA",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "zip-malformed",
+      "kind": "analyzer",
+      "component": "ZIP",
+      "case_class": "malformed",
+      "data_base64": "UEsDBG5vdC1hLXZhbGlkLXppcA==",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "zip-truncated",
+      "kind": "analyzer",
+      "component": "ZIP",
+      "case_class": "truncated",
+      "data_base64": "UEsDBBQAAAAAAAAAIQBVN3xnGAAAABgAAAAMAAAA",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "tar-malformed",
+      "kind": "analyzer",
+      "component": "TAR",
+      "case_class": "malformed",
+      "data_base64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB1c3RhcgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "tar-truncated",
+      "kind": "analyzer",
+      "component": "TAR",
+      "case_class": "truncated",
+      "data_base64": "ZXZpZGVuY2UudHh0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAwMDA2NDQAMDAwMDAwMAAwMDAwMDAwADAwMDAwMDAwMDMwADAwMDAwMDAwMDAwADAxMDI2MQAgMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB1c3Rhcg==",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "x86-shellcode-malformed",
+      "kind": "analyzer",
+      "component": "X86ShellcodeEmulation",
+      "case_class": "malformed",
+      "data_base64": "aGh0dHBoOi8veAAP/w==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["x86_emulation.json", "x86_emulated_strings.txt"]
+    },
+    {
+      "id": "x86-shellcode-truncated",
+      "kind": "analyzer",
+      "component": "X86ShellcodeEmulation",
+      "case_class": "truncated",
+      "data_base64": "aGNvbQBodmlsLmg6Ly9laGh0dHDN",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["x86_emulation.json", "x86_emulated_strings.txt"]
+    },
+    {
+      "id": "steganography-malformed",
+      "kind": "analyzer",
+      "component": "Steganography",
+      "case_class": "malformed",
+      "data_base64": "iVBORw0KGgr/////SURBVA==",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "steganography-truncated",
+      "kind": "analyzer",
+      "component": "Steganography",
+      "case_class": "truncated",
+      "data_base64": "iVBORw0KGgoAAAAN",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "optional-archive-malformed",
+      "kind": "analyzer",
+      "component": "OptionalArchive",
+      "case_class": "malformed",
+      "data_base64": "N3q8ryccbm90LWEtdmFsaWQtYXJjaGl2ZQ==",
+      "expected_recognition": true
+    },
+    {
+      "id": "optional-archive-truncated",
+      "kind": "analyzer",
+      "component": "OptionalArchive",
+      "case_class": "truncated",
+      "data_base64": "N3q8rycc",
+      "expected_recognition": true
     }
   ]
 }

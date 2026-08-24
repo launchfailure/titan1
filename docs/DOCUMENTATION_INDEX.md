@@ -33,5 +33,6 @@
 ## Maintainers
 
 - [PROJECT_CHARTER.md](PROJECT_CHARTER.md) — mission, core principles, scope, and governance.
+- [DEPTH_HARDENING.md](DEPTH_HARDENING.md) — active vertical-hardening phases, gates, and progress.
 - [ROADMAP.md](ROADMAP.md) — shipped and planned work.
 - [RELEASING.md](RELEASING.md) — release process.
