@@ -9,13 +9,369 @@
         "precision": 1.0,
         "recall": 1.0,
         "specificity": 1.0,
-        "true_negative": 38,
-        "true_positive": 36
+        "true_negative": 53,
+        "true_positive": 45
       },
-      "case_count": 78,
+      "case_class_coverage": {
+        "covered_components": [
+          "analyzer:DEX",
+          "analyzer:ELF",
+          "analyzer:Email",
+          "analyzer:Mach-O",
+          "analyzer:OfficeOOXML",
+          "analyzer:OptionalArchive",
+          "analyzer:PE",
+          "analyzer:Script",
+          "analyzer:Steganography",
+          "analyzer:TAR",
+          "analyzer:WindowsLNK",
+          "analyzer:X86ShellcodeEmulation",
+          "analyzer:ZIP"
+        ],
+        "covered_count": 13,
+        "missing": [],
+        "per_component": {
+          "analyzer:DEX": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:ELF": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:Email": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:Mach-O": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:OfficeOOXML": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:OptionalArchive": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:PE": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:Script": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:Steganography": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:TAR": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:WindowsLNK": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:X86ShellcodeEmulation": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:ZIP": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "decoder:ASCII85": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:Base58": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:Base64": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:Base64URL": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:Base91": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:Brotli": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:Bz2": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:Gzip": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:HTMLEntity": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:Hex": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:JavaScriptEmulation": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:JavaScriptEscape": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:LZMA": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:OLE": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:PDF": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:PEM": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:PowerShellEncodedCommand": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:ROT13": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:RawDeflate": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:RecursiveBase64": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:URLDecoder": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:UTF16": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:UnicodeEscape": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:XOR": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:ZLIB": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          },
+          "decoder:Zstandard": {
+            "clean_negative": 1,
+            "malformed": 0,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 0
+          }
+        },
+        "required_by_kind": {
+          "analyzer": [
+            "malformed",
+            "truncated"
+          ]
+        },
+        "required_component_count": 13,
+        "required_components": [
+          "analyzer:DEX",
+          "analyzer:ELF",
+          "analyzer:Email",
+          "analyzer:Mach-O",
+          "analyzer:OfficeOOXML",
+          "analyzer:OptionalArchive",
+          "analyzer:PE",
+          "analyzer:Script",
+          "analyzer:Steganography",
+          "analyzer:TAR",
+          "analyzer:WindowsLNK",
+          "analyzer:X86ShellcodeEmulation",
+          "analyzer:ZIP"
+        ]
+      },
+      "case_count": 104,
       "cases": [
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "ASCII85",
           "expected_match": true,
           "expected_recognition": true,
@@ -31,6 +387,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "ASCII85",
           "expected_match": false,
           "expected_recognition": false,
@@ -46,6 +403,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "RawDeflate",
           "expected_match": true,
           "expected_recognition": true,
@@ -61,6 +419,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "RawDeflate",
           "expected_match": false,
           "expected_recognition": false,
@@ -76,6 +435,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "PowerShellEncodedCommand",
           "expected_match": true,
           "expected_recognition": true,
@@ -91,6 +451,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "PowerShellEncodedCommand",
           "expected_match": false,
           "expected_recognition": false,
@@ -106,6 +467,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "JavaScriptEscape",
           "expected_match": true,
           "expected_recognition": true,
@@ -121,6 +483,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "JavaScriptEscape",
           "expected_match": false,
           "expected_recognition": false,
@@ -136,6 +499,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "Base58",
           "expected_match": true,
           "expected_recognition": true,
@@ -151,6 +515,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Base58",
           "expected_match": false,
           "expected_recognition": false,
@@ -166,6 +531,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "Base91",
           "expected_match": true,
           "expected_recognition": true,
@@ -181,6 +547,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Base91",
           "expected_match": false,
           "expected_recognition": false,
@@ -200,6 +567,7 @@
             "email_summary.json"
           ],
           "can_process": true,
+          "case_class": "positive",
           "component": "Email",
           "expected_artifacts_present": true,
           "expected_match": true,
@@ -215,6 +583,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Email",
           "expected_artifacts_present": null,
           "expected_match": false,
@@ -233,6 +602,7 @@
             "script_summary.json"
           ],
           "can_process": true,
+          "case_class": "positive",
           "component": "Script",
           "expected_artifacts_present": true,
           "expected_match": true,
@@ -248,6 +618,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Script",
           "expected_artifacts_present": null,
           "expected_match": false,
@@ -265,6 +636,7 @@
             "lnk_metadata.json"
           ],
           "can_process": true,
+          "case_class": "positive",
           "component": "WindowsLNK",
           "expected_artifacts_present": true,
           "expected_match": true,
@@ -280,6 +652,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "WindowsLNK",
           "expected_artifacts_present": null,
           "expected_match": false,
@@ -298,6 +671,7 @@
             "office_summary.json"
           ],
           "can_process": true,
+          "case_class": "positive",
           "component": "OfficeOOXML",
           "expected_artifacts_present": true,
           "expected_match": true,
@@ -313,6 +687,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "OfficeOOXML",
           "expected_artifacts_present": null,
           "expected_match": false,
@@ -327,6 +702,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "Base64",
           "expected_match": true,
           "expected_recognition": true,
@@ -342,6 +718,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Base64",
           "expected_match": false,
           "expected_recognition": false,
@@ -357,6 +734,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "Base64URL",
           "expected_match": true,
           "expected_recognition": true,
@@ -372,6 +750,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Base64URL",
           "expected_match": false,
           "expected_recognition": false,
@@ -387,6 +766,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "Brotli",
           "expected_match": true,
           "expected_recognition": true,
@@ -402,6 +782,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Brotli",
           "expected_match": false,
           "expected_recognition": false,
@@ -417,6 +798,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "Bz2",
           "expected_match": true,
           "expected_recognition": true,
@@ -432,6 +814,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Bz2",
           "expected_match": false,
           "expected_recognition": false,
@@ -447,6 +830,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "Gzip",
           "expected_match": true,
           "expected_recognition": true,
@@ -462,6 +846,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Gzip",
           "expected_match": false,
           "expected_recognition": false,
@@ -477,6 +862,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "HTMLEntity",
           "expected_match": true,
           "expected_recognition": true,
@@ -492,6 +878,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "HTMLEntity",
           "expected_match": false,
           "expected_recognition": false,
@@ -507,6 +894,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "Hex",
           "expected_match": true,
           "expected_recognition": true,
@@ -522,6 +910,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Hex",
           "expected_match": false,
           "expected_recognition": false,
@@ -537,6 +926,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "JavaScriptEmulation",
           "expected_match": true,
           "expected_recognition": true,
@@ -552,6 +942,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "JavaScriptEmulation",
           "expected_match": false,
           "expected_recognition": false,
@@ -567,6 +958,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "LZMA",
           "expected_match": true,
           "expected_recognition": true,
@@ -582,6 +974,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "LZMA",
           "expected_match": false,
           "expected_recognition": false,
@@ -597,6 +990,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "ROT13",
           "expected_match": true,
           "expected_recognition": true,
@@ -612,6 +1006,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "ROT13",
           "expected_match": false,
           "expected_recognition": false,
@@ -627,6 +1022,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "RecursiveBase64",
           "expected_match": true,
           "expected_recognition": true,
@@ -642,6 +1038,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "RecursiveBase64",
           "expected_match": false,
           "expected_recognition": false,
@@ -657,6 +1054,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "URLDecoder",
           "expected_match": true,
           "expected_recognition": true,
@@ -672,6 +1070,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "URLDecoder",
           "expected_match": false,
           "expected_recognition": false,
@@ -687,6 +1086,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "UTF16",
           "expected_match": true,
           "expected_recognition": true,
@@ -702,6 +1102,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "UTF16",
           "expected_match": false,
           "expected_recognition": false,
@@ -717,6 +1118,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "UnicodeEscape",
           "expected_match": true,
           "expected_recognition": true,
@@ -732,6 +1134,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "UnicodeEscape",
           "expected_match": false,
           "expected_recognition": false,
@@ -747,6 +1150,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "XOR",
           "expected_match": true,
           "expected_recognition": true,
@@ -762,6 +1166,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "XOR",
           "expected_match": false,
           "expected_recognition": false,
@@ -777,6 +1182,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "ZLIB",
           "expected_match": true,
           "expected_recognition": true,
@@ -792,6 +1198,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "ZLIB",
           "expected_match": false,
           "expected_recognition": false,
@@ -807,6 +1214,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "Zstandard",
           "expected_match": true,
           "expected_recognition": true,
@@ -822,6 +1230,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Zstandard",
           "expected_match": false,
           "expected_recognition": false,
@@ -840,6 +1249,7 @@
             "pe_metadata.json"
           ],
           "can_process": true,
+          "case_class": "positive",
           "component": "PE",
           "expected_artifacts_present": true,
           "expected_match": true,
@@ -855,6 +1265,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "PE",
           "expected_artifacts_present": null,
           "expected_match": false,
@@ -872,6 +1283,7 @@
             "elf_metadata.json"
           ],
           "can_process": true,
+          "case_class": "positive",
           "component": "ELF",
           "expected_artifacts_present": true,
           "expected_match": true,
@@ -887,6 +1299,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "ELF",
           "expected_artifacts_present": null,
           "expected_match": false,
@@ -904,6 +1317,7 @@
             "macho_metadata.json"
           ],
           "can_process": true,
+          "case_class": "positive",
           "component": "Mach-O",
           "expected_artifacts_present": true,
           "expected_match": true,
@@ -919,6 +1333,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Mach-O",
           "expected_artifacts_present": null,
           "expected_match": false,
@@ -937,6 +1352,7 @@
             "dex_strings.txt"
           ],
           "can_process": true,
+          "case_class": "positive",
           "component": "DEX",
           "expected_artifacts_present": true,
           "expected_match": true,
@@ -952,6 +1368,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "DEX",
           "expected_artifacts_present": null,
           "expected_match": false,
@@ -969,6 +1386,7 @@
             "evidence.txt"
           ],
           "can_process": true,
+          "case_class": "positive",
           "component": "ZIP",
           "expected_artifacts_present": true,
           "expected_match": true,
@@ -984,6 +1402,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "ZIP",
           "expected_artifacts_present": null,
           "expected_match": false,
@@ -1001,6 +1420,7 @@
             "evidence.txt"
           ],
           "can_process": true,
+          "case_class": "positive",
           "component": "TAR",
           "expected_artifacts_present": true,
           "expected_match": true,
@@ -1016,6 +1436,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "TAR",
           "expected_artifacts_present": null,
           "expected_match": false,
@@ -1034,6 +1455,7 @@
             "x86_emulation.json"
           ],
           "can_process": true,
+          "case_class": "positive",
           "component": "X86ShellcodeEmulation",
           "expected_artifacts_present": true,
           "expected_match": true,
@@ -1049,6 +1471,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "X86ShellcodeEmulation",
           "expected_artifacts_present": null,
           "expected_match": false,
@@ -1066,6 +1489,7 @@
             "steg_png_appended_payload.exe"
           ],
           "can_process": true,
+          "case_class": "positive",
           "component": "Steganography",
           "expected_artifacts_present": true,
           "expected_match": true,
@@ -1081,6 +1505,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "Steganography",
           "expected_artifacts_present": null,
           "expected_match": false,
@@ -1096,6 +1521,7 @@
         {
           "artifacts": [],
           "can_process": true,
+          "case_class": "positive",
           "component": "OptionalArchive",
           "expected_artifacts_present": null,
           "expected_match": null,
@@ -1111,6 +1537,7 @@
         {
           "artifacts": [],
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "OptionalArchive",
           "expected_artifacts_present": null,
           "expected_match": null,
@@ -1125,6 +1552,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "OLE",
           "expected_match": true,
           "expected_recognition": true,
@@ -1140,6 +1568,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "OLE",
           "expected_match": false,
           "expected_recognition": false,
@@ -1155,6 +1584,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "PDF",
           "expected_match": true,
           "expected_recognition": true,
@@ -1170,6 +1600,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "PDF",
           "expected_match": false,
           "expected_recognition": false,
@@ -1185,6 +1616,7 @@
         },
         {
           "can_process": true,
+          "case_class": "positive",
           "component": "PEM",
           "expected_match": true,
           "expected_recognition": true,
@@ -1200,6 +1632,7 @@
         },
         {
           "can_process": false,
+          "case_class": "clean_negative",
           "component": "PEM",
           "expected_match": false,
           "expected_recognition": false,
@@ -1212,6 +1645,443 @@
           "predicted_match": false,
           "predicted_recognition": false,
           "recognition_outcome": "true_negative"
+        },
+        {
+          "artifacts": [
+            "email_summary.json"
+          ],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "Email",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "email-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "case_class": "truncated",
+          "component": "Email",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": false,
+          "id": "email-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": false,
+          "recognition_outcome": "true_negative"
+        },
+        {
+          "artifacts": [
+            "script_summary.json"
+          ],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "Script",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "script-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [
+            "script_summary.json"
+          ],
+          "can_process": true,
+          "case_class": "truncated",
+          "component": "Script",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "script-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [
+            "lnk_metadata.json"
+          ],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "WindowsLNK",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "lnk-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "case_class": "truncated",
+          "component": "WindowsLNK",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": false,
+          "id": "lnk-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": false,
+          "recognition_outcome": "true_negative"
+        },
+        {
+          "artifacts": [
+            "office_document_text.txt",
+            "office_summary.json"
+          ],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "OfficeOOXML",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "office-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "case_class": "truncated",
+          "component": "OfficeOOXML",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": false,
+          "id": "office-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": false,
+          "recognition_outcome": "true_negative"
+        },
+        {
+          "artifacts": [
+            "pe_metadata.json"
+          ],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "PE",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "pe-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "case_class": "truncated",
+          "component": "PE",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": false,
+          "id": "pe-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": false,
+          "recognition_outcome": "true_negative"
+        },
+        {
+          "artifacts": [
+            "elf_metadata.json"
+          ],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "ELF",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "elf-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": true,
+          "case_class": "truncated",
+          "component": "ELF",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": true,
+          "id": "elf-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "Mach-O",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": true,
+          "id": "macho-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": true,
+          "case_class": "truncated",
+          "component": "Mach-O",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": true,
+          "id": "macho-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "DEX",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": true,
+          "id": "dex-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "case_class": "truncated",
+          "component": "DEX",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": false,
+          "id": "dex-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": false,
+          "recognition_outcome": "true_negative"
+        },
+        {
+          "artifacts": [],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "ZIP",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": true,
+          "id": "zip-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": true,
+          "case_class": "truncated",
+          "component": "ZIP",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": true,
+          "id": "zip-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "TAR",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": true,
+          "id": "tar-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": true,
+          "case_class": "truncated",
+          "component": "TAR",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": true,
+          "id": "tar-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [
+            "x86_emulated_strings.txt",
+            "x86_emulation.json"
+          ],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "X86ShellcodeEmulation",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "x86-shellcode-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [
+            "x86_emulated_strings.txt",
+            "x86_emulation.json"
+          ],
+          "can_process": true,
+          "case_class": "truncated",
+          "component": "X86ShellcodeEmulation",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "x86-shellcode-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "Steganography",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": true,
+          "id": "steganography-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": true,
+          "case_class": "truncated",
+          "component": "Steganography",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": true,
+          "id": "steganography-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "OptionalArchive",
+          "expected_artifacts_present": null,
+          "expected_match": null,
+          "expected_recognition": true,
+          "id": "optional-archive-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": null,
+          "predicted_match": false,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": true,
+          "case_class": "truncated",
+          "component": "OptionalArchive",
+          "expected_artifacts_present": null,
+          "expected_match": null,
+          "expected_recognition": true,
+          "id": "optional-archive-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": null,
+          "predicted_match": false,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
         }
       ],
       "components": {
@@ -1223,7 +2093,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
+          "true_negative": 3,
           "true_positive": 1
         },
         "analyzer:ELF": {
@@ -1234,8 +2104,8 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
-          "true_positive": 1
+          "true_negative": 2,
+          "true_positive": 2
         },
         "analyzer:Email": {
           "accuracy": 1.0,
@@ -1245,8 +2115,8 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
-          "true_positive": 1
+          "true_negative": 2,
+          "true_positive": 2
         },
         "analyzer:Mach-O": {
           "accuracy": 1.0,
@@ -1256,7 +2126,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
+          "true_negative": 3,
           "true_positive": 1
         },
         "analyzer:OfficeOOXML": {
@@ -1267,8 +2137,8 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
-          "true_positive": 1
+          "true_negative": 2,
+          "true_positive": 2
         },
         "analyzer:PE": {
           "accuracy": 1.0,
@@ -1278,8 +2148,8 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
-          "true_positive": 1
+          "true_negative": 2,
+          "true_positive": 2
         },
         "analyzer:Script": {
           "accuracy": 1.0,
@@ -1290,7 +2160,7 @@
           "recall": 1.0,
           "specificity": 1.0,
           "true_negative": 1,
-          "true_positive": 1
+          "true_positive": 3
         },
         "analyzer:Steganography": {
           "accuracy": 1.0,
@@ -1300,7 +2170,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
+          "true_negative": 3,
           "true_positive": 1
         },
         "analyzer:TAR": {
@@ -1311,7 +2181,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
+          "true_negative": 3,
           "true_positive": 1
         },
         "analyzer:WindowsLNK": {
@@ -1322,8 +2192,8 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
-          "true_positive": 1
+          "true_negative": 2,
+          "true_positive": 2
         },
         "analyzer:X86ShellcodeEmulation": {
           "accuracy": 1.0,
@@ -1334,7 +2204,7 @@
           "recall": 1.0,
           "specificity": 1.0,
           "true_negative": 1,
-          "true_positive": 1
+          "true_positive": 3
         },
         "analyzer:ZIP": {
           "accuracy": 1.0,
@@ -1344,7 +2214,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
+          "true_negative": 3,
           "true_positive": 1
         },
         "decoder:ASCII85": {
@@ -1666,8 +2536,8 @@
         "precision": 1.0,
         "recall": 1.0,
         "specificity": 1.0,
-        "true_negative": 39,
-        "true_positive": 39
+        "true_negative": 44,
+        "true_positive": 60
       },
       "recognition_components": {
         "analyzer:DEX": {
@@ -1678,8 +2548,8 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
-          "true_positive": 1
+          "true_negative": 2,
+          "true_positive": 2
         },
         "analyzer:ELF": {
           "accuracy": 1.0,
@@ -1690,7 +2560,7 @@
           "recall": 1.0,
           "specificity": 1.0,
           "true_negative": 1,
-          "true_positive": 1
+          "true_positive": 3
         },
         "analyzer:Email": {
           "accuracy": 1.0,
@@ -1700,8 +2570,8 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
-          "true_positive": 1
+          "true_negative": 2,
+          "true_positive": 2
         },
         "analyzer:Mach-O": {
           "accuracy": 1.0,
@@ -1712,7 +2582,7 @@
           "recall": 1.0,
           "specificity": 1.0,
           "true_negative": 1,
-          "true_positive": 1
+          "true_positive": 3
         },
         "analyzer:OfficeOOXML": {
           "accuracy": 1.0,
@@ -1722,8 +2592,8 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
-          "true_positive": 1
+          "true_negative": 2,
+          "true_positive": 2
         },
         "analyzer:OptionalArchive": {
           "accuracy": 1.0,
@@ -1734,7 +2604,7 @@
           "recall": 1.0,
           "specificity": 1.0,
           "true_negative": 1,
-          "true_positive": 1
+          "true_positive": 3
         },
         "analyzer:PE": {
           "accuracy": 1.0,
@@ -1744,8 +2614,8 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
-          "true_positive": 1
+          "true_negative": 2,
+          "true_positive": 2
         },
         "analyzer:Script": {
           "accuracy": 1.0,
@@ -1756,7 +2626,7 @@
           "recall": 1.0,
           "specificity": 1.0,
           "true_negative": 1,
-          "true_positive": 1
+          "true_positive": 3
         },
         "analyzer:Steganography": {
           "accuracy": 1.0,
@@ -1767,7 +2637,7 @@
           "recall": 1.0,
           "specificity": 1.0,
           "true_negative": 1,
-          "true_positive": 1
+          "true_positive": 3
         },
         "analyzer:TAR": {
           "accuracy": 1.0,
@@ -1778,7 +2648,7 @@
           "recall": 1.0,
           "specificity": 1.0,
           "true_negative": 1,
-          "true_positive": 1
+          "true_positive": 3
         },
         "analyzer:WindowsLNK": {
           "accuracy": 1.0,
@@ -1788,8 +2658,8 @@
           "precision": 1.0,
           "recall": 1.0,
           "specificity": 1.0,
-          "true_negative": 1,
-          "true_positive": 1
+          "true_negative": 2,
+          "true_positive": 2
         },
         "analyzer:X86ShellcodeEmulation": {
           "accuracy": 1.0,
@@ -1800,7 +2670,7 @@
           "recall": 1.0,
           "specificity": 1.0,
           "true_negative": 1,
-          "true_positive": 1
+          "true_positive": 3
         },
         "analyzer:ZIP": {
           "accuracy": 1.0,
@@ -1811,7 +2681,7 @@
           "recall": 1.0,
           "specificity": 1.0,
           "true_negative": 1,
-          "true_positive": 1
+          "true_positive": 3
         },
         "decoder:ASCII85": {
           "accuracy": 1.0,
@@ -2189,82 +3059,82 @@
         "missing_positive": [],
         "per_component": {
           "analyzer:DEX": {
-            "extraction_negative_cases": 1,
+            "extraction_negative_cases": 3,
             "extraction_positive_cases": 1,
-            "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "recognition_negative_cases": 2,
+            "recognition_positive_cases": 2
           },
           "analyzer:ELF": {
-            "extraction_negative_cases": 1,
-            "extraction_positive_cases": 1,
+            "extraction_negative_cases": 2,
+            "extraction_positive_cases": 2,
             "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "recognition_positive_cases": 3
           },
           "analyzer:Email": {
-            "extraction_negative_cases": 1,
-            "extraction_positive_cases": 1,
-            "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "extraction_negative_cases": 2,
+            "extraction_positive_cases": 2,
+            "recognition_negative_cases": 2,
+            "recognition_positive_cases": 2
           },
           "analyzer:Mach-O": {
-            "extraction_negative_cases": 1,
+            "extraction_negative_cases": 3,
             "extraction_positive_cases": 1,
             "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "recognition_positive_cases": 3
           },
           "analyzer:OfficeOOXML": {
-            "extraction_negative_cases": 1,
-            "extraction_positive_cases": 1,
-            "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "extraction_negative_cases": 2,
+            "extraction_positive_cases": 2,
+            "recognition_negative_cases": 2,
+            "recognition_positive_cases": 2
           },
           "analyzer:OptionalArchive": {
             "extraction_negative_cases": 0,
             "extraction_positive_cases": 0,
             "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "recognition_positive_cases": 3
           },
           "analyzer:PE": {
-            "extraction_negative_cases": 1,
-            "extraction_positive_cases": 1,
-            "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "extraction_negative_cases": 2,
+            "extraction_positive_cases": 2,
+            "recognition_negative_cases": 2,
+            "recognition_positive_cases": 2
           },
           "analyzer:Script": {
             "extraction_negative_cases": 1,
-            "extraction_positive_cases": 1,
+            "extraction_positive_cases": 3,
             "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "recognition_positive_cases": 3
           },
           "analyzer:Steganography": {
-            "extraction_negative_cases": 1,
+            "extraction_negative_cases": 3,
             "extraction_positive_cases": 1,
             "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "recognition_positive_cases": 3
           },
           "analyzer:TAR": {
-            "extraction_negative_cases": 1,
+            "extraction_negative_cases": 3,
             "extraction_positive_cases": 1,
             "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "recognition_positive_cases": 3
           },
           "analyzer:WindowsLNK": {
-            "extraction_negative_cases": 1,
-            "extraction_positive_cases": 1,
-            "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "extraction_negative_cases": 2,
+            "extraction_positive_cases": 2,
+            "recognition_negative_cases": 2,
+            "recognition_positive_cases": 2
           },
           "analyzer:X86ShellcodeEmulation": {
             "extraction_negative_cases": 1,
-            "extraction_positive_cases": 1,
+            "extraction_positive_cases": 3,
             "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "recognition_positive_cases": 3
           },
           "analyzer:ZIP": {
-            "extraction_negative_cases": 1,
+            "extraction_negative_cases": 3,
             "extraction_positive_cases": 1,
             "recognition_negative_cases": 1,
-            "recognition_positive_cases": 1
+            "recognition_positive_cases": 3
           },
           "decoder:ASCII85": {
             "extraction_negative_cases": 1,

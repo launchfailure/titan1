@@ -2,6 +2,9 @@
   "schema_version": "1.0",
   "name": "Titan decoder and structured-analyzer calibration v1",
   "require_registry_parity": true,
+  "required_case_classes": {
+    "analyzer": ["malformed", "truncated"]
+  },
   "cases": [
     {
       "id": "ascii85-positive",
@@ -666,6 +669,247 @@
       "data_text": "plain text without armor",
       "expected_recognition": false,
       "expected_match": false
+    },
+    {
+      "id": "email-malformed",
+      "kind": "analyzer",
+      "component": "Email",
+      "case_class": "malformed",
+      "data_text": "From: sender@example.org\r\nContent-Type: multipart/mixed; boundary=\"unterminated\r\n\r\n--unterminated",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["email_summary.json"]
+    },
+    {
+      "id": "email-truncated",
+      "kind": "analyzer",
+      "component": "Email",
+      "case_class": "truncated",
+      "data_text": "From: sender@example.org\r\nTo: analyst@example.org\r\nSubject: Calibration\r\nCon",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "script-malformed",
+      "kind": "analyzer",
+      "component": "Script",
+      "case_class": "malformed",
+      "data_text": "powershell.exe -EncodedCommand !!!not-base64!!!",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["script_summary.json"]
+    },
+    {
+      "id": "script-truncated",
+      "kind": "analyzer",
+      "component": "Script",
+      "case_class": "truncated",
+      "data_text": "powershell.exe -NoProfile -EncodedCommand",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["script_summary.json"]
+    },
+    {
+      "id": "lnk-malformed",
+      "kind": "analyzer",
+      "component": "WindowsLNK",
+      "case_class": "malformed",
+      "data_base64": "TAAAAAEUAgAAAAAAwAAAAAAAAEb//////////////////////////////////////////////////////////////////////////w==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["lnk_metadata.json"]
+    },
+    {
+      "id": "lnk-truncated",
+      "kind": "analyzer",
+      "component": "WindowsLNK",
+      "case_class": "truncated",
+      "data_base64": "TAAAAAEUAgAAAAAAwAAAAAAAAEYgAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANIEAAAAAAAAAQAAAAAAAAAAAAAAAAAA",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "office-malformed",
+      "kind": "analyzer",
+      "component": "OfficeOOXML",
+      "case_class": "malformed",
+      "data_base64": "UEsDBBQAAAAAALtxGF3TefA3EAAAABAAAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbDxUeXBlcz48T3ZlcnJpZGVQSwMEFAAAAAAAu3EYXccuzNkTAAAAEwAAABEAAAB3b3JkL2RvY3VtZW50LnhtbDx3OmRvY3VtZW50Pjxicm9rZW5QSwECFAMUAAAAAAC7cRhd03nwNxAAAAAQAAAAEwAAAAAAAAAAAAAAgAEAAAAAW0NvbnRlbnRfVHlwZXNdLnhtbFBLAQIUAxQAAAAAALtxGF3HLszZEwAAABMAAAARAAAAAAAAAAAAAACAAUEAAAB3b3JkL2RvY3VtZW50LnhtbFBLBQYAAAAAAgACAIAAAACDAAAAAAA=",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["office_summary.json", "office_document_text.txt"]
+    },
+    {
+      "id": "office-truncated",
+      "kind": "analyzer",
+      "component": "OfficeOOXML",
+      "case_class": "truncated",
+      "data_base64": "UEsDBBQAAAAAAINh9VzqpRaoaQAAAGkAAAATAAAA",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "pe-malformed",
+      "kind": "analyzer",
+      "component": "PE",
+      "case_class": "malformed",
+      "data_base64": "TVoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAFBFAAAAAP//AAAAAAAAAAAAAAAAAAAAAA==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["pe_metadata.json"]
+    },
+    {
+      "id": "pe-truncated",
+      "kind": "analyzer",
+      "component": "PE",
+      "case_class": "truncated",
+      "data_base64": "TVoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAA",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "elf-malformed",
+      "kind": "analyzer",
+      "component": "ELF",
+      "case_class": "malformed",
+      "data_base64": "f0VMRgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["elf_metadata.json"]
+    },
+    {
+      "id": "elf-truncated",
+      "kind": "analyzer",
+      "component": "ELF",
+      "case_class": "truncated",
+      "data_base64": "f0VMRgIBAQAAAAAAAAAAAAIAPgABAAAAABAAAAAAAAA=",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "macho-malformed",
+      "kind": "analyzer",
+      "component": "Mach-O",
+      "case_class": "malformed",
+      "data_base64": "zvrt/gcAAAADAAAAAgAAAAEAAAAIAAAAAAAAAAEAAAAAAAAA",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "macho-truncated",
+      "kind": "analyzer",
+      "component": "Mach-O",
+      "case_class": "truncated",
+      "data_base64": "z/rt/gcAAAEDAAAAAgAAAAIAAADQAAAAAAAgAA==",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "dex-malformed",
+      "kind": "analyzer",
+      "component": "DEX",
+      "case_class": "malformed",
+      "data_base64": "ZGV4CjAzNQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHhWNBIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "dex-truncated",
+      "kind": "analyzer",
+      "component": "DEX",
+      "case_class": "truncated",
+      "data_base64": "ZGV4CjAzNQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACmAAAAcAAAAHhWNBIAAAAAAAAAAAAAAAACAAAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAuAAAAeAAA",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "zip-malformed",
+      "kind": "analyzer",
+      "component": "ZIP",
+      "case_class": "malformed",
+      "data_base64": "UEsDBG5vdC1hLXZhbGlkLXppcA==",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "zip-truncated",
+      "kind": "analyzer",
+      "component": "ZIP",
+      "case_class": "truncated",
+      "data_base64": "UEsDBBQAAAAAAAAAIQBVN3xnGAAAABgAAAAMAAAA",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "tar-malformed",
+      "kind": "analyzer",
+      "component": "TAR",
+      "case_class": "malformed",
+      "data_base64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB1c3RhcgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "tar-truncated",
+      "kind": "analyzer",
+      "component": "TAR",
+      "case_class": "truncated",
+      "data_base64": "ZXZpZGVuY2UudHh0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAwMDA2NDQAMDAwMDAwMAAwMDAwMDAwADAwMDAwMDAwMDMwADAwMDAwMDAwMDAwADAxMDI2MQAgMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB1c3Rhcg==",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "x86-shellcode-malformed",
+      "kind": "analyzer",
+      "component": "X86ShellcodeEmulation",
+      "case_class": "malformed",
+      "data_base64": "aGh0dHBoOi8veAAP/w==",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["x86_emulation.json", "x86_emulated_strings.txt"]
+    },
+    {
+      "id": "x86-shellcode-truncated",
+      "kind": "analyzer",
+      "component": "X86ShellcodeEmulation",
+      "case_class": "truncated",
+      "data_base64": "aGNvbQBodmlsLmg6Ly9laGh0dHDN",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["x86_emulation.json", "x86_emulated_strings.txt"]
+    },
+    {
+      "id": "steganography-malformed",
+      "kind": "analyzer",
+      "component": "Steganography",
+      "case_class": "malformed",
+      "data_base64": "iVBORw0KGgr/////SURBVA==",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "steganography-truncated",
+      "kind": "analyzer",
+      "component": "Steganography",
+      "case_class": "truncated",
+      "data_base64": "iVBORw0KGgoAAAAN",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "optional-archive-malformed",
+      "kind": "analyzer",
+      "component": "OptionalArchive",
+      "case_class": "malformed",
+      "data_base64": "N3q8ryccbm90LWEtdmFsaWQtYXJjaGl2ZQ==",
+      "expected_recognition": true
+    },
+    {
+      "id": "optional-archive-truncated",
+      "kind": "analyzer",
+      "component": "OptionalArchive",
+      "case_class": "truncated",
+      "data_base64": "N3q8rycc",
+      "expected_recognition": true
     }
   ]
 }
