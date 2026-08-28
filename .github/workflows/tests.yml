@@ -21,6 +21,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install headless desktop runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes libegl1 libgl1
+
       - name: Install
         run: |
           python -m pip install --upgrade pip
@@ -60,7 +65,9 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .
+          # Proof calibration executes the optional compression decoders, and
+          # the fuzz harness should exercise the same installed format set.
+          python -m pip install -e '.[formats]'
 
       - name: Fuzz decoders/analyzers (bounded budget)
         # Time-bounded so CI stays fast; enforces the never-raise / bounded-

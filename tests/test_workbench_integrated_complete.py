@@ -80,6 +80,8 @@ def test_dynamic_view_replacement_waits_for_removal():
 def test_ci_installs_every_required_optional_test_dependency():
     workflow = Path(".github/workflows/tests.yml").read_text(encoding="utf-8")
     assert "-e '.[workbench-ui,desktop-ui,formats]'" in workflow
+    assert "libegl1 libgl1" in workflow
+    assert "-e '.[formats]'" in workflow
     assert "'yara-python>=4.5.4'" in workflow
     assert "pytest -q --fail-on-skips" in workflow
 
