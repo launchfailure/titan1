@@ -99,7 +99,8 @@ git clone https://github.com/pragmaconflux/titan1.git
 cd titan1
 python -m venv .venv
 source .venv/bin/activate
-pip install -e '.[dev,desktop-ui,formats]'
+pip install -e '.[dev,workbench-ui,desktop-ui,formats]'
+pip install 'yara-python>=4.5.4'
 ```
 
 Install optional Brotli, Zstandard, 7z, RAR, ISO, and CAB support with

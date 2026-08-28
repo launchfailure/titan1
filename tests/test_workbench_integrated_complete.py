@@ -77,9 +77,13 @@ def test_dynamic_view_replacement_waits_for_removal():
     asyncio.run(exercise())
 
 
-def test_ci_installs_the_required_textual_extra():
+def test_ci_installs_every_required_optional_test_dependency():
     workflow = Path(".github/workflows/tests.yml").read_text(encoding="utf-8")
-    assert "-e '.[workbench-ui]'" in workflow
+    assert "-e '.[workbench-ui,desktop-ui,formats]'" in workflow
+    assert "libegl1 libgl1" in workflow
+    assert "-e '.[formats]'" in workflow
+    assert "'yara-python>=4.5.4'" in workflow
+    assert "pytest -q --fail-on-skips" in workflow
 
 
 def test_analysis_worker_refreshes_results_without_duplicate_ids(monkeypatch):
