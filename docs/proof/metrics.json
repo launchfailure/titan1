@@ -10,7 +10,7 @@
         "recall": 1.0,
         "specificity": 1.0,
         "true_negative": 53,
-        "true_positive": 45
+        "true_positive": 47
       },
       "case_class_coverage": {
         "covered_components": [
@@ -772,11 +772,11 @@
           "expected_recognition": true,
           "id": "brotli-positive",
           "kind": "decoder",
-          "missing_modules": [
-            "brotli"
-          ],
-          "outcome": null,
-          "predicted_match": null,
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "output_hash_matches": true,
+          "output_sha256": "86b5038960972f1c1f3530bfe26344b8e1fb275a473bed358985a8fce6e09bd7",
+          "predicted_match": true,
           "predicted_recognition": true,
           "recognition_outcome": "true_positive"
         },
@@ -1220,11 +1220,11 @@
           "expected_recognition": true,
           "id": "zstandard-positive",
           "kind": "decoder",
-          "missing_modules": [
-            "zstandard"
-          ],
-          "outcome": null,
-          "predicted_match": null,
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "output_hash_matches": true,
+          "output_sha256": "d870123f47526c5b4ba6b1feedee4e33481acd5b18880be4e2f14b7bb4fc900b",
+          "predicted_match": true,
           "predicted_recognition": true,
           "recognition_outcome": "true_positive"
         },
@@ -2274,14 +2274,14 @@
         },
         "decoder:Brotli": {
           "accuracy": 1.0,
-          "f1": 0.0,
+          "f1": 1.0,
           "false_negative": 0,
           "false_positive": 0,
-          "precision": 0.0,
-          "recall": 0.0,
+          "precision": 1.0,
+          "recall": 1.0,
           "specificity": 1.0,
           "true_negative": 1,
-          "true_positive": 0
+          "true_positive": 1
         },
         "decoder:Bz2": {
           "accuracy": 1.0,
@@ -2494,34 +2494,19 @@
         },
         "decoder:Zstandard": {
           "accuracy": 1.0,
-          "f1": 0.0,
+          "f1": 1.0,
           "false_negative": 0,
           "false_positive": 0,
-          "precision": 0.0,
-          "recall": 0.0,
+          "precision": 1.0,
+          "recall": 1.0,
           "specificity": 1.0,
           "true_negative": 1,
-          "true_positive": 0
+          "true_positive": 1
         }
       },
       "corpus": "tests/fixtures/calibration/decoder-analyzer-v1.json",
       "corpus_name": "Titan decoder and structured-analyzer calibration v1",
-      "dependency_skips": [
-        {
-          "component": "decoder:Brotli",
-          "id": "brotli-positive",
-          "missing_modules": [
-            "brotli"
-          ]
-        },
-        {
-          "component": "decoder:Zstandard",
-          "id": "zstandard-positive",
-          "missing_modules": [
-            "zstandard"
-          ]
-        }
-      ],
+      "dependency_skips": [],
       "quality_gate": {
         "failures": [],
         "minimum_precision": 0.9,

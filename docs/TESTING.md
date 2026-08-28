@@ -5,13 +5,17 @@ Titan's test strategy combines unit tests, contract tests, deterministic corpora
 ## Commands
 
 ```bash
-python -m pytest
+python -m pip install -e '.[dev,workbench-ui,desktop-ui,formats]'
+python -m pip install 'yara-python>=4.5.4'
+python -m pytest --fail-on-skips
 ruff check .
 mypy titan_decoder
 ```
 
-CI installs `.[workbench-ui]` across the supported Python matrix so the Textual
-application tests are mandatory rather than silently skipped.
+CI installs the Textual and desktop interfaces, optional format libraries,
+JSON Schema validator, and YARA binding across the supported Python matrix.
+`--fail-on-skips` makes those tests mandatory instead of silently reducing
+coverage when an installation step regresses.
 
 ## Test categories
 

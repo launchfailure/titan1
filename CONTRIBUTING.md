@@ -15,8 +15,9 @@ Thanks for your interest in improving Titan Decoder. Contributions should preser
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -e '.[dev]'
-python -m pytest
+pip install -e '.[dev,workbench-ui,desktop-ui,formats]'
+pip install 'yara-python>=4.5.4'
+python -m pytest --fail-on-skips
 ```
 
 ## Pull request expectations
