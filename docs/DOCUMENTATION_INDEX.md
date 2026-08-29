@@ -36,3 +36,4 @@
 - [DEPTH_HARDENING.md](DEPTH_HARDENING.md) — active vertical-hardening phases, gates, and progress.
 - [ROADMAP.md](ROADMAP.md) — shipped and planned work.
 - [RELEASING.md](RELEASING.md) — release process.
+- [RELEASE_NOTES_2.1.0.md](RELEASE_NOTES_2.1.0.md) — prepared notes for the 2.1.0 depth and workflow release.
