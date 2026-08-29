@@ -95,6 +95,11 @@ class CalibrationRunner:
         cases = value.get("cases")
         if not isinstance(cases, list):
             raise ValueError("calibration corpus cases must be a list")
+        case_definitions = {
+            str(case.get("id")): case
+            for case in cases
+            if isinstance(case, dict) and case.get("id")
+        }
         engine = TitanEngine(self.config)
         components: dict[str, dict[str, Any]] = {
             "decoder": {str(item.name): item for item in engine.decoders},
@@ -199,7 +204,11 @@ class CalibrationRunner:
                 continue
             unavailable_modules = _missing_modules(required_modules)
             try:
-                data = self._case_data(raw_case, corpus_path.parent)
+                data = self._case_data(
+                    raw_case,
+                    corpus_path.parent,
+                    case_definitions=case_definitions,
+                )
                 predicted_recognition, predicted_match, observation = self._evaluate(
                     kind,
                     component,
@@ -472,14 +481,57 @@ class CalibrationRunner:
         }
 
     @staticmethod
-    def _case_data(value: Mapping[str, Any], root: Path) -> bytes:
+    def _case_data(
+        value: Mapping[str, Any],
+        root: Path,
+        *,
+        case_definitions: Mapping[str, Mapping[str, Any]] | None = None,
+        resolving: frozenset[str] = frozenset(),
+    ) -> bytes:
         representations = [
             key
             for key in ("data_text", "data_base64", "data_hex", "fixture")
             if key in value
         ]
+        derive_from = value.get("derive_from")
+        if derive_from is not None:
+            if representations:
+                raise ValueError(
+                    "derived case cannot also declare a data representation"
+                )
+            source_id = str(derive_from)
+            if not source_id or case_definitions is None:
+                raise ValueError("derived case must reference a corpus case id")
+            if source_id in resolving:
+                raise ValueError("derived case references contain a cycle")
+            source = case_definitions.get(source_id)
+            if source is None:
+                raise ValueError(f"derived case references unknown case: {source_id}")
+            data = CalibrationRunner._case_data(
+                source,
+                root,
+                case_definitions=case_definitions,
+                resolving=resolving | {source_id},
+            )
+            mutation = value.get("mutation")
+            if mutation == "flip-middle-byte":
+                if not data:
+                    raise ValueError("cannot mutate an empty source case")
+                index = len(data) // 2
+                return data[:index] + bytes([data[index] ^ 0xFF]) + data[index + 1 :]
+            if mutation == "truncate-half":
+                if len(data) < 2:
+                    raise ValueError(
+                        "cannot truncate a source case shorter than 2 bytes"
+                    )
+                return data[: max(1, len(data) // 2)]
+            raise ValueError(
+                "derived case mutation must be flip-middle-byte or truncate-half"
+            )
         if len(representations) != 1:
-            raise ValueError("case must declare exactly one data representation")
+            raise ValueError(
+                "case must declare exactly one data representation or derive_from"
+            )
         key = representations[0]
         if key == "data_text":
             return str(value[key]).encode("utf-8")

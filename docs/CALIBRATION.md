@@ -20,9 +20,9 @@ The runner produces:
 - case-level observations and errors;
 - a configurable precision/recall quality gate.
 
-The committed v1 corpus has 104 deterministic cases. It covers positive and
+The committed v1 corpus has 156 deterministic cases. It covers positive and
 negative recognition for all 39 live built-in decoders and analyzers, plus one
-malformed and one truncated case for each of the 13 structural analyzers.
+malformed and one truncated case for every one of those components.
 Thirty-eight components also have positive extraction cases;
 `OptionalArchive` currently has recognition coverage only because positive
 extraction depends on separately installed format libraries. Brotli and
@@ -49,13 +49,16 @@ case, or when a required component lacks an adversarial case class.
 
 The corpus uses schema version `1.0`. Each case contains `id`, `kind`
 (`decoder` or `analyzer`), `component`, exactly one of `data_text`,
-`data_base64`, `data_hex`, or a corpus-relative `fixture`, and at least one of
-`expected_recognition` or `expected_match`. When `expected_recognition` is
-omitted it defaults to `expected_match`. Omitting `expected_match` creates a
-recognition-only case. Decoder positives may add `expected_output_sha256`;
-analyzer positives may add `expected_artifacts`. Cases whose extraction needs
-an optional package declare `required_modules`; recognition still runs when the
-package is absent, while extraction is recorded as dependency-skipped.
+`data_base64`, `data_hex`, a corpus-relative `fixture`, or `derive_from`, and at
+least one of `expected_recognition` or `expected_match`. A derived case names a
+previous corpus case and applies either `flip-middle-byte` or `truncate-half`;
+this keeps adversarial mutations reproducible without copying large binary
+fixtures. When `expected_recognition` is omitted it defaults to
+`expected_match`. Omitting `expected_match` creates a recognition-only case.
+Decoder positives may add `expected_output_sha256`; analyzer positives may add
+`expected_artifacts`. Cases whose extraction needs an optional package declare
+`required_modules`; recognition still runs when the package is absent, while
+extraction is recorded as dependency-skipped.
 
 Cases can declare `case_class` as `positive`, `clean_negative`, `malformed`,
 `truncated`, `size_bound`, or `nested_chain`. When omitted, the runner infers
@@ -64,10 +67,10 @@ Cases can declare `case_class` as `positive`, `clean_negative`, `malformed`,
 every live built-in of that kind must cover. Invalid labels and cases that fail
 to load or evaluate cannot satisfy that coverage gate.
 
-The bundled corpus sets `require_registry_parity` and requires analyzer
-`malformed` and `truncated` classes, making both live-registry and structural
-adversarial coverage part of the quality gate. Small ad-hoc corpora may omit
-those fields when they are intentionally measuring only a subset.
+The bundled corpus sets `require_registry_parity` and requires both decoder and
+analyzer `malformed` and `truncated` classes, making live-registry adversarial
+coverage part of the quality gate. Small ad-hoc corpora may omit those fields
+when they are intentionally measuring only a subset.
 
 ```json
 {
