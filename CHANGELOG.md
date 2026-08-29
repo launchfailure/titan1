@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+Code-assurance ratchet:
+
+- Raise the CI coverage floor from 70% to 75% while keeping the full package in
+  scope.
+- Remove `core.evidence_parsers` from the mypy exemption list and add property
+  checks for evidence ordering, deduplication, record bounds, and coercion.
+
 Continuous adversarial testing:
 
 - Add a weekly 30-minute fuzz campaign spanning decoder/analyzer contracts,

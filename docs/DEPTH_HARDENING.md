@@ -149,7 +149,7 @@ rule. This is a floor, not the final content target.
 | D2 detection-content scale | In progress | 48-case native and 32-case YARA corpora; scheduled-task batch adds two variants, three native near-misses, decoded-child coverage, and multi-rule interactions |
 | D3 decoder/analyzer parity | In progress | 39/39 live built-ins have positive/negative recognition plus malformed/truncated coverage; size-bound and nested-chain depth continues |
 | D4 continuous adversarial testing | In progress | Weekly 30-minute campaign covers six surfaces, records iterations/unique inputs/violations, and retains deletion-minimized reproducers for 30 days |
-| D5 code-assurance ratchet | Planned | Higher coverage floor and shrinking mypy exemption list |
+| D5 code-assurance ratchet | In progress | CI floor raised from 70% to 75%; evidence parsers removed from mypy exemptions; property checks cover ordering, deduplication, bounds, and coercion |
 | D6 determinism/provenance | Planned | Cross-platform golden and compatibility evidence |
 | D7 performance/operations | Planned | Memory/amplification/concurrency and platform smoke gates |
 | D8 independent validation | Blocked on external assessor | Published independent report and resolved findings |

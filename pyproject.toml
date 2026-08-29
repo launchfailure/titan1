@@ -104,7 +104,6 @@ module = [
     "titan_decoder.core.analyzers.base",
     "titan_decoder.core.correlation",
     "titan_decoder.core.engine",
-    "titan_decoder.core.evidence_parsers",
     "titan_decoder.core.graph_export",
     "titan_decoder.core.ioc_export",
     "titan_decoder.core.vault",

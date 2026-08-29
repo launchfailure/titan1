@@ -831,8 +831,11 @@ def parse_evidence_file(path: Path, kind: str) -> ParseResult:
 
     # Endpoint artifacts (not CSV/JSONL logs)
     if kind in {"powershell", "powershell_history", "ps_history"}:
-        events, indicators = parse_powershell_history(path)
-        return ParseResult(events=events, indicators=merge_indicators(indicators))
+        endpoint_events, endpoint_indicators = parse_powershell_history(path)
+        return ParseResult(
+            events=endpoint_events,
+            indicators=merge_indicators(endpoint_indicators),
+        )
 
     if kind in {
         "browser",
@@ -841,8 +844,11 @@ def parse_evidence_file(path: Path, kind: str) -> ParseResult:
         "edge_history",
         "firefox_history",
     }:
-        events, indicators = parse_browser_history_sqlite(path)
-        return ParseResult(events=events, indicators=merge_indicators(indicators))
+        endpoint_events, endpoint_indicators = parse_browser_history_sqlite(path)
+        return ParseResult(
+            events=endpoint_events,
+            indicators=merge_indicators(endpoint_indicators),
+        )
 
     records = load_records(path)
 
