@@ -8,6 +8,7 @@ def test_load_starter_rules():
     assert "TITAN-001" in rule_ids
     assert "TITAN-007" in rule_ids
     assert "TITAN-008" in rule_ids
+    assert "TITAN-009" in rule_ids
 
 
 def test_deep_base64_detection():
@@ -133,6 +134,69 @@ def test_lolbin_does_not_join_context_from_unrelated_nodes():
         item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, {})
     }
     assert "TITAN-003" not in ids
+
+
+def test_scheduled_task_rule_requires_persistence_and_abuse_context():
+    report = {
+        "nodes": [
+            {
+                "id": 0,
+                "content_preview": (
+                    "schtasks.exe /create /tn CacheUpdate /sc onlogon "
+                    '/tr "powershell.exe -EncodedCommand SQBFAFgA" /f'
+                ),
+            }
+        ]
+    }
+    detections = CorrelationRulesEngine().evaluate_all(report, {})
+    by_id = {item["rule_id"]: item for item in detections}
+
+    assert by_id["TITAN-009"]["severity"] == "high"
+    assert by_id["TITAN-009"]["attack_ids"] == ["T1053.005"]
+
+
+def test_scheduled_task_rule_rejects_benign_task_creation():
+    report = {
+        "nodes": [
+            {
+                "id": 0,
+                "content_preview": (
+                    "schtasks.exe /create /tn DailyBackup /sc onlogon "
+                    '/tr "C:\\Program Files\\Backup\\backup.exe" /f'
+                ),
+            }
+        ]
+    }
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, {})
+    }
+
+    assert "TITAN-009" not in ids
+
+
+def test_scheduled_task_rule_does_not_join_unrelated_nodes():
+    report = {
+        "nodes": [
+            {
+                "id": 1,
+                "parent": None,
+                "content_preview": (
+                    "schtasks.exe /create /tn CacheUpdate /sc onlogon "
+                    '/tr "C:\\Tools\\updater.exe" /f'
+                ),
+            },
+            {
+                "id": 2,
+                "parent": None,
+                "content_preview": "powershell.exe -EncodedCommand SQBFAFgA",
+            },
+        ]
+    }
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, {})
+    }
+
+    assert "TITAN-009" not in ids
 
 
 def test_multistage_rule_requires_attack_context():

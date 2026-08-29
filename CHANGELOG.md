@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+Detection content depth:
+
+- Add native `TITAN-009` and starter-pack YARA coverage for suspicious
+  logon/startup scheduled-task persistence (`T1053.005`).
+- Measure command-line and PowerShell behavior variants, decoded-child
+  coverage, multi-rule risk stacking, and benign administrative lookalikes.
+
 Decoder calibration depth:
 
 - Require every live built-in decoder, as well as every structural analyzer,

@@ -34,6 +34,14 @@ RULES = Path(__file__).parents[1] / "examples" / "yara_rules"
             "Titan_Regsvr32_Remote_Scriptlet",
             "T1218.010",
         ),
+        (
+            (
+                b"schtasks.exe /create /tn CacheUpdate /sc onlogon "
+                b'/tr "powershell.exe -EncodedCommand SQBFAFgA" /f'
+            ),
+            "Titan_Scheduled_Task_Suspicious_Execution",
+            "T1053.005",
+        ),
     ],
 )
 def test_starter_pack_detects_proxy_execution_chains(payload, expected_rule, attack_id):
@@ -55,6 +63,11 @@ def test_starter_pack_detects_proxy_execution_chains(payload, expected_rule, att
         b"regsvr32 /s local-component.dll",
         b"Documentation: certutil and mshta can access https://docs.example/ safely.",
         b"The scrobj.dll component is registered by Windows; do not delete it.",
+        b"schtasks.exe /query /tn DailyBackup /fo list",
+        (
+            b"schtasks.exe /create /tn DailyBackup /sc onlogon "
+            b'/tr "C:\\Program Files\\Backup\\backup.exe" /f'
+        ),
     ],
 )
 def test_starter_pack_rejects_benign_proxy_execution_near_misses(payload):
@@ -66,5 +79,6 @@ def test_starter_pack_rejects_benign_proxy_execution_near_misses(payload):
         "Titan_Certutil_Remote_Download",
         "Titan_MSHTA_Remote_Execution",
         "Titan_Regsvr32_Remote_Scriptlet",
+        "Titan_Scheduled_Task_Suspicious_Execution",
     }
     assert not (new_rules & {match["rule"] for match in result["matches"]})

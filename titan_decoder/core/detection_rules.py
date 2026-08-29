@@ -268,6 +268,26 @@ class CorrelationRulesEngine:
             )
         )
 
+        # Rule 9: persistence through a logon/startup scheduled task whose
+        # action also carries a strong living-off-the-land execution signal.
+        # Scheduled tasks are common administration primitives, so creation by
+        # itself is deliberately insufficient evidence.
+        self.rules.append(
+            DetectionRule(
+                rule_id="TITAN-009",
+                name="Scheduled Task Suspicious Execution",
+                description=(
+                    "Logon or startup task creation launches a LOLBin with "
+                    "encoded, hidden, download, or scriptlet execution context"
+                ),
+                severity="high",
+                detect_fn=lambda report, iocs: self._detect_scheduled_task_execution(
+                    report
+                ),
+                attack_ids=["T1053.005"],
+            )
+        )
+
         logger.info(f"Loaded {len(self.rules)} correlation rules")
 
     @staticmethod
@@ -447,9 +467,44 @@ class CorrelationRulesEngine:
         """
         for node in report.get("nodes", []):
             text = str(node.get("content_preview") or "").lower()
-            if not any(lolbin in text for lolbin in self._LOLBINS):
-                continue
-            if any(pattern.search(text) for pattern in self._LOLBIN_CONTEXT):
+            if self._has_lolbin_execution_context(text):
+                return True
+        return False
+
+    @classmethod
+    def _has_lolbin_execution_context(cls, text: str) -> bool:
+        return any(lolbin in text for lolbin in cls._LOLBINS) and any(
+            pattern.search(text) for pattern in cls._LOLBIN_CONTEXT
+        )
+
+    def _detect_scheduled_task_execution(self, report: Dict[str, Any]) -> bool:
+        """Detect high-signal scheduled-task persistence in one graph node.
+
+        The boundary intentionally requires all three parts to co-occur: task
+        creation, a logon/startup trigger, and suspicious LOLBin execution.
+        Querying tasks, ordinary backup tasks, and unrelated sibling-node text
+        therefore stay below the detection threshold.
+        """
+        for node in report.get("nodes", []):
+            text = str(node.get("content_preview") or "").lower()
+            cli_task = bool(
+                re.search(r"\bschtasks(?:\.exe)?\b", text)
+                and re.search(r"(?<!\w)/create\b", text)
+                and re.search(r"(?<!\w)/tr(?:\s|:)", text)
+                and re.search(r"(?<!\w)/sc(?:\s|:)(?:onlogon|onstart)\b", text)
+            )
+            powershell_task = bool(
+                re.search(r"\bregister-scheduledtask\b", text)
+                and re.search(r"\bnew-scheduledtaskaction\b", text)
+                and re.search(
+                    r"\bnew-scheduledtasktrigger\b[^\r\n]{0,160}"
+                    r"-(?:atlogon|atstartup)\b",
+                    text,
+                )
+            )
+            if (cli_task or powershell_task) and self._has_lolbin_execution_context(
+                text
+            ):
                 return True
         return False
 

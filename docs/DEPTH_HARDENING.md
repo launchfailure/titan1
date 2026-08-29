@@ -146,7 +146,7 @@ rule. This is a floor, not the final content target.
 | Slice | Status | Exit evidence |
 |---|---|---|
 | D1 detection-quality foundation | Complete | Live rule parity, `TITAN-008`, 2+ positives and 2+ targeted near-misses per rule, risk separation, and full CI |
-| D2 detection-content scale | Planned | Larger versioned native/YARA corpora and interaction cases |
+| D2 detection-content scale | In progress | 48-case native and 32-case YARA corpora; scheduled-task batch adds two variants, three native near-misses, decoded-child coverage, and multi-rule interactions |
 | D3 decoder/analyzer parity | In progress | 39/39 live built-ins have positive/negative recognition plus malformed/truncated coverage; size-bound and nested-chain depth continues |
 | D4 continuous adversarial testing | Planned | Scheduled fuzzing with retained reproducers and broader harnesses |
 | D5 code-assurance ratchet | Planned | Higher coverage floor and shrinking mypy exemption list |

