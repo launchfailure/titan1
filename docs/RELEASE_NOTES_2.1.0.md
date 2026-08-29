@@ -47,7 +47,7 @@ service surfaces, and stronger operational controls.
 ## Verification snapshot
 
 - 858 tests pass with zero skips on the supported CI matrix.
-- Coverage is approximately 79%, above the enforced 70% floor.
+- Coverage is approximately 80%, above the enforced 75% floor.
 - Bounded fuzzing, performance regression, lint, type-check, and proof
   freshness gates pass on `main`.
 

@@ -47,9 +47,9 @@ jobs:
           mypy titan_decoder/
 
       - name: Run tests with coverage floor
-        # Coverage floor fails the build on regressions (current ~74%).
+        # Coverage floor fails the build on regressions (current ~79%).
         run: |
-          pytest -q --fail-on-skips --cov=titan_decoder --cov-report=term-missing --cov-fail-under=70
+          pytest -q --fail-on-skips --cov=titan_decoder --cov-report=term-missing --cov-fail-under=75
 
   fuzz:
     runs-on: ubuntu-latest

@@ -259,14 +259,17 @@ def merge_indicators(indicators: List[Indicator]) -> List[Indicator]:
     for ind in indicators:
         k = ind.key()
         if k not in merged:
+            unique_sources: Dict[tuple, EvidenceRef] = {}
+            for source in ind.sources:
+                unique_sources.setdefault(_source_key(source), source)
             merged[k] = Indicator(
                 indicator_type=normalize_indicator_type(ind.indicator_type),
                 value=ind.value,
                 first_seen=ind.first_seen,
                 last_seen=ind.last_seen,
                 confidence=ind.confidence,
-                tags=list(ind.tags),
-                sources=list(ind.sources),
+                tags=sorted(set(ind.tags)),
+                sources=list(unique_sources.values()),
             )
             seen_sources[k] = {_source_key(s) for s in merged[k].sources}
             continue
