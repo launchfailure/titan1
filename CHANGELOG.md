@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+Continuous adversarial testing:
+
+- Add a weekly 30-minute fuzz campaign spanning decoder/analyzer contracts,
+  evidence parsers, plugin transport, server request bounds, report loading and
+  exports, and workspace loading.
+- Retain machine-readable campaign metrics and deletion-minimized reproducers
+  as CI artifacts for 30 days, with recorded seeds for replay.
+
 Detection content depth:
 
 - Add native `TITAN-009` and starter-pack YARA coverage for suspicious

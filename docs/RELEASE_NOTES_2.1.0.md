@@ -37,6 +37,7 @@ service surfaces, and stronger operational controls.
 - Hash-bound assurance adapters, bounded plugin workers, and explicit offline
   network policy.
 - Reproducible benchmark and proof artifacts with CI freshness gates.
+- Weekly cross-surface fuzzing with replayable, minimized failure artifacts.
 - Full optional test environment across Python 3.10–3.13; skipped tests now
   fail CI.
 - Deterministic CycloneDX SBOM and Sigstore-enabled GitHub release workflow.

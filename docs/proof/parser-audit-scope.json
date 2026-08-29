@@ -53,6 +53,7 @@
   "required_checks": [
     "pytest -q",
     "python fuzz/fuzz_decoders.py --seconds 30",
+    "python fuzz/fuzz_surfaces.py --seconds 30 --artifacts .fuzz-artifacts",
     "python tools/bench.py --check",
     "python tools/publish_proof.py --check"
   ],
