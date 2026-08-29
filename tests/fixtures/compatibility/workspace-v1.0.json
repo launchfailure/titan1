@@ -1,0 +1,13 @@
+{
+  "name": "Legacy investigation",
+  "version": "1.0",
+  "entries": [
+    {
+      "report_path": "legacy-report.json",
+      "tags": ["legacy", "reviewed"],
+      "note": "Imported from the original workbench contract.",
+      "status": "closed"
+    }
+  ],
+  "notes": ["Frozen v1.0 compatibility fixture."]
+}

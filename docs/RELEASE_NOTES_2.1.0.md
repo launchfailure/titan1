@@ -41,12 +41,14 @@ service surfaces, and stronger operational controls.
 - Full optional test environment across Python 3.10–3.13; skipped tests now
   fail CI.
 - Deterministic CycloneDX SBOM and Sigstore-enabled GitHub release workflow.
+- Linux and Windows golden/lineage checks plus frozen v1 report, workspace, and
+  plugin compatibility fixtures.
 - Parser audit scope and source hashes prepared for independent assessment;
   Titan does not claim that the external review has occurred.
 
 ## Verification snapshot
 
-- 858 tests pass with zero skips on the supported CI matrix.
+- 886 tests pass with zero skips in the full local verification run.
 - Coverage is approximately 80%, above the enforced 75% floor.
 - Bounded fuzzing, performance regression, lint, type-check, and proof
   freshness gates pass on `main`.

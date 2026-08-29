@@ -150,6 +150,6 @@ rule. This is a floor, not the final content target.
 | D3 decoder/analyzer parity | In progress | 39/39 live built-ins have positive/negative recognition plus malformed/truncated coverage; size-bound and nested-chain depth continues |
 | D4 continuous adversarial testing | In progress | Weekly 30-minute campaign covers six surfaces, records iterations/unique inputs/violations, and retains deletion-minimized reproducers for 30 days |
 | D5 code-assurance ratchet | In progress | CI floor raised from 70% to 75%; evidence parsers removed from mypy exemptions; property checks cover ordering, deduplication, bounds, and coercion |
-| D6 determinism/provenance | Planned | Cross-platform golden and compatibility evidence |
+| D6 determinism/provenance | In progress | Golden, lineage, and legacy report/workspace/plugin fixtures run on Linux plus Windows Python 3.10–3.13; migration matrix is published |
 | D7 performance/operations | Planned | Memory/amplification/concurrency and platform smoke gates |
 | D8 independent validation | Blocked on external assessor | Published independent report and resolved findings |
