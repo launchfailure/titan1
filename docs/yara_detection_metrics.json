@@ -1,23 +1,23 @@
 {
   "schema": "titan-yara-quality/1",
-  "corpus_size": 27,
-  "positive_samples": 16,
-  "benign_samples": 11,
+  "corpus_size": 32,
+  "positive_samples": 18,
+  "benign_samples": 14,
   "per_rule": {
     "Titan_PowerShell_Download_Cradle": {
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 30,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
     },
     "Titan_Encoded_Command_Invocation": {
-      "tp": 2,
+      "tp": 4,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 28,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
@@ -26,7 +26,7 @@
       "tp": 4,
       "fp": 0,
       "fn": 0,
-      "tn": 23,
+      "tn": 28,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
@@ -35,7 +35,7 @@
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 30,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
@@ -44,7 +44,7 @@
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 30,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
@@ -53,7 +53,7 @@
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 30,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
@@ -62,7 +62,7 @@
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 30,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
@@ -71,7 +71,16 @@
       "tp": 2,
       "fp": 0,
       "fn": 0,
-      "tn": 25,
+      "tn": 30,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "Titan_Scheduled_Task_Suspicious_Execution": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 30,
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0
@@ -227,6 +236,28 @@
       ]
     },
     {
+      "name": "schtasks_encoded_powershell",
+      "expected_rules": [
+        "Titan_Encoded_Command_Invocation",
+        "Titan_Scheduled_Task_Suspicious_Execution"
+      ],
+      "fired_rules": [
+        "Titan_Encoded_Command_Invocation",
+        "Titan_Scheduled_Task_Suspicious_Execution"
+      ]
+    },
+    {
+      "name": "register_scheduled_task_hidden_powershell",
+      "expected_rules": [
+        "Titan_Encoded_Command_Invocation",
+        "Titan_Scheduled_Task_Suspicious_Execution"
+      ],
+      "fired_rules": [
+        "Titan_Encoded_Command_Invocation",
+        "Titan_Scheduled_Task_Suspicious_Execution"
+      ]
+    },
+    {
       "name": "benign_readme",
       "expected_rules": [],
       "fired_rules": []
@@ -278,6 +309,21 @@
     },
     {
       "name": "benign_scrobj",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_schtasks_query",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_scheduled_backup",
+      "expected_rules": [],
+      "fired_rules": []
+    },
+    {
+      "name": "benign_scheduled_maintenance",
       "expected_rules": [],
       "fired_rules": []
     }

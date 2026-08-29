@@ -316,6 +316,38 @@ def build_corpus() -> List[Sample]:
         )
     )
 
+    # TITAN-009: logon persistence whose task action uses an encoded PowerShell
+    # command. This deliberately also exercises TITAN-003 risk stacking.
+    samples.append(
+        Sample(
+            "mal_schtasks_encoded_powershell",
+            (
+                b"schtasks.exe /create /tn CacheUpdate /sc onlogon "
+                b'/tr "powershell.exe -NoProfile -EncodedCommand SQBFAFgA" /f'
+            ),
+            malicious=True,
+            expected_rules={"TITAN-003", "TITAN-009"},
+        )
+    )
+
+    # TITAN-009 v2: the PowerShell cmdlet form, recovered from a Base64 child
+    # node so the measured batch covers decoded graph content as well as roots.
+    scheduled_task_script = (
+        b"$a=New-ScheduledTaskAction -Execute 'powershell.exe' "
+        b"-Argument '-WindowStyle Hidden -EncodedCommand SQBFAFgA'; "
+        b"$t=New-ScheduledTaskTrigger -AtLogOn; "
+        b"Register-ScheduledTask -TaskName 'Updater' -Action $a -Trigger $t"
+    )
+    samples.append(
+        Sample(
+            "mal_encoded_register_scheduled_task",
+            base64.b64encode(scheduled_task_script),
+            malicious=True,
+            expected_rules={"TITAN-003", "TITAN-009"},
+            required_decoders={"Base64"},
+        )
+    )
+
     # --- Benign samples -----------------------------------------------------
 
     samples.append(
@@ -648,6 +680,42 @@ def build_corpus() -> List[Sample]:
             _png(16, 16, random_pixels),
             malicious=False,
             near_miss_rules={"TITAN-008"},
+        )
+    )
+
+    # Scheduled-task administration remains below TITAN-009 unless creation,
+    # a persistence trigger, and suspicious execution all co-occur.
+    samples.append(
+        Sample(
+            "ben_schtasks_query",
+            b"schtasks.exe /query /tn DailyBackup /fo list",
+            malicious=False,
+            near_miss_rules={"TITAN-009"},
+        )
+    )
+    samples.append(
+        Sample(
+            "ben_scheduled_backup",
+            (
+                b"schtasks.exe /create /tn DailyBackup /sc onlogon "
+                b'/tr "C:\\Program Files\\Backup\\backup.exe" /f'
+            ),
+            malicious=False,
+            near_miss_rules={"TITAN-009"},
+        )
+    )
+    samples.append(
+        Sample(
+            "ben_register_scheduled_maintenance",
+            (
+                b"$a=New-ScheduledTaskAction -Execute 'powershell.exe' "
+                b"-Argument '-NoProfile -File C:\\Admin\\Rotate-Logs.ps1'; "
+                b"$t=New-ScheduledTaskTrigger -AtStartup; "
+                b"Register-ScheduledTask -TaskName 'LogRotation' "
+                b"-Action $a -Trigger $t"
+            ),
+            malicious=False,
+            near_miss_rules={"TITAN-009"},
         )
     )
 

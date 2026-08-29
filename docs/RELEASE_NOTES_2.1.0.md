@@ -8,7 +8,8 @@ service surfaces, and stronger operational controls.
 ## Detection and parser depth
 
 - Live-registry detection calibration with multiple positives and targeted
-  benign near-misses for every built-in rule, including `TITAN-008`.
+  benign near-misses for every built-in rule, including hidden-media
+  `TITAN-008` and scheduled-task persistence `TITAN-009`.
 - First-class bounded YARA scanning across every artifact-graph node, with a
   calibrated starter pack and risk-scoring integration.
 - Decoder/analyzer calibration derived from the live registry, with recognition

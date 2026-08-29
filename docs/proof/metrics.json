@@ -4173,9 +4173,9 @@
       "skipped_count": 0
     },
     "detection": {
-      "benign_count": 27,
-      "corpus_size": 43,
-      "malicious_count": 16,
+      "benign_count": 30,
+      "corpus_size": 48,
+      "malicious_count": 18,
       "per_rule": {
         "TITAN-001": {
           "f1": 1.0,
@@ -4185,7 +4185,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "targeted_near_miss_samples": 2,
-          "tn": 41,
+          "tn": 46,
           "tp": 2
         },
         "TITAN-002": {
@@ -4196,19 +4196,19 @@
           "precision": 1.0,
           "recall": 1.0,
           "targeted_near_miss_samples": 3,
-          "tn": 41,
+          "tn": 46,
           "tp": 2
         },
         "TITAN-003": {
           "f1": 1.0,
           "fn": 0,
           "fp": 0,
-          "positive_samples": 2,
+          "positive_samples": 4,
           "precision": 1.0,
           "recall": 1.0,
           "targeted_near_miss_samples": 4,
-          "tn": 41,
-          "tp": 2
+          "tn": 44,
+          "tp": 4
         },
         "TITAN-004": {
           "f1": 1.0,
@@ -4218,7 +4218,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "targeted_near_miss_samples": 2,
-          "tn": 41,
+          "tn": 46,
           "tp": 2
         },
         "TITAN-005": {
@@ -4229,7 +4229,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "targeted_near_miss_samples": 4,
-          "tn": 41,
+          "tn": 46,
           "tp": 2
         },
         "TITAN-006": {
@@ -4240,7 +4240,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "targeted_near_miss_samples": 2,
-          "tn": 41,
+          "tn": 46,
           "tp": 2
         },
         "TITAN-007": {
@@ -4251,7 +4251,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "targeted_near_miss_samples": 3,
-          "tn": 41,
+          "tn": 46,
           "tp": 2
         },
         "TITAN-008": {
@@ -4262,7 +4262,18 @@
           "precision": 1.0,
           "recall": 1.0,
           "targeted_near_miss_samples": 2,
-          "tn": 41,
+          "tn": 46,
+          "tp": 2
+        },
+        "TITAN-009": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "positive_samples": 2,
+          "precision": 1.0,
+          "recall": 1.0,
+          "targeted_near_miss_samples": 3,
+          "tn": 46,
           "tp": 2
         }
       },
@@ -4533,6 +4544,47 @@
           "required_decoders": [],
           "risk_level": "MEDIUM",
           "risk_score": 25
+        },
+        {
+          "expected_rules": [
+            "TITAN-003",
+            "TITAN-009"
+          ],
+          "fired_rules": [
+            "TITAN-003",
+            "TITAN-009"
+          ],
+          "malicious": true,
+          "name": "mal_schtasks_encoded_powershell",
+          "near_miss_rules": [],
+          "observed_decoders": [
+            "script"
+          ],
+          "required_decoders": [],
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-003",
+            "TITAN-009"
+          ],
+          "fired_rules": [
+            "TITAN-003",
+            "TITAN-009"
+          ],
+          "malicious": true,
+          "name": "mal_encoded_register_scheduled_task",
+          "near_miss_rules": [],
+          "observed_decoders": [
+            "base64",
+            "script"
+          ],
+          "required_decoders": [
+            "Base64"
+          ],
+          "risk_level": "HIGH",
+          "risk_score": 50
         },
         {
           "expected_rules": [],
@@ -4915,6 +4967,45 @@
           "required_decoders": [],
           "risk_level": "LOW",
           "risk_score": 10
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_schtasks_query",
+          "near_miss_rules": [
+            "TITAN-009"
+          ],
+          "observed_decoders": [],
+          "required_decoders": [],
+          "risk_level": "CLEAN",
+          "risk_score": 0
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_scheduled_backup",
+          "near_miss_rules": [
+            "TITAN-009"
+          ],
+          "observed_decoders": [],
+          "required_decoders": [],
+          "risk_level": "CLEAN",
+          "risk_score": 0
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_register_scheduled_maintenance",
+          "near_miss_rules": [
+            "TITAN-009"
+          ],
+          "observed_decoders": [],
+          "required_decoders": [],
+          "risk_level": "CLEAN",
+          "risk_score": 0
         }
       ],
       "quality_gate": {
@@ -4927,6 +5018,9 @@
       },
       "risk_separation": {
         "benign_scores": [
+          0,
+          0,
+          0,
           0,
           0,
           0,
@@ -4964,6 +5058,8 @@
           25,
           25,
           26,
+          50,
+          50,
           50,
           50,
           50,

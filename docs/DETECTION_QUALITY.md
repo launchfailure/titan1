@@ -7,18 +7,20 @@ documents the methodology, the current numbers, and how to reproduce them.
 ## Methodology
 
 - **Corpus** — `tools/corpus_samples.py` generates a labeled set of
-  documentation-range, synthetic samples: **16 malicious** (two per rule, so
-  per-rule recall is measured on more than one example — a rule that only
-  matched its exact design sample would show up as a miss) covering deep base64
-  nesting, CFB macro docs with a network IOC, LOLBin command lines, high-entropy
-  executable-like blobs, multi-stage IOC infrastructure, XOR-obfuscated C2,
-  PDFs carrying an embedded PE/ELF, and hidden PNG payloads; and **27 benign**,
-  including at least **two labeled adversarial near-misses per rule**. These
+  documentation-range, synthetic samples: **18 malicious** (at least two per
+  rule, so per-rule recall is measured on more than one example — a rule that
+  only matched its exact design sample would show up as a miss) covering deep
+  base64 nesting, CFB macro docs with a network IOC, LOLBin command lines,
+  high-entropy executable-like blobs, multi-stage IOC infrastructure,
+  XOR-obfuscated C2, PDFs carrying an embedded PE/ELF, hidden PNG payloads, and
+  suspicious scheduled-task persistence; and **30 benign**, including at least
+  **two labeled adversarial near-misses per rule**. These
   deliberately sit just under a trigger: single-layer Base64, clean/macro-only
   CFB, ordinary OLE hyperlinks, routine PowerShell and `cmd.exe`
   administration (including `-Encoding`), generic ciphertext, IOC-rich service
   documentation, XOR without a network observable, JavaScript-only PDFs, PDF
-  prose about executable formats, non-PDF executables, and clean/unframed PNGs.
+  prose about executable formats, non-PDF executables, clean/unframed PNGs,
+  task queries, and ordinary scheduled backups and maintenance.
   The corpus is fully deterministic (seeded RNG, no `os.urandom`). **No real
   malware is stored in the repository — only the generator (the harness).**
 - **Harness** — `tools/eval_detections.py` runs the full engine plus the
@@ -51,11 +53,13 @@ Committed machine-readable numbers: [`detection_metrics.json`](detection_metrics
 | TITAN-006 | 1.000     | 1.000  | 1.000 |
 | TITAN-007 | 1.000     | 1.000  | 1.000 |
 | TITAN-008 | 1.000     | 1.000  | 1.000 |
+| TITAN-009 | 1.000     | 1.000  | 1.000 |
 
-Each rule now has **two** positive samples (recall is measured on more than one
-example), and precision is checked against 27 benign samples. Every rule also
-has at least **two explicitly labeled near-misses**, preventing unrelated clean
-files from creating a misleading appearance of negative coverage. The LOLBin
+Each rule now has at least **two** positive samples (recall is measured on more
+than one example), and precision is checked against 30 benign samples. Every
+rule also has at least **two explicitly labeled near-misses**, preventing
+unrelated clean files from creating a misleading appearance of negative
+coverage. The LOLBin
 rule (TITAN-003) now requires actual abuse evidence rather than routine
 `-NoProfile`, `cmd.exe /c`, or `cscript //nologo` administration. TITAN-004
 requires high entropy plus executable/packer context; generic encrypted bytes
@@ -63,6 +67,10 @@ remain visible through the separate entropy risk signal without becoming a
 detection. OLE, XOR, and PDF correlations now keep their evidence within the
 relevant artifact lineage, while multi-stage infrastructure requires explicit
 C2, beacon, or exfiltration context rather than IOC diversity alone.
+TITAN-009 requires scheduled-task creation, a logon/startup trigger, and strong
+LOLBin abuse context in one graph node; the measured Base64 variant verifies
+that decoded child content is covered, and both positives exercise deliberate
+TITAN-003/TITAN-009 risk stacking.
 
 **Risk separation:** benign samples score at most **12**; every malicious sample
 scores at least **15**. The classes do not overlap.
