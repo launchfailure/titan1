@@ -5133,6 +5133,23 @@
   },
   "fuzzing": {
     "harness": "fuzz/fuzz_decoders.py",
+    "scheduled_campaign": {
+      "artifact_retention_days": 30,
+      "harness": "fuzz/fuzz_surfaces.py",
+      "reproducer_minimization": "deletion",
+      "seconds": 1800,
+      "structured_seed_count": 6,
+      "surface_count": 6,
+      "surfaces": [
+        "decoder-analyzer",
+        "evidence-parsers",
+        "plugin-transport",
+        "server-request",
+        "report-load-export",
+        "workspace-load-save"
+      ],
+      "workflow": ".github/workflows/scheduled-fuzz.yml"
+    },
     "seed_count": 26,
     "seeds": [
       {

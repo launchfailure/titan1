@@ -16,6 +16,16 @@ from urllib.parse import urlsplit
 from .service import TitanService
 
 
+def parse_artifact_length(value: str | None, maximum: int) -> int | None:
+    """Return a bounded positive request length or ``None`` when invalid."""
+
+    try:
+        length = int(value or "")
+    except (TypeError, ValueError):
+        return None
+    return length if 0 < length <= maximum else None
+
+
 class TitanHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
 
@@ -91,12 +101,9 @@ class TitanHandler(BaseHTTPRequestHandler):
         if self._path() != ["v1", "jobs"]:
             self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
             return
-        try:
-            length = int(self.headers.get("Content-Length", ""))
-        except ValueError:
-            length = -1
         maximum = self.server.service.store.max_artifact_bytes
-        if length <= 0 or length > maximum:
+        length = parse_artifact_length(self.headers.get("Content-Length"), maximum)
+        if length is None:
             self._json(
                 HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
                 {"error": "invalid artifact size", "max_bytes": maximum},
