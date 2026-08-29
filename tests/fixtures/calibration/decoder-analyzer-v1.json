@@ -3,7 +3,8 @@
   "name": "Titan decoder and structured-analyzer calibration v1",
   "require_registry_parity": true,
   "required_case_classes": {
-    "analyzer": ["malformed", "truncated"]
+    "analyzer": ["malformed", "truncated"],
+    "decoder": ["malformed", "truncated"]
   },
   "cases": [
     {
@@ -910,6 +911,544 @@
       "case_class": "truncated",
       "data_base64": "N3q8rycc",
       "expected_recognition": true
+    },
+    {
+      "id": "ascii85-malformed",
+      "kind": "decoder",
+      "component": "ASCII85",
+      "case_class": "malformed",
+      "derive_from": "ascii85-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "ascii85-truncated",
+      "kind": "decoder",
+      "component": "ASCII85",
+      "case_class": "truncated",
+      "derive_from": "ascii85-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "raw-deflate-malformed",
+      "kind": "decoder",
+      "component": "RawDeflate",
+      "case_class": "malformed",
+      "derive_from": "raw-deflate-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "dbaf070d132cc48e461b1e70c2a716e3bf7d3acd0790a7fbed794a99cd79fbd7"
+    },
+    {
+      "id": "raw-deflate-truncated",
+      "kind": "decoder",
+      "component": "RawDeflate",
+      "case_class": "truncated",
+      "derive_from": "raw-deflate-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "powershell-encoded-malformed",
+      "kind": "decoder",
+      "component": "PowerShellEncodedCommand",
+      "case_class": "malformed",
+      "derive_from": "powershell-encoded-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "powershell-encoded-truncated",
+      "kind": "decoder",
+      "component": "PowerShellEncodedCommand",
+      "case_class": "truncated",
+      "derive_from": "powershell-encoded-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "javascript-escape-malformed",
+      "kind": "decoder",
+      "component": "JavaScriptEscape",
+      "case_class": "malformed",
+      "derive_from": "javascript-escape-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "javascript-escape-truncated",
+      "kind": "decoder",
+      "component": "JavaScriptEscape",
+      "case_class": "truncated",
+      "derive_from": "javascript-escape-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "497724aa18c0b9360dfacc48c29f0980ab52aa9707a75960f7905c0014de8fb0"
+    },
+    {
+      "id": "base58-malformed",
+      "kind": "decoder",
+      "component": "Base58",
+      "case_class": "malformed",
+      "derive_from": "base58-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "base58-truncated",
+      "kind": "decoder",
+      "component": "Base58",
+      "case_class": "truncated",
+      "derive_from": "base58-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "base91-malformed",
+      "kind": "decoder",
+      "component": "Base91",
+      "case_class": "malformed",
+      "derive_from": "base91-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "base91-truncated",
+      "kind": "decoder",
+      "component": "Base91",
+      "case_class": "truncated",
+      "derive_from": "base91-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "base64-malformed",
+      "kind": "decoder",
+      "component": "Base64",
+      "case_class": "malformed",
+      "derive_from": "base64-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "base64-truncated",
+      "kind": "decoder",
+      "component": "Base64",
+      "case_class": "truncated",
+      "derive_from": "base64-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "base64url-malformed",
+      "kind": "decoder",
+      "component": "Base64URL",
+      "case_class": "malformed",
+      "derive_from": "base64url-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "base64url-truncated",
+      "kind": "decoder",
+      "component": "Base64URL",
+      "case_class": "truncated",
+      "derive_from": "base64url-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "brotli-malformed",
+      "kind": "decoder",
+      "component": "Brotli",
+      "case_class": "malformed",
+      "derive_from": "brotli-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": false,
+      "required_modules": ["brotli"]
+    },
+    {
+      "id": "brotli-truncated",
+      "kind": "decoder",
+      "component": "Brotli",
+      "case_class": "truncated",
+      "derive_from": "brotli-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": false,
+      "required_modules": ["brotli"]
+    },
+    {
+      "id": "bz2-malformed",
+      "kind": "decoder",
+      "component": "Bz2",
+      "case_class": "malformed",
+      "derive_from": "bz2-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "bz2-truncated",
+      "kind": "decoder",
+      "component": "Bz2",
+      "case_class": "truncated",
+      "derive_from": "bz2-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "gzip-malformed",
+      "kind": "decoder",
+      "component": "Gzip",
+      "case_class": "malformed",
+      "derive_from": "gzip-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "gzip-truncated",
+      "kind": "decoder",
+      "component": "Gzip",
+      "case_class": "truncated",
+      "derive_from": "gzip-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "html-entity-malformed",
+      "kind": "decoder",
+      "component": "HTMLEntity",
+      "case_class": "malformed",
+      "derive_from": "html-entity-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "html-entity-truncated",
+      "kind": "decoder",
+      "component": "HTMLEntity",
+      "case_class": "truncated",
+      "derive_from": "html-entity-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "0f1d4d64ad91df8a2f3bac6afb92eb946c589e6c6912ac5a854184966626775b"
+    },
+    {
+      "id": "hex-malformed",
+      "kind": "decoder",
+      "component": "Hex",
+      "case_class": "malformed",
+      "derive_from": "hex-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "hex-truncated",
+      "kind": "decoder",
+      "component": "Hex",
+      "case_class": "truncated",
+      "derive_from": "hex-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "5863a9ab2ea6755b099947202d65e41897c495b118f15eb7bc0331aeb66f9729"
+    },
+    {
+      "id": "javascript-emulation-malformed",
+      "kind": "decoder",
+      "component": "JavaScriptEmulation",
+      "case_class": "malformed",
+      "derive_from": "javascript-emulation-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "javascript-emulation-truncated",
+      "kind": "decoder",
+      "component": "JavaScriptEmulation",
+      "case_class": "truncated",
+      "derive_from": "javascript-emulation-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "lzma-malformed",
+      "kind": "decoder",
+      "component": "LZMA",
+      "case_class": "malformed",
+      "derive_from": "lzma-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "lzma-truncated",
+      "kind": "decoder",
+      "component": "LZMA",
+      "case_class": "truncated",
+      "derive_from": "lzma-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "rot13-malformed",
+      "kind": "decoder",
+      "component": "ROT13",
+      "case_class": "malformed",
+      "derive_from": "rot13-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "rot13-truncated",
+      "kind": "decoder",
+      "component": "ROT13",
+      "case_class": "truncated",
+      "derive_from": "rot13-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "b0877fb36dfdb8fe2ff6bba55d6ab75ee77d78e9625f96fe39ae5c1f64c7dd59"
+    },
+    {
+      "id": "recursive-base64-malformed",
+      "kind": "decoder",
+      "component": "RecursiveBase64",
+      "case_class": "malformed",
+      "derive_from": "recursive-base64-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "recursive-base64-truncated",
+      "kind": "decoder",
+      "component": "RecursiveBase64",
+      "case_class": "truncated",
+      "derive_from": "recursive-base64-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "67562eb9cbfe8d1243f11dd06928d0e49dfeba7ac30796ea1f906ff21cc50e34"
+    },
+    {
+      "id": "url-malformed",
+      "kind": "decoder",
+      "component": "URLDecoder",
+      "case_class": "malformed",
+      "derive_from": "url-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "url-truncated",
+      "kind": "decoder",
+      "component": "URLDecoder",
+      "case_class": "truncated",
+      "derive_from": "url-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "fb2fc902b13697cdfcc498e42797fbe890edd518909bb27605b5d62fa87c8648"
+    },
+    {
+      "id": "utf16-malformed",
+      "kind": "decoder",
+      "component": "UTF16",
+      "case_class": "malformed",
+      "derive_from": "utf16-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "421eec99e0d55485cbe07330d32142f61d0d25ac79fb083f7034f2df87f2644e"
+    },
+    {
+      "id": "utf16-truncated",
+      "kind": "decoder",
+      "component": "UTF16",
+      "case_class": "truncated",
+      "derive_from": "utf16-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "15c9693d304e06052f67dadc582e2d7f599b7aeb3b9baa84b71856341002b26e"
+    },
+    {
+      "id": "unicode-escape-malformed",
+      "kind": "decoder",
+      "component": "UnicodeEscape",
+      "case_class": "malformed",
+      "derive_from": "unicode-escape-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "unicode-escape-truncated",
+      "kind": "decoder",
+      "component": "UnicodeEscape",
+      "case_class": "truncated",
+      "derive_from": "unicode-escape-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "2744e681469bd8d4c347a36e2d2c4fc240c33835d86f21485b7fbe962e365c13"
+    },
+    {
+      "id": "xor-malformed",
+      "kind": "decoder",
+      "component": "XOR",
+      "case_class": "malformed",
+      "derive_from": "xor-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "xor-truncated",
+      "kind": "decoder",
+      "component": "XOR",
+      "case_class": "truncated",
+      "derive_from": "xor-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "c8704cf413dd4d6aff43fcd96f50173894d111f9e390255ff0efd30e5b2d3704"
+    },
+    {
+      "id": "zlib-malformed",
+      "kind": "decoder",
+      "component": "ZLIB",
+      "case_class": "malformed",
+      "derive_from": "zlib-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "zlib-truncated",
+      "kind": "decoder",
+      "component": "ZLIB",
+      "case_class": "truncated",
+      "derive_from": "zlib-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "zstandard-malformed",
+      "kind": "decoder",
+      "component": "Zstandard",
+      "case_class": "malformed",
+      "derive_from": "zstandard-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": false,
+      "required_modules": ["zstandard"]
+    },
+    {
+      "id": "zstandard-truncated",
+      "kind": "decoder",
+      "component": "Zstandard",
+      "case_class": "truncated",
+      "derive_from": "zstandard-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "f53a6b24202eccf25a2e2d52e1e2dcae11ee6dc28c20a1f6e73411532abfab31",
+      "required_modules": ["zstandard"]
+    },
+    {
+      "id": "ole-malformed",
+      "kind": "decoder",
+      "component": "OLE",
+      "case_class": "malformed",
+      "derive_from": "ole-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "965517030b0ba7fc9ff380e25e65a45ece78ac16bf6e6259a1409d9ddfadb5c9"
+    },
+    {
+      "id": "ole-truncated",
+      "kind": "decoder",
+      "component": "OLE",
+      "case_class": "truncated",
+      "derive_from": "ole-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "pdf-malformed",
+      "kind": "decoder",
+      "component": "PDF",
+      "case_class": "malformed",
+      "derive_from": "pdf-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_output_sha256": "c32ed65e95c69894542183ed4b8007a04a1fdff10e6370614068e3a7358c1b05"
+    },
+    {
+      "id": "pdf-truncated",
+      "kind": "decoder",
+      "component": "PDF",
+      "case_class": "truncated",
+      "derive_from": "pdf-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "pem-malformed",
+      "kind": "decoder",
+      "component": "PEM",
+      "case_class": "malformed",
+      "derive_from": "pem-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": false
+    },
+    {
+      "id": "pem-truncated",
+      "kind": "decoder",
+      "component": "PEM",
+      "case_class": "truncated",
+      "derive_from": "pem-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": false,
+      "expected_match": false
     }
   ]
 }

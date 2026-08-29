@@ -14,7 +14,7 @@ CORPUS = Path(__file__).parent / "fixtures" / "calibration" / "decoder-analyzer-
 def test_bundled_decoder_analyzer_calibration_passes_quality_gate():
     report = CalibrationRunner().run(CORPUS)
 
-    assert report["case_count"] == 104
+    assert report["case_count"] == 156
     assert report["skipped_count"] == 0
     assert report["aggregate"]["precision"] == 1.0
     assert report["aggregate"]["recall"] == 1.0
@@ -25,12 +25,21 @@ def test_bundled_decoder_analyzer_calibration_passes_quality_gate():
     assert report["registry_coverage"]["missing_positive"] == []
     assert report["registry_coverage"]["missing_negative"] == []
     assert report["case_class_coverage"]["required_by_kind"] == {
-        "analyzer": ["malformed", "truncated"]
+        "analyzer": ["malformed", "truncated"],
+        "decoder": ["malformed", "truncated"],
     }
-    assert report["case_class_coverage"]["required_component_count"] == 13
-    assert report["case_class_coverage"]["covered_count"] == 13
+    assert report["case_class_coverage"]["required_component_count"] == 39
+    assert report["case_class_coverage"]["covered_count"] == 39
     assert report["case_class_coverage"]["missing"] == []
     assert report["case_class_coverage"]["per_component"]["analyzer:DEX"] == {
+        "clean_negative": 1,
+        "malformed": 1,
+        "nested_chain": 0,
+        "positive": 1,
+        "size_bound": 0,
+        "truncated": 1,
+    }
+    assert report["case_class_coverage"]["per_component"]["decoder:ASCII85"] == {
         "clean_negative": 1,
         "malformed": 1,
         "nested_chain": 0,
@@ -192,6 +201,130 @@ def test_invalid_required_case_classes_contract_is_rejected(tmp_path):
         CalibrationRunner(Config(tmp_path / "missing.json")).run(corpus)
 
 
+def test_derived_adversarial_case_mutations_are_deterministic(tmp_path):
+    corpus = tmp_path / "derived.json"
+    corpus.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "cases": [
+                    {
+                        "id": "ascii85-source",
+                        "kind": "decoder",
+                        "component": "ASCII85",
+                        "data_text": "<~87cURD_*#1Blmd$+T~>",
+                        "expected_match": True,
+                    },
+                    {
+                        "id": "ascii85-derived-malformed",
+                        "kind": "decoder",
+                        "component": "ASCII85",
+                        "case_class": "malformed",
+                        "derive_from": "ascii85-source",
+                        "mutation": "flip-middle-byte",
+                        "expected_match": False,
+                    },
+                    {
+                        "id": "ascii85-derived-truncated",
+                        "kind": "decoder",
+                        "component": "ASCII85",
+                        "case_class": "truncated",
+                        "derive_from": "ascii85-source",
+                        "mutation": "truncate-half",
+                        "expected_match": False,
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = CalibrationRunner(Config(tmp_path / "missing.json")).run(corpus)
+
+    assert report["quality_gate"]["passed"] is True
+    assert report["case_count"] == 3
+    assert (
+        report["case_class_coverage"]["per_component"]["decoder:ASCII85"]["malformed"]
+        == 1
+    )
+    assert (
+        report["case_class_coverage"]["per_component"]["decoder:ASCII85"]["truncated"]
+        == 1
+    )
+    assert not any(
+        "ascii85-derived" in str(failure)
+        for failure in report["quality_gate"]["failures"]
+    )
+
+
+def test_invalid_derived_case_reference_fails_closed(tmp_path):
+    corpus = tmp_path / "derived-invalid.json"
+    corpus.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "cases": [
+                    {
+                        "id": "derived-invalid",
+                        "kind": "decoder",
+                        "component": "ASCII85",
+                        "derive_from": "missing-source",
+                        "mutation": "truncate-half",
+                        "expected_match": False,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = CalibrationRunner(Config(tmp_path / "missing.json")).run(corpus)
+
+    assert report["quality_gate"]["passed"] is False
+    assert any(
+        "derived case references unknown case" in str(failure)
+        for failure in report["quality_gate"]["failures"]
+    )
+
+
+def test_cyclic_derived_case_references_fail_closed(tmp_path):
+    corpus = tmp_path / "derived-cycle.json"
+    corpus.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "cases": [
+                    {
+                        "id": "derived-cycle-a",
+                        "kind": "decoder",
+                        "component": "ASCII85",
+                        "derive_from": "derived-cycle-b",
+                        "mutation": "truncate-half",
+                        "expected_match": False,
+                    },
+                    {
+                        "id": "derived-cycle-b",
+                        "kind": "decoder",
+                        "component": "ASCII85",
+                        "derive_from": "derived-cycle-a",
+                        "mutation": "flip-middle-byte",
+                        "expected_match": False,
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = CalibrationRunner(Config(tmp_path / "missing.json")).run(corpus)
+
+    assert report["quality_gate"]["passed"] is False
+    assert any(
+        "derived case references contain a cycle" in str(failure)
+        for failure in report["quality_gate"]["failures"]
+    )
+
+
 def test_optional_dependency_skips_extraction_but_measures_recognition(tmp_path):
     corpus = tmp_path / "optional.json"
     corpus.write_text(
@@ -302,4 +435,4 @@ def test_cli_calibration_writes_report(tmp_path, capsys):
 
     assert cli.handle_info_commands(args, Config(tmp_path / "missing.json")) == 0
     assert json.loads(output.read_text(encoding="utf-8"))["quality_gate"]["passed"]
-    assert json.loads(capsys.readouterr().out)["case_count"] == 104
+    assert json.loads(capsys.readouterr().out)["case_count"] == 156

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+Decoder calibration depth:
+
+- Require every live built-in decoder, as well as every structural analyzer,
+  to carry deterministic malformed and truncated calibration cases.
+- Add compact derived-case mutations with pinned extraction hashes so a corpus
+  can retain its original fixture while measuring corrupt and partial variants.
+
 ## 2.1.0 — Depth, extensibility, and analyst workflows (2026-08-29)
 
 Detection-depth hardening:
