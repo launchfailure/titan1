@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+Determinism and compatibility:
+
+- Verify golden reports, root/lineage commitments, and frozen compatibility
+  fixtures on Windows across Python 3.10–3.13 in addition to the Linux matrix.
+- Lock legacy report, workspace, and Plugin API 1.0 reader behavior, including
+  `parent_id` navigation, and publish an explicit contract migration matrix.
+
 Code-assurance ratchet:
 
 - Raise the CI coverage floor from 70% to 75% while keeping the full package in

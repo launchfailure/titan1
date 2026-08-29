@@ -26,6 +26,7 @@
 - [DETECTION_AND_RISK.md](DETECTION_AND_RISK.md) — rules and operational severity.
 - [PLUGIN_API.md](PLUGIN_API.md) — plugin model and trust boundary.
 - [REPORT_SCHEMA.md](REPORT_SCHEMA.md) — report compatibility.
+- [SCHEMA_COMPATIBILITY.md](SCHEMA_COMPATIBILITY.md) — versioned contract and migration policy.
 - [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) — change workflow.
 - [TESTING.md](TESTING.md) — test strategy and commands.
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — contribution requirements.

@@ -24,6 +24,8 @@ errors remain explicit status entries; they never become an implicit pass.
 ## Versioning
 
 The primary report schema version is defined in the engine. The Intelligence sub-object has its own JSON Schema and compatibility tests because it is consumed independently.
+The cross-contract reader and migration guarantees are documented in
+[`SCHEMA_COMPATIBILITY.md`](SCHEMA_COMPATIBILITY.md).
 
 ## Compatibility rules
 

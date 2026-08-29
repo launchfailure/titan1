@@ -1,0 +1,35 @@
+{
+  "analysis_id": "legacy-case-001",
+  "root_hash": "legacy-root-hash",
+  "node_count": 2,
+  "nodes": [
+    {
+      "node_id": "root",
+      "parent_id": null,
+      "depth": 0,
+      "method": "SOURCE",
+      "sha256": "legacy-root-hash",
+      "content_preview": "YUdWc2JHOD0="
+    },
+    {
+      "node_id": "child",
+      "parent_id": "root",
+      "depth": 1,
+      "method": "DECODE_Base64",
+      "decoder_used": "Base64",
+      "sha256": "legacy-child-hash",
+      "content_preview": "hello"
+    }
+  ],
+  "iocs": {
+    "domains": ["legacy.example"]
+  },
+  "detections": [],
+  "risk": {
+    "level": "MEDIUM",
+    "score": 42
+  },
+  "intelligence": {
+    "classification": "suspicious"
+  }
+}

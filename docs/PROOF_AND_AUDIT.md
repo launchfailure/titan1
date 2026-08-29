@@ -12,9 +12,10 @@ python fuzz/fuzz_decoders.py --seconds 30
 
 `metrics.json` records calibration confusion metrics, live-registry and
 adversarial case-class coverage, the published benchmark baseline, every fuzz
-seed's size and SHA-256, supported sharing formats, and catalog size. The HTML
-is generated from that JSON without external assets or network access. All
-output is byte-for-byte reproducible from committed inputs.
+seed's size and SHA-256, golden and compatibility fixture hashes, the Linux and
+Windows determinism matrix, supported sharing formats, and catalog size. The
+HTML is generated from that JSON without external assets or network access.
+All output is byte-for-byte reproducible from committed inputs.
 
 The benchmark corpus is publicly available with the source repository under
 the project license. It combines golden transformation cases and larger

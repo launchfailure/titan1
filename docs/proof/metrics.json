@@ -5123,6 +5123,70 @@
     "hardware_normalized": true,
     "source": "tools/bench_baseline.json"
   },
+  "determinism": {
+    "compatibility_fixture_count": 3,
+    "compatibility_fixtures": [
+      {
+        "path": "tests/fixtures/compatibility/plugin-manifest-v1.0.json",
+        "sha256": "bb68fdd06e92b03def4e7d9d5303e93b97b3b279ef8df4c3170005c9da6ce4ac"
+      },
+      {
+        "path": "tests/fixtures/compatibility/report-v1.0.json",
+        "sha256": "626f24b93d5a7f099935199e8853dbc00c41d378198a0bb225b6448391244cfd"
+      },
+      {
+        "path": "tests/fixtures/compatibility/workspace-v1.0.json",
+        "sha256": "7d48406b3b5dc0ae61f63888a2012f1f40c6eefd65e3850e7eff2ded840b6fe8"
+      }
+    ],
+    "golden_fixture_count": 8,
+    "golden_fixtures": [
+      {
+        "path": "tests/golden/expected/cfb_macro.doc.json",
+        "sha256": "97eaab8d5f3ac24f1e933e6834507e6cae65d49a38737e47f882112bfd25269c"
+      },
+      {
+        "path": "tests/golden/expected/gzip_text.bin.json",
+        "sha256": "4b54183cbd7c7bd89bc991ed26beeb4e8553e9c769daa4176d2b53b06c098a2a"
+      },
+      {
+        "path": "tests/golden/expected/high_entropy.bin.json",
+        "sha256": "fa70648c9b57d0a3ca87fafac1aaaeb69616551c7d95f8d4fde7973cc4b7d5b0"
+      },
+      {
+        "path": "tests/golden/expected/multi_ioc.txt.json",
+        "sha256": "212f8e9ae6300c270412054fafd8a07fd58f1d696bae6dfca0d005e3f1c049dd"
+      },
+      {
+        "path": "tests/golden/expected/nested_base64.txt.json",
+        "sha256": "3e60a9c0bf7f3bd35bdf3ec3711df11d44e36c72959b1cefd204bec18c3191fd"
+      },
+      {
+        "path": "tests/golden/expected/pdf_js.pdf.json",
+        "sha256": "167b5ef74dfad56422155124acee26a52879eae637c7803b9341b09230363a66"
+      },
+      {
+        "path": "tests/golden/expected/plain_iocs.txt.json",
+        "sha256": "07e67760590d77c5c7ee084f63ee6334bb1c04c93fc7758e48522c42bf469d57"
+      },
+      {
+        "path": "tests/golden/expected/xor_url.bin.json",
+        "sha256": "780e6bec20e0c09838a233c23be9bc3a78119e6c96ac3ac08a2b204bcf9c1426"
+      }
+    ],
+    "lineage_property": "tests/test_determinism_contracts.py",
+    "platforms": [
+      "ubuntu-latest",
+      "windows-latest"
+    ],
+    "python_versions": [
+      "3.10",
+      "3.11",
+      "3.12",
+      "3.13"
+    ],
+    "workflow": ".github/workflows/tests.yml"
+  },
   "ecosystem": {
     "catalog": "registry/plugins-v1.json",
     "catalog_entries": 1,
