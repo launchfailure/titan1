@@ -25,7 +25,8 @@ Edit [titan_decoder/__init__.py](../titan_decoder/__init__.py):
 3. Run tests
 
 ```bash
-python -m pytest -q
+python -m pip install -e ".[dev,workbench-ui,desktop-ui,formats]" "yara-python>=4.5.4"
+python -m pytest -q --fail-on-skips
 ```
 
 Doc sync (recommended when behavior/options changed):
@@ -77,8 +78,9 @@ So the everyday release is just:
 ```bash
 # 1. Bump the version
 #    edit titan_decoder/__init__.py  ->  __version__ = "X.Y.Z"
-# 2. Run tests + update docs/CHANGELOG as needed
-python -m pytest -q
+# 2. Install the complete test surface, run it, and update docs/CHANGELOG as needed
+python -m pip install -e ".[dev,workbench-ui,desktop-ui,formats]" "yara-python>=4.5.4"
+python -m pytest -q --fail-on-skips
 # 3. Commit, then tag and push the tag
 git tag -a vX.Y.Z -m "Titan Decoder vX.Y.Z"
 git push origin vX.Y.Z
@@ -161,7 +163,8 @@ Use SemVer:
 ### 2) Run tests locally
 
 ```bash
-python -m pytest -q
+python -m pip install -e ".[dev,workbench-ui,desktop-ui,formats]" "yara-python>=4.5.4"
+python -m pytest -q --fail-on-skips
 ```
 
 ### 3) Build distributions

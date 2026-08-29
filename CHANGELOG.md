@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.1.0 — Depth, extensibility, and analyst workflows (2026-08-29)
+
 Detection-depth hardening:
 
 - Derive detection-quality coverage from the live built-in rule registry so a
