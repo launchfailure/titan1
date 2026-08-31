@@ -50,6 +50,7 @@ from titan_decoder.core.analyzers.base import (
     PEAnalyzer,
     ELFAnalyzer,
 )
+from titan_decoder.core.analyzers.executable_formats import VirtualDiskAnalyzer
 from titan_decoder.core.analyzers.structured import (
     EmailAnalyzer,
     LnkAnalyzer,
@@ -124,6 +125,7 @@ def _analyzers() -> list:
         ),
         PEAnalyzer(),
         ELFAnalyzer(),
+        VirtualDiskAnalyzer(structured),
         EmailAnalyzer(structured),
         LnkAnalyzer(),
         MsiAnalyzer(structured),

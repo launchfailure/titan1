@@ -53,6 +53,16 @@ def test_tar_prescan_many_tiny_entries_is_not_quadratic():
     assert len(out) <= 25
 
 
+def test_archive_prescans_stop_at_file_cap():
+    zip_buffer = io.BytesIO(_zip_of_empty(100))
+    with zipfile.ZipFile(zip_buffer) as archive:
+        assert len(ZipAnalyzer({"max_zip_files": 3})._pre_scan_zip(archive)) == 3
+
+    tar_buffer = io.BytesIO(_tar_of_empty(100))
+    with tarfile.open(fileobj=tar_buffer) as archive:
+        assert len(TarAnalyzer({"max_tar_files": 3})._pre_scan_tar(archive)) == 3
+
+
 def test_zip_total_size_cap_still_honored():
     files = [(f"file_{i}.bin", os.urandom(8000)) for i in range(40)]
     expected = {nm: hashlib.sha256(c).hexdigest() for nm, c in files}

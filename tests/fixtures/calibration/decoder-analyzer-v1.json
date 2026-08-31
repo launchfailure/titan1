@@ -2,7 +2,6 @@
   "schema_version": "1.0",
   "name": "Titan decoder and structured-analyzer calibration v1",
   "require_registry_parity": true,
-  "exempt_components": ["analyzer:MSI", "analyzer:OneNote", "analyzer:RTF"],
   "required_case_classes": {
     "analyzer": ["malformed", "truncated"],
     "decoder": ["malformed", "truncated"]
@@ -1447,6 +1446,176 @@
       "component": "PEM",
       "case_class": "truncated",
       "derive_from": "pem-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "rtf-positive",
+      "kind": "analyzer",
+      "component": "RTF",
+      "case_class": "positive",
+      "data_text": "{\\rtf1\\ansi Calibration RTF http://rtf.example/a\\par {\\object\\objemb{\\*\\objclass Package}{\\*\\objdata 4d5a900043414c4942524154494f4e}}}",
+      "expected_match": true,
+      "expected_artifacts": ["rtf_summary.json", "rtf_text.txt", "rtf_object_001.exe"]
+    },
+    {
+      "id": "rtf-negative",
+      "kind": "analyzer",
+      "component": "RTF",
+      "case_class": "clean_negative",
+      "data_text": "This prose mentions RTF but is not a Rich Text Format document.",
+      "expected_match": false
+    },
+    {
+      "id": "rtf-malformed",
+      "kind": "analyzer",
+      "component": "RTF",
+      "case_class": "malformed",
+      "derive_from": "rtf-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["rtf_summary.json", "rtf_text.txt"]
+    },
+    {
+      "id": "rtf-truncated",
+      "kind": "analyzer",
+      "component": "RTF",
+      "case_class": "truncated",
+      "derive_from": "rtf-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["rtf_summary.json", "rtf_text.txt"]
+    },
+    {
+      "id": "msi-positive",
+      "kind": "analyzer",
+      "component": "MSI",
+      "case_class": "positive",
+      "data_base64_parts": [
+        "0M8R4KGxGuEAAAAAAAAAAAAAAAAAAAAAPgADAP7/CQAGAAAAAAAAAAAAAAABAAAAAQAAAAAAAAAAEAAABAAAAAEAAAD+////AAAAAAAAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9////AgAAAP7////+/////v//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////",
+        "/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////1IAbwBvAHQAIABFAG4AdAByAHkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWAAUA//////////8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAMAAAAAAAAAAXwBTAHQAcgBpAG4AZwBQAG8AbwBsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgAAgH/////AgAAAP////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAAAAAABfAFMAdAByAGkAbgBnAEQAYQB0AGEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAACAf////8DAAAA/////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAuAAAAAAAAAEIAaQBuAGEAcgB5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOAAEB//////////8EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/v///wAAAAAAAAAA",
+        "VQBwAGQAYQB0AGUAcgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAgH///////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAADgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADkBAAADwABAB8AAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQ2FsaWJyYXRpb24gTVNJaHR0cHM6Ly9tc2kuZXhhbXBsZS9jYWxpYnJhdGlvbgAAAAAAAAAAAAAAAAAAAAAAAE1aIENBTElCUkFUSU9OAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7////+/////v//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////"
+      ],
+      "expected_match": true,
+      "expected_artifacts": ["msi_summary.json", "msi_strings.txt"]
+    },
+    {
+      "id": "msi-negative",
+      "kind": "analyzer",
+      "component": "MSI",
+      "case_class": "clean_negative",
+      "data_text": "This ordinary text mentions an MSI installer but is not a package.",
+      "expected_match": false
+    },
+    {
+      "id": "msi-malformed",
+      "kind": "analyzer",
+      "component": "MSI",
+      "case_class": "malformed",
+      "derive_from": "msi-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["msi_summary.json"]
+    },
+    {
+      "id": "msi-truncated",
+      "kind": "analyzer",
+      "component": "MSI",
+      "case_class": "truncated",
+      "derive_from": "msi-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["msi_summary.json"]
+    },
+    {
+      "id": "virtual-disk-positive",
+      "kind": "analyzer",
+      "component": "VirtualDisk",
+      "case_class": "positive",
+      "data_base64_parts": [
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAABwAAAAEAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVapodHRwczovL2NhbGlicmF0aW9uLmRpc2suZXhhbXBsZS9zdGFnZQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGNvbmVjdGl4AAAAAgABAAD//////////wAAAABUSVROAAEAAFdpMmsAAAAAAAAEAAAAAAAAAAQAAAEQPwAAAAL//+tQEjRWeBI0VniavN7wEjRWeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      ],
+      "expected_match": true,
+      "expected_artifacts": ["virtual_disk_metadata.json", "disk_partition_001.bin"]
+    },
+    {
+      "id": "virtual-disk-negative",
+      "kind": "analyzer",
+      "component": "VirtualDisk",
+      "case_class": "clean_negative",
+      "data_text": "This prose mentions VHD and VHDX but is not a virtual disk image.",
+      "expected_match": false
+    },
+    {
+      "id": "virtual-disk-malformed",
+      "kind": "analyzer",
+      "component": "VirtualDisk",
+      "case_class": "malformed",
+      "derive_from": "virtual-disk-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["virtual_disk_metadata.json", "disk_partition_001.bin"]
+    },
+    {
+      "id": "virtual-disk-truncated",
+      "kind": "analyzer",
+      "component": "VirtualDisk",
+      "case_class": "truncated",
+      "derive_from": "virtual-disk-positive",
+      "mutation": "truncate-half",
+      "expected_recognition": false,
+      "expected_match": false
+    },
+    {
+      "id": "onenote-positive",
+      "kind": "analyzer",
+      "component": "OneNote",
+      "case_class": "positive",
+      "data_base64_parts": [
+        "5FJce4zYp02usVN40CmW0wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP92aEBuR9Uml0BeR7ciu2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOcW471lJhFFpMSNTQt6nqwkAAAAAAAAAAAAAAAAAAAAAAAAAE1aIENBTElCUkFUSU9OIGh0dHBzOi8vb25lLmV4YW1wbGUvYSKn+3F5DwtKuxOJklZCayQ="
+      ],
+      "expected_match": true,
+      "expected_artifacts": ["onenote_summary.json", "onenote_strings.txt", "onenote_file_001.exe"]
+    },
+    {
+      "id": "onenote-negative",
+      "kind": "analyzer",
+      "component": "OneNote",
+      "case_class": "clean_negative",
+      "data_text": "This prose mentions OneNote but is not a section file.",
+      "expected_match": false
+    },
+    {
+      "id": "onenote-malformed",
+      "kind": "analyzer",
+      "component": "OneNote",
+      "case_class": "malformed",
+      "derive_from": "onenote-positive",
+      "mutation": "flip-middle-byte",
+      "expected_recognition": true,
+      "expected_match": true,
+      "expected_artifacts": ["onenote_summary.json"]
+    },
+    {
+      "id": "onenote-truncated",
+      "kind": "analyzer",
+      "component": "OneNote",
+      "case_class": "truncated",
+      "derive_from": "onenote-positive",
       "mutation": "truncate-half",
       "expected_recognition": false,
       "expected_match": false

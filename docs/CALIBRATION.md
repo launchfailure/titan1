@@ -20,10 +20,10 @@ The runner produces:
 - case-level observations and errors;
 - a configurable precision/recall quality gate.
 
-The committed v1 corpus has 156 deterministic cases. It covers positive and
-negative recognition for all 39 live built-in decoders and analyzers, plus one
+The committed v1 corpus has 172 deterministic cases. It covers positive and
+negative recognition for all 43 live built-in decoders and analyzers, plus one
 malformed and one truncated case for every one of those components.
-Thirty-eight components also have positive extraction cases;
+Forty-two components also have positive extraction cases;
 `OptionalArchive` currently has recognition coverage only because positive
 extraction depends on separately installed format libraries. Brotli and
 Zstandard extraction cases are committed and run when their optional Python
@@ -47,17 +47,11 @@ case, or when a required component lacks an adversarial case class.
 
 ## Corpus contract
 
-`exempt_components` can explicitly identify newly introduced built-ins that
-are temporarily outside the registry-parity and malformed/truncated case-class
-ratchets. Exemptions remain visible in the report and should be removed as soon
-as their binary calibration fixtures land. MSI, OneNote, and RTF currently use
-this transition path; their focused, detection-corpus, and fuzz tests still run
-in CI.
-
 The corpus uses schema version `1.0`. Each case contains `id`, `kind`
 (`decoder` or `analyzer`), `component`, exactly one of `data_text`,
-`data_base64`, `data_hex`, a corpus-relative `fixture`, or `derive_from`, and at
-least one of `expected_recognition` or `expected_match`. A derived case names a
+`data_base64`, line-wrapped `data_base64_parts`, `data_hex`, a corpus-relative
+`fixture`, or `derive_from`, and at least one of `expected_recognition` or
+`expected_match`. A derived case names a
 previous corpus case and applies either `flip-middle-byte` or `truncate-half`;
 this keeps adversarial mutations reproducible without copying large binary
 fixtures. When `expected_recognition` is omitted it defaults to
@@ -66,6 +60,10 @@ Decoder positives may add `expected_output_sha256`; analyzer positives may add
 `expected_artifacts`. Cases whose extraction needs an optional package declare
 `required_modules`; recognition still runs when the package is absent, while
 extraction is recorded as dependency-skipped.
+
+`data_base64_parts` is a non-empty array of strings joined before strict Base64
+decoding. It keeps large deterministic binary samples reviewable without
+committing opaque fixture files.
 
 Cases can declare `case_class` as `positive`, `clean_negative`, `malformed`,
 `truncated`, `size_bound`, or `nested_chain`. When omitted, the runner infers

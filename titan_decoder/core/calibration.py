@@ -116,16 +116,10 @@ class CalibrationRunner:
             raise ValueError("require_registry_parity must be boolean")
         require_registry_parity = require_registry_parity_value
         required_case_classes = self._required_case_classes(value)
-        raw_exemptions = value.get("exempt_components", [])
-        if not isinstance(raw_exemptions, list) or not all(
-            isinstance(item, str) for item in raw_exemptions
-        ):
-            raise ValueError("exempt_components must be a string list")
-        exempt_components = set(raw_exemptions)
-        unknown_exemptions = exempt_components - set(registry_keys)
-        if unknown_exemptions:
+        if "exempt_components" in value:
             raise ValueError(
-                f"exempt_components contains unknown entries: {sorted(unknown_exemptions)}"
+                "exempt_components is not supported; every live built-in must be "
+                "covered by the calibration corpus"
             )
         details: list[dict[str, Any]] = []
         counts: dict[str, dict[str, int]] = {}
@@ -348,8 +342,6 @@ class CalibrationRunner:
         missing_negative: list[str] = []
         if require_registry_parity:
             for key in registry_keys:
-                if key in exempt_components:
-                    continue
                 item = coverage.get(key, {})
                 if int(item.get("recognition_positive_cases", 0)) < 1:
                     missing_positive.append(key)
@@ -371,7 +363,6 @@ class CalibrationRunner:
             f"{kind}:{name}"
             for kind in required_case_classes
             for name in builtin_components[kind]
-            if f"{kind}:{name}" not in exempt_components
         )
         missing_case_classes: list[dict[str, str]] = []
         covered_case_class_components: list[str] = []
@@ -404,7 +395,6 @@ class CalibrationRunner:
             "recognition_components": recognition_by_component,
             "registry_coverage": {
                 "required": require_registry_parity,
-                "exempt_components": sorted(exempt_components),
                 "live_builtin_components": registry_keys,
                 "live_builtin_count": len(registry_keys),
                 "covered_components": covered_registry,
@@ -505,7 +495,13 @@ class CalibrationRunner:
     ) -> bytes:
         representations = [
             key
-            for key in ("data_text", "data_base64", "data_hex", "fixture")
+            for key in (
+                "data_text",
+                "data_base64",
+                "data_base64_parts",
+                "data_hex",
+                "fixture",
+            )
             if key in value
         ]
         derive_from = value.get("derive_from")
@@ -552,6 +548,15 @@ class CalibrationRunner:
             return str(value[key]).encode("utf-8")
         if key == "data_base64":
             return base64.b64decode(str(value[key]), validate=True)
+        if key == "data_base64_parts":
+            parts = value[key]
+            if (
+                not isinstance(parts, list)
+                or not parts
+                or not all(isinstance(part, str) for part in parts)
+            ):
+                raise ValueError("data_base64_parts must be a non-empty string list")
+            return base64.b64decode("".join(parts), validate=True)
         if key == "data_hex":
             return bytes.fromhex(str(value[key]))
         path = (root / str(value[key])).resolve()

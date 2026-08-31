@@ -44,7 +44,7 @@ from ..decoders.advanced import (
     ZstandardDecoder,
 )
 from .analyzers.base import Analyzer, ZipAnalyzer, TarAnalyzer, PEAnalyzer, ELFAnalyzer
-from .analyzers.executable_formats import DexAnalyzer, MachOAnalyzer
+from .analyzers.executable_formats import DexAnalyzer, MachOAnalyzer, VirtualDiskAnalyzer
 from .analyzers.steganography import SteganographyAnalyzer
 from .analyzers.emulation import X86ShellcodeEmulationAnalyzer
 from .analyzers.structured import (
@@ -301,6 +301,8 @@ class TitanEngine:
             self.analyzers.append(OneNoteAnalyzer(structured_config))
         if self.config.get("analyzers", {}).get("optional_archives", True):
             self.analyzers.append(OptionalArchiveAnalyzer(structured_config))
+        if self.config.get("analyzers", {}).get("virtual_disk", True):
+            self.analyzers.append(VirtualDiskAnalyzer(structured_config))
         if self.config.get("analyzers", {}).get("zip", True):
             zip_config = {
                 "max_zip_files": self.config.get("max_zip_files", 25),
@@ -311,6 +313,7 @@ class TitanEngine:
                     "max_zip_file_size", 50 * 1024 * 1024
                 ),
                 "max_compression_ratio": self.config.get("max_compression_ratio", 100),
+                "zip_passwords": self.config.get("zip_passwords", ["infected"]),
             }
             self.analyzers.append(ZipAnalyzer(zip_config))
         if self.config.get("analyzers", {}).get("tar", True):
@@ -997,6 +1000,10 @@ class TitanEngine:
         cfg = copy.deepcopy(getattr(self.config, "_config", {}))
         if isinstance(cfg, dict) and cfg.get("virustotal_api_key"):
             cfg["virustotal_api_key"] = "[REDACTED]"
+        if isinstance(cfg, dict) and "zip_passwords" in cfg:
+            passwords = cfg.get("zip_passwords")
+            password_count = len(passwords) if isinstance(passwords, list) else 1
+            cfg["zip_passwords"] = ["[REDACTED]"] * min(password_count, 8)
 
         decoder_names = []
         for d in self.decoders:
