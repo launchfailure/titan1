@@ -9,10 +9,13 @@
       "DEX",
       "ELF",
       "Email",
+      "MSI",
       "Mach-O",
       "OfficeOOXML",
+      "OneNote",
       "OptionalArchive",
       "PE",
+      "RTF",
       "Script",
       "Steganography",
       "TAR",
@@ -83,7 +86,7 @@
     },
     {
       "path": "titan_decoder/core/analyzers/structured.py",
-      "sha256": "29d7ddfe8eb970a1c305ccb4ff842d90975d88b4ca55c9a5e0ed0ddc0954474d"
+      "sha256": "f810acfac6e1ed9572dba0b0285a7fbe67dd60822a4616f0aea0a4b9aed27744"
     },
     {
       "path": "titan_decoder/decoders/advanced.py",

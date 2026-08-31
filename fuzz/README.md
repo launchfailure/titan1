@@ -15,8 +15,9 @@ Every decoder and analyzer must, on **any** input (random or malformed):
 3. **Always terminate quickly** — a single call finishes well under the
    engine's per-decode timeout.
 
-`check_all(data)` runs one input through everything and raises `InvariantError`
-on a violation.
+`check_all(data)` runs one input through every built-in decoder plus the core
+archive, executable, email, Office, RTF, script, LNK, MSI, and OneNote
+analyzers and raises `InvariantError` on a violation.
 
 ## Running
 

@@ -77,6 +77,8 @@ if _HAS_HYPOTHESIS:
                     b"\x1f\x8b",
                     b"BZh",
                     b"\xfd7zXZ",
+                    b"{\\rtf1",
+                    bytes.fromhex("e4525c7b8cd8a74daeb15378d02996d3"),
                 ]
             ),
             st.binary(min_size=0, max_size=2048),

@@ -7,12 +7,14 @@ documents the methodology, the current numbers, and how to reproduce them.
 ## Methodology
 
 - **Corpus** — `tools/corpus_samples.py` generates a labeled set of
-  documentation-range, synthetic samples: **14 malicious** (two per rule, so
+  documentation-range, synthetic samples: **24 malicious** (two per rule, so
   per-rule recall is measured on more than one example — a rule that only
   matched its exact design sample would show up as a miss) covering deep base64
   nesting, CFB macro docs with a network IOC, LOLBin command lines, high-entropy
   packed blobs, multi-stage IOC infrastructure, XOR-obfuscated C2, and PDFs
-  carrying an embedded PE/ELF; and **13 benign**, including **adversarial
+  carrying an embedded PE/ELF, hidden-media payloads, RTF active objects, XLM
+  execution formulas, MSI executable delivery, and OneNote embedded-file
+  delivery; and **22 benign**, including **adversarial
   near-misses** that deliberately sit just under a rule's trigger (a single-URL
   doc, a JS-only PDF with no embedded executable, a single-layer base64 blob, a
   two-domain config, a benign shell script, and a documentation snippet that
@@ -44,14 +46,19 @@ Committed machine-readable numbers: [`detection_metrics.json`](detection_metrics
 | TITAN-005 | 1.000     | 1.000  | 1.000 |
 | TITAN-006 | 1.000     | 1.000  | 1.000 |
 | TITAN-007 | 1.000     | 1.000  | 1.000 |
+| TITAN-008 | 1.000     | 1.000  | 1.000 |
+| TITAN-009 | 1.000     | 1.000  | 1.000 |
+| TITAN-010 | 1.000     | 1.000  | 1.000 |
+| TITAN-011 | 1.000     | 1.000  | 1.000 |
+| TITAN-012 | 1.000     | 1.000  | 1.000 |
 
 Each rule now has **two** positive samples (recall is measured on more than one
-example), and precision is checked against 13 benign samples that include
+example), and precision is checked against 22 benign samples that include
 adversarial near-misses. The LOLBin rule (TITAN-003) requires an actual
 abuse/execution-context token, so a document that merely *names* PowerShell or
 cmd.exe no longer false-positives.
 
-**Risk separation:** benign samples score at most **7**; every malicious sample
+**Risk separation:** benign samples score at most **9**; every malicious sample
 scores at least **15**. The classes do not overlap.
 
 These numbers reflect a deliberately small, clean corpus and are a regression
@@ -68,8 +75,9 @@ python tools/eval_detections.py --json docs/detection_metrics.json
 ```
 
 `tests/test_detection_eval.py` runs the same evaluation in CI and asserts that
-the benign/malicious risk scores stay separated and that no rule's precision
-regresses below 0.8, so the corpus stays honest as rules evolve.
+the benign/malicious risk scores stay separated, every built-in rule has at
+least two positives, and no rule's precision or recall regresses below 0.8, so
+the corpus stays honest as rules evolve.
 
 ## Extending the corpus
 

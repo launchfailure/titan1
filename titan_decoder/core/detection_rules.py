@@ -260,6 +260,78 @@ class CorrelationRulesEngine:
             )
         )
 
+        # Rule 9: an RTF document combines a carved active payload with either
+        # network infrastructure or automatic OLE update/link behavior. A
+        # plain RTF hyperlink or a passive embedded attachment is insufficient.
+        self.rules.append(
+            DetectionRule(
+                rule_id="TITAN-009",
+                name="RTF Embedded Active Content",
+                description=(
+                    "RTF contains an executable or auto-linked embedded object "
+                    "with network or automatic-update behavior"
+                ),
+                severity="high",
+                detect_fn=lambda report, iocs: self._detect_rtf_active_content(
+                    report, iocs
+                ),
+                attack_ids=["T1204.002"],
+            )
+        )
+
+        # Rule 10: an Excel 4.0 macro sheet invokes a high-risk execution,
+        # registration, file-write, or dispatch function. An ordinary formula
+        # on a macro sheet remains visible to analysts but does not fire.
+        self.rules.append(
+            DetectionRule(
+                rule_id="TITAN-010",
+                name="Excel 4.0 Macro Execution",
+                description=(
+                    "An OOXML Excel 4.0 macro sheet uses a high-risk execution "
+                    "or native-call function"
+                ),
+                severity="high",
+                detect_fn=lambda report, iocs: self._detect_xlm_execution(report),
+                attack_ids=["T1059.005", "T1204.002"],
+            )
+        )
+
+        # Rule 11: an MSI database carries an executable payload and network
+        # infrastructure. A normal installer, or an installer that merely
+        # contains a URL, remains a non-match.
+        self.rules.append(
+            DetectionRule(
+                rule_id="TITAN-011",
+                name="MSI Embedded Executable Delivery",
+                description=(
+                    "A Windows Installer package contains an executable payload "
+                    "and a network indicator"
+                ),
+                severity="high",
+                detect_fn=lambda report, iocs: self._detect_msi_delivery(report, iocs),
+                attack_ids=["T1218.007", "T1204.002"],
+            )
+        )
+
+        # Rule 12: a documented OneNote embedded-file object carries an
+        # executable and network infrastructure. Plain notes and passive
+        # attachments do not meet the delivery-chain threshold.
+        self.rules.append(
+            DetectionRule(
+                rule_id="TITAN-012",
+                name="OneNote Embedded Executable Delivery",
+                description=(
+                    "A OneNote section contains an executable embedded-file "
+                    "object and a network indicator"
+                ),
+                severity="high",
+                detect_fn=lambda report, iocs: self._detect_onenote_delivery(
+                    report, iocs
+                ),
+                attack_ids=["T1204.002"],
+            )
+        )
+
         logger.info(f"Loaded {len(self.rules)} correlation rules")
 
     def _detect_deep_base64(self, report: Dict[str, Any]) -> bool:
@@ -435,6 +507,116 @@ class CorrelationRulesEngine:
             if artifact.startswith("steg_"):
                 return True
         return False
+
+    def _detect_rtf_active_content(
+        self, report: Dict[str, Any], iocs: Dict[str, Any]
+    ) -> bool:
+        """Detect a strong RTF embedded-object delivery chain."""
+        nodes = report.get("nodes", [])
+        has_rtf = any(
+            "rtf"
+            in (
+                str(node.get("method") or "")
+                + " "
+                + str(node.get("decoder_used") or "")
+            ).lower()
+            for node in nodes
+        )
+        if not has_rtf:
+            return False
+        object_names = [str(node.get("artifact_name") or "").lower() for node in nodes]
+        has_object = any(name.startswith("rtf_object_") for name in object_names)
+        has_executable = any(name.endswith(".exe") for name in object_names)
+        summary_text = "\n".join(
+            str(node.get("content_preview") or "").lower()
+            for node in nodes
+            if str(node.get("artifact_name") or "").lower() == "rtf_summary.json"
+        )
+        auto_behavior = any(
+            marker in summary_text
+            for marker in (
+                '"auto_linked_object": true',
+                '"object_update_requested": true',
+            )
+        )
+        has_network = bool(
+            iocs.get("urls") or iocs.get("ipv4_public") or iocs.get("domains")
+        )
+        return (
+            has_object
+            and (has_executable or auto_behavior)
+            and (has_network or auto_behavior)
+        )
+
+    def _detect_xlm_execution(self, report: Dict[str, Any]) -> bool:
+        """Detect high-risk functions extracted from an XLM macro sheet."""
+        functions = (
+            "call(",
+            "exec(",
+            "fopen(",
+            "formula(",
+            "formula.fill(",
+            "fwrite(",
+            "register(",
+            "register.id(",
+            "run(",
+            "send.keys(",
+        )
+        for node in report.get("nodes", []):
+            if str(node.get("artifact_name") or "").lower() != "office_xlm_macros.txt":
+                continue
+            preview = str(node.get("content_preview") or "").lower()
+            if any(function in preview for function in functions):
+                return True
+        return False
+
+    def _detect_msi_delivery(
+        self, report: Dict[str, Any], iocs: Dict[str, Any]
+    ) -> bool:
+        """Detect executable delivery from a recognized MSI database."""
+        nodes = report.get("nodes", [])
+        has_msi = any(
+            "msi"
+            in (
+                str(node.get("method") or "")
+                + " "
+                + str(node.get("decoder_used") or "")
+            ).lower()
+            for node in nodes
+        )
+        has_executable = any(
+            str(node.get("artifact_name") or "").lower().startswith("msi_payload_")
+            and str(node.get("artifact_name") or "").lower().endswith(".exe")
+            for node in nodes
+        )
+        has_network = bool(
+            iocs.get("urls") or iocs.get("ipv4_public") or iocs.get("domains")
+        )
+        return has_msi and has_executable and has_network
+
+    def _detect_onenote_delivery(
+        self, report: Dict[str, Any], iocs: Dict[str, Any]
+    ) -> bool:
+        """Detect executable delivery from a recognized OneNote section."""
+        nodes = report.get("nodes", [])
+        has_onenote = any(
+            "onenote"
+            in (
+                str(node.get("method") or "")
+                + " "
+                + str(node.get("decoder_used") or "")
+            ).lower()
+            for node in nodes
+        )
+        has_executable = any(
+            str(node.get("artifact_name") or "").lower().startswith("onenote_file_")
+            and str(node.get("artifact_name") or "").lower().endswith(".exe")
+            for node in nodes
+        )
+        has_network = bool(
+            iocs.get("urls") or iocs.get("ipv4_public") or iocs.get("domains")
+        )
+        return has_onenote and has_executable and has_network
 
     def evaluate_all(
         self, report: Dict[str, Any], iocs: Dict[str, Any]

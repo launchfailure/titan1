@@ -16,6 +16,8 @@
 - [ASSURANCE_PIPELINE.md](ASSURANCE_PIPELINE.md) — six-control verdicts and provider contracts.
 - [DEEP_SCAN_AND_QUARANTINE.md](DEEP_SCAN_AND_QUARANTINE.md) — recursive static scanning and recoverable quarantine.
 - [CALIBRATION.md](CALIBRATION.md) — decoder/analyzer precision and recall gates.
+- [RTF_ANALYSIS.md](RTF_ANALYSIS.md) — bounded RTF text and embedded-object extraction.
+- [MSI_AND_ONENOTE_ANALYSIS.md](MSI_AND_ONENOTE_ANALYSIS.md) — bounded installer and OneNote embedded-file extraction.
 
 ## Developers
 

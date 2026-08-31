@@ -45,7 +45,7 @@ Titan is designed for repeatable analysis rather than opaque “best guess” de
 | Recursive decoding | Base64 variants, ASCII85, Base58, Base91, PEM, Hex, ROT13, PowerShell EncodedCommand, JavaScript/URL/HTML/Unicode escapes, UTF-16, XOR |
 | Compression | Gzip, Bz2, LZMA, Zlib, raw Deflate, and optional Brotli/Zstandard with bounded output |
 | Opt-in decoders | Base32, UUEncode, ASN.1, Quoted-Printable |
-| Structural formats | PDF, OLE/CFB, RFC/MIME email, OOXML, scripts, Windows LNK, and image/media steganography artifacts |
+| Structural formats | PDF, OLE/CFB, RFC/MIME email, OOXML/XLM, RTF, MSI, OneNote embedded files, scripts, Windows LNK, and image/media steganography artifacts |
 | Archive analysis | ZIP/TAR plus optional 7z, RAR, ISO, and CAB extraction with count/size/ratio limits |
 | Executables | Deeper PE/ELF section, entropy, import, entry-point, overlay, interpreter, and anomaly analysis |
 | Indicators | URLs, domains, IPs, emails, hashes, and normalized evidence indicators |
@@ -350,6 +350,7 @@ See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 | [Assurance pipeline](docs/ASSURANCE_PIPELINE.md) | Six fail-closed controls, verdict policy, VM and provenance attestations |
 | [Deep scan and quarantine](docs/DEEP_SCAN_AND_QUARANTINE.md) | Recursive static scanning, quarantine policy, and restoration |
 | [Calibration](docs/CALIBRATION.md) | Labeled decoder/analyzer quality metrics and gates |
+| [MSI and OneNote analysis](docs/MSI_AND_ONENOTE_ANALYSIS.md) | Bounded installer and OneNote embedded-file recovery |
 | [Pipelines](docs/PIPELINES.md) | End-to-end execution, decoder engine, and analyzer pipeline |
 | [Developer guide](docs/DEVELOPER_GUIDE.md) | Repository layout and implementation workflow |
 | [Intelligence Layer](docs/INTELLIGENCE_LAYER.md) | Signals, classification, ranking, and compatibility |

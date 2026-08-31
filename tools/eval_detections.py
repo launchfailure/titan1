@@ -34,17 +34,6 @@ from titan_decoder.core.risk_scoring import RiskScoringEngine  # noqa: E402
 from titan_decoder.core.ioc_export import build_ioc_summary  # noqa: E402
 
 
-ALL_RULES = [
-    "TITAN-001",
-    "TITAN-002",
-    "TITAN-003",
-    "TITAN-004",
-    "TITAN-005",
-    "TITAN-006",
-    "TITAN-007",
-]
-
-
 def evaluate() -> Dict:
     cfg = Config()
     cfg.set("max_recursion_depth", 8)
@@ -52,11 +41,16 @@ def evaluate() -> Dict:
     engine = TitanEngine(cfg)
     rules_engine = CorrelationRulesEngine()
     risk_engine = RiskScoringEngine()
+    all_rules = sorted(
+        rule.rule_id
+        for rule in rules_engine.rules
+        if getattr(rule, "source", {"type": "builtin"}).get("type") == "builtin"
+    )
 
     corpus = build_corpus()
 
     # Per-rule confusion-matrix counts.
-    counts = {r: {"tp": 0, "fp": 0, "fn": 0, "tn": 0} for r in ALL_RULES}
+    counts = {r: {"tp": 0, "fp": 0, "fn": 0, "tn": 0} for r in all_rules}
     per_sample = []
     benign_scores: List[int] = []
     malicious_scores: List[int] = []
@@ -68,7 +62,7 @@ def evaluate() -> Dict:
         fired = {d["rule_id"] for d in detections}
         risk = risk_engine.compute_risk_score(report, iocs, detections)
 
-        for rule in ALL_RULES:
+        for rule in all_rules:
             expected = rule in sample.expected_rules
             got = rule in fired
             if expected and got:
@@ -111,7 +105,7 @@ def evaluate() -> Dict:
             "f1": round(f1, 3),
         }
 
-    per_rule = {r: {**counts[r], **prf(counts[r])} for r in ALL_RULES}
+    per_rule = {r: {**counts[r], **prf(counts[r])} for r in all_rules}
 
     max_benign = max(benign_scores) if benign_scores else 0
     min_malicious = min(malicious_scores) if malicious_scores else 0

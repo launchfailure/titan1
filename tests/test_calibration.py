@@ -12,13 +12,16 @@ CORPUS = Path(__file__).parent / "fixtures" / "calibration" / "decoder-analyzer-
 def test_bundled_decoder_analyzer_calibration_passes_quality_gate():
     report = CalibrationRunner().run(CORPUS)
 
-    assert report["case_count"] == 20
+    assert report["case_count"] == 27
     assert report["skipped_count"] == 0
     assert report["aggregate"]["precision"] == 1.0
     assert report["aggregate"]["recall"] == 1.0
     assert report["quality_gate"]["passed"] is True
     assert report["components"]["decoder:ASCII85"]["true_positive"] == 1
     assert report["components"]["analyzer:OfficeOOXML"]["true_negative"] == 1
+    assert report["components"]["analyzer:RTF"]["true_positive"] == 1
+    assert report["components"]["analyzer:MSI"]["true_negative"] == 1
+    assert report["components"]["analyzer:OneNote"]["true_positive"] == 1
 
 
 def test_calibration_detects_output_regression(tmp_path):
@@ -56,4 +59,4 @@ def test_cli_calibration_writes_report(tmp_path, capsys):
 
     assert cli.handle_info_commands(args, Config(tmp_path / "missing.json")) == 0
     assert json.loads(output.read_text(encoding="utf-8"))["quality_gate"]["passed"]
-    assert json.loads(capsys.readouterr().out)["case_count"] == 20
+    assert json.loads(capsys.readouterr().out)["case_count"] == 27

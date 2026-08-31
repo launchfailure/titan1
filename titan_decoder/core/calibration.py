@@ -152,6 +152,20 @@ class CalibrationRunner:
 
     @staticmethod
     def _case_data(value: Mapping[str, Any], root: Path) -> bytes:
+        if "data_base64_parts" in value:
+            parts = value["data_base64_parts"]
+            if (
+                not isinstance(parts, list)
+                or not parts
+                or not all(isinstance(part, str) for part in parts)
+            ):
+                raise ValueError("data_base64_parts must be a non-empty string list")
+            conflicting = {
+                key for key in ("data_text", "data_hex", "fixture") if key in value
+            }
+            if conflicting:
+                raise ValueError("case must declare exactly one data representation")
+            return base64.b64decode("".join(parts), validate=True)
         representations = [
             key
             for key in ("data_text", "data_base64", "data_hex", "fixture")

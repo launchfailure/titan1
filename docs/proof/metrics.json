@@ -9,10 +9,10 @@
         "precision": 1.0,
         "recall": 1.0,
         "specificity": 1.0,
-        "true_negative": 10,
-        "true_positive": 10
+        "true_negative": 13,
+        "true_positive": 14
       },
-      "case_count": 20,
+      "case_count": 27,
       "cases": [
         {
           "can_process": true,
@@ -224,6 +224,91 @@
           "kind": "analyzer",
           "outcome": "true_negative",
           "predicted_match": false
+        },
+        {
+          "artifacts": [
+            "office_summary.json",
+            "office_xlm_macros.txt"
+          ],
+          "can_process": true,
+          "component": "OfficeOOXML",
+          "expected_match": true,
+          "id": "office-xlm-positive",
+          "kind": "analyzer",
+          "outcome": "true_positive",
+          "predicted_match": true
+        },
+        {
+          "artifacts": [
+            "rtf_object_001.exe",
+            "rtf_summary.json",
+            "rtf_text.txt"
+          ],
+          "can_process": true,
+          "component": "RTF",
+          "expected_match": true,
+          "id": "rtf-positive",
+          "kind": "analyzer",
+          "outcome": "true_positive",
+          "predicted_match": true
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "component": "RTF",
+          "expected_match": false,
+          "id": "rtf-negative",
+          "kind": "analyzer",
+          "outcome": "true_negative",
+          "predicted_match": false
+        },
+        {
+          "artifacts": [
+            "msi_payload_001.exe",
+            "msi_strings.txt",
+            "msi_summary.json"
+          ],
+          "can_process": true,
+          "component": "MSI",
+          "expected_match": true,
+          "id": "msi-positive",
+          "kind": "analyzer",
+          "outcome": "true_positive",
+          "predicted_match": true
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "component": "MSI",
+          "expected_match": false,
+          "id": "msi-negative",
+          "kind": "analyzer",
+          "outcome": "true_negative",
+          "predicted_match": false
+        },
+        {
+          "artifacts": [
+            "onenote_file_001.exe",
+            "onenote_strings.txt",
+            "onenote_summary.json"
+          ],
+          "can_process": true,
+          "component": "OneNote",
+          "expected_match": true,
+          "id": "onenote-positive",
+          "kind": "analyzer",
+          "outcome": "true_positive",
+          "predicted_match": true
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "component": "OneNote",
+          "expected_match": false,
+          "id": "onenote-negative",
+          "kind": "analyzer",
+          "outcome": "true_negative",
+          "predicted_match": false
         }
       ],
       "components": {
@@ -238,7 +323,40 @@
           "true_negative": 1,
           "true_positive": 1
         },
+        "analyzer:MSI": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
         "analyzer:OfficeOOXML": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 2
+        },
+        "analyzer:OneNote": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "analyzer:RTF": {
           "accuracy": 1.0,
           "f1": 1.0,
           "false_negative": 0,
@@ -351,9 +469,9 @@
       "skipped_count": 0
     },
     "detection": {
-      "benign_count": 13,
-      "corpus_size": 27,
-      "malicious_count": 14,
+      "benign_count": 22,
+      "corpus_size": 46,
+      "malicious_count": 24,
       "per_rule": {
         "TITAN-001": {
           "f1": 1.0,
@@ -361,7 +479,7 @@
           "fp": 0,
           "precision": 1.0,
           "recall": 1.0,
-          "tn": 25,
+          "tn": 44,
           "tp": 2
         },
         "TITAN-002": {
@@ -370,7 +488,7 @@
           "fp": 0,
           "precision": 1.0,
           "recall": 1.0,
-          "tn": 25,
+          "tn": 44,
           "tp": 2
         },
         "TITAN-003": {
@@ -379,7 +497,7 @@
           "fp": 0,
           "precision": 1.0,
           "recall": 1.0,
-          "tn": 25,
+          "tn": 44,
           "tp": 2
         },
         "TITAN-004": {
@@ -388,7 +506,7 @@
           "fp": 0,
           "precision": 1.0,
           "recall": 1.0,
-          "tn": 25,
+          "tn": 44,
           "tp": 2
         },
         "TITAN-005": {
@@ -397,7 +515,7 @@
           "fp": 0,
           "precision": 1.0,
           "recall": 1.0,
-          "tn": 25,
+          "tn": 44,
           "tp": 2
         },
         "TITAN-006": {
@@ -406,7 +524,7 @@
           "fp": 0,
           "precision": 1.0,
           "recall": 1.0,
-          "tn": 25,
+          "tn": 44,
           "tp": 2
         },
         "TITAN-007": {
@@ -415,7 +533,52 @@
           "fp": 0,
           "precision": 1.0,
           "recall": 1.0,
-          "tn": 25,
+          "tn": 44,
+          "tp": 2
+        },
+        "TITAN-008": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn": 44,
+          "tp": 2
+        },
+        "TITAN-009": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn": 44,
+          "tp": 2
+        },
+        "TITAN-010": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn": 44,
+          "tp": 2
+        },
+        "TITAN-011": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn": 44,
+          "tp": 2
+        },
+        "TITAN-012": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tn": 44,
           "tp": 2
         }
       },
@@ -506,6 +669,66 @@
         },
         {
           "expected_rules": [
+            "TITAN-008"
+          ],
+          "fired_rules": [
+            "TITAN-008"
+          ],
+          "malicious": true,
+          "name": "mal_hidden_media_pe",
+          "risk_level": "MEDIUM",
+          "risk_score": 25
+        },
+        {
+          "expected_rules": [
+            "TITAN-009"
+          ],
+          "fired_rules": [
+            "TITAN-009"
+          ],
+          "malicious": true,
+          "name": "mal_rtf_embedded_executable",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-010"
+          ],
+          "fired_rules": [
+            "TITAN-010"
+          ],
+          "malicious": true,
+          "name": "mal_xlm_exec",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-011"
+          ],
+          "fired_rules": [
+            "TITAN-011"
+          ],
+          "malicious": true,
+          "name": "mal_msi_executable_delivery",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-012"
+          ],
+          "fired_rules": [
+            "TITAN-012"
+          ],
+          "malicious": true,
+          "name": "mal_onenote_executable_delivery",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
             "TITAN-001"
           ],
           "fired_rules": [
@@ -589,6 +812,66 @@
           "risk_score": 75
         },
         {
+          "expected_rules": [
+            "TITAN-008"
+          ],
+          "fired_rules": [
+            "TITAN-008"
+          ],
+          "malicious": true,
+          "name": "mal_hidden_media_zip",
+          "risk_level": "MEDIUM",
+          "risk_score": 25
+        },
+        {
+          "expected_rules": [
+            "TITAN-009"
+          ],
+          "fired_rules": [
+            "TITAN-009"
+          ],
+          "malicious": true,
+          "name": "mal_rtf_autolink_object",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-010"
+          ],
+          "fired_rules": [
+            "TITAN-010"
+          ],
+          "malicious": true,
+          "name": "mal_xlm_call",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-011"
+          ],
+          "fired_rules": [
+            "TITAN-011"
+          ],
+          "malicious": true,
+          "name": "mal_msi_executable_delivery_v2",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
+          "expected_rules": [
+            "TITAN-012"
+          ],
+          "fired_rules": [
+            "TITAN-012"
+          ],
+          "malicious": true,
+          "name": "mal_onenote_executable_delivery_v2",
+          "risk_level": "HIGH",
+          "risk_score": 50
+        },
+        {
           "expected_rules": [],
           "fired_rules": [],
           "malicious": false,
@@ -664,6 +947,78 @@
           "expected_rules": [],
           "fired_rules": [],
           "malicious": false,
+          "name": "ben_clean_png",
+          "risk_level": "CLEAN",
+          "risk_score": 0
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_rtf_hyperlink",
+          "risk_level": "LOW",
+          "risk_score": 9
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_rtf_passive_attachment",
+          "risk_level": "LOW",
+          "risk_score": 4
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_xlm_ordinary_formula",
+          "risk_level": "LOW",
+          "risk_score": 8
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_worksheet_exec_text",
+          "risk_level": "LOW",
+          "risk_score": 8
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_msi_support_url",
+          "risk_level": "LOW",
+          "risk_score": 9
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_msi_offline_executable",
+          "risk_level": "LOW",
+          "risk_score": 2
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_onenote_empty",
+          "risk_level": "LOW",
+          "risk_score": 2
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
+          "name": "ben_onenote_pdf_attachment",
+          "risk_level": "LOW",
+          "risk_score": 9
+        },
+        {
+          "expected_rules": [],
+          "fired_rules": [],
+          "malicious": false,
           "name": "ben_single_base64_long",
           "risk_level": "LOW",
           "risk_score": 2
@@ -699,19 +1054,30 @@
           0,
           0,
           0,
+          0,
           2,
           2,
           2,
           2,
+          2,
+          2,
+          4,
           4,
           4,
           5,
           6,
-          7
+          7,
+          8,
+          8,
+          9,
+          9,
+          9
         ],
         "malicious_scores": [
           15,
           18,
+          25,
+          25,
           25,
           25,
           25,
@@ -722,10 +1088,18 @@
           50,
           50,
           50,
+          50,
+          50,
+          50,
+          50,
+          50,
+          50,
+          50,
+          50,
           75,
           75
         ],
-        "max_benign_score": 7,
+        "max_benign_score": 9,
         "min_malicious_score": 15,
         "separated": true
       }

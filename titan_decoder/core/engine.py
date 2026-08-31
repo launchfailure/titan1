@@ -50,8 +50,11 @@ from .analyzers.emulation import X86ShellcodeEmulationAnalyzer
 from .analyzers.structured import (
     EmailAnalyzer,
     LnkAnalyzer,
+    MsiAnalyzer,
+    OneNoteAnalyzer,
     OfficeAnalyzer,
     OptionalArchiveAnalyzer,
+    RtfAnalyzer,
     ScriptAnalyzer,
 )
 from ..utils.helpers import sha256, entropy, looks_like_text, extract_iocs
@@ -286,10 +289,16 @@ class TitanEngine:
             self.analyzers.append(EmailAnalyzer(structured_config))
         if self.config.get("analyzers", {}).get("office", True):
             self.analyzers.append(OfficeAnalyzer(structured_config))
+        if self.config.get("analyzers", {}).get("rtf", True):
+            self.analyzers.append(RtfAnalyzer(structured_config))
         if self.config.get("analyzers", {}).get("script", True):
             self.analyzers.append(ScriptAnalyzer(structured_config))
         if self.config.get("analyzers", {}).get("lnk", True):
             self.analyzers.append(LnkAnalyzer())
+        if self.config.get("analyzers", {}).get("msi", True):
+            self.analyzers.append(MsiAnalyzer(structured_config))
+        if self.config.get("analyzers", {}).get("onenote", True):
+            self.analyzers.append(OneNoteAnalyzer(structured_config))
         if self.config.get("analyzers", {}).get("optional_archives", True):
             self.analyzers.append(OptionalArchiveAnalyzer(structured_config))
         if self.config.get("analyzers", {}).get("zip", True):

@@ -31,8 +31,9 @@ Additional shipped engine expansion:
 
 - ASCII85, Base58, Base91, raw Deflate, PowerShell EncodedCommand,
   JavaScript escape, and optional Brotli/Zstandard decoders.
-- RFC/MIME, OOXML, script, LNK, optional 7z/RAR/ISO/CAB, deeper PE/ELF, and
-  expanded image/audio/video steganography analyzers.
+- RFC/MIME, OOXML, RTF text/embedded-object extraction, script, LNK, optional
+  7z/RAR/ISO/CAB, deeper PE/ELF, and expanded image/audio/video steganography
+  analyzers.
 - Versioned Windows/Debian capability handshake, manual decoder parity,
   progress events, real timeouts, and cancellation.
 - Hash-bound assurance adapters for isolated VM and provenance providers plus
@@ -71,12 +72,14 @@ constraints: deterministic, bounded, offline-first, fail-closed.
    and bounded seed extractors for Cobalt Strike Beacon and decrypted Remcos
    settings, with real-layout positive/adversarial fixtures. Next: expand the
    calibrated family and version matrix from measured field samples.
-3. **Format coverage depth.** .NET assembly structure, MSI/NSIS/InnoSetup
-   installers, OneNote, RTF exploit structures, Excel 4.0 XLM macros, VBA
+3. **Format coverage depth.** .NET assembly structure, NSIS/InnoSetup
+   installers, deeper MSI table/custom-action semantics, deeper RTF exploit semantics, VBA
    p-code, PDF stream filters with JavaScript extraction, APK/DEX, VHD/VHDX,
    and password-protected archives (`infected`). Thin Mach-O and DEX structural
-   analyzers now ship with malformed-input corpus slices and explicit resource
-   bounds; continue prioritizing the remaining formats by measured misses.
+   analyzers, bounded RTF text/object extraction, XLM formula recovery, MSI
+   string/payload inspection, and documented OneNote embedded-file recovery now
+   ship with malformed-input corpus slices and explicit resource bounds;
+   continue prioritizing the remaining formats by measured misses.
 4. **Service mode.** A `titan-server` deployment shape: REST API, work
    queue, horizontally scalable workers, artifact store, and hash-based
    dedup cache now ships as a dependency-free, loopback-only-by-default

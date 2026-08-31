@@ -50,6 +50,15 @@ from titan_decoder.core.analyzers.base import (
     PEAnalyzer,
     ELFAnalyzer,
 )
+from titan_decoder.core.analyzers.structured import (
+    EmailAnalyzer,
+    LnkAnalyzer,
+    MsiAnalyzer,
+    OfficeAnalyzer,
+    OneNoteAnalyzer,
+    RtfAnalyzer,
+    ScriptAnalyzer,
+)
 
 # Small cap so bomb behavior is observable cheaply.
 CAP = 256 * 1024
@@ -90,6 +99,12 @@ def _decoders() -> list:
 
 
 def _analyzers() -> list:
+    structured = {
+        "max_structured_artifacts": 16,
+        "max_structured_total_size": CAP // 2,
+        "max_structured_artifact_size": CAP // 4,
+        "max_compression_ratio": 100,
+    }
     return [
         ZipAnalyzer(
             {
@@ -109,6 +124,13 @@ def _analyzers() -> list:
         ),
         PEAnalyzer(),
         ELFAnalyzer(),
+        EmailAnalyzer(structured),
+        LnkAnalyzer(),
+        MsiAnalyzer(structured),
+        OfficeAnalyzer(structured),
+        OneNoteAnalyzer(structured),
+        RtfAnalyzer(structured),
+        ScriptAnalyzer(structured),
     ]
 
 

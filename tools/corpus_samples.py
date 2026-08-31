@@ -15,10 +15,12 @@ the false-positive measurement.
 from __future__ import annotations
 
 import base64
+import io
 import os
 import random
 import sys
 import zlib
+import zipfile
 from dataclasses import dataclass, field
 from typing import List, Set
 
@@ -48,6 +50,93 @@ def _nested_base64(payload: bytes, layers: int) -> bytes:
     for _ in range(layers):
         out = base64.b64encode(out)
     return out
+
+
+def _png_with_appended(payload: bytes = b"") -> bytes:
+    def chunk(kind: bytes, value: bytes) -> bytes:
+        body = kind + value
+        return (
+            len(value).to_bytes(4, "big")
+            + body
+            + (zlib.crc32(body) & 0xFFFFFFFF).to_bytes(4, "big")
+        )
+
+    ihdr = b"\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00"
+    image = (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", zlib.compress(b"\x00\x80\x80\x80"))
+        + chunk(b"IEND", b"")
+    )
+    return image + payload
+
+
+def _rtf_object(payload: bytes, object_controls: bytes = b"\\objemb") -> bytes:
+    return (
+        b"{\\rtf1\\ansi Delivery document\\par "
+        b"{\\object"
+        + object_controls
+        + b"{\\*\\objclass Package}{\\*\\objdata "
+        + payload.hex().encode("ascii")
+        + b"}}}"
+    )
+
+
+def _xlm_workbook(formula: str, *, macro_sheet: bool = True) -> bytes:
+    output = io.BytesIO()
+    member = "xl/macrosheets/sheet1.xml" if macro_sheet else "xl/worksheets/sheet1.xml"
+
+    def write(archive: zipfile.ZipFile, name: str, value: str) -> None:
+        info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+        info.compress_type = zipfile.ZIP_DEFLATED
+        archive.writestr(info, value)
+
+    with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
+        write(
+            archive,
+            "[Content_Types].xml",
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>',
+        )
+        write(archive, "xl/workbook.xml", "<workbook/>")
+        write(
+            archive,
+            member,
+            f'<worksheet><sheetData><c r="A1"><f>{formula}</f>'
+            "<v>0</v></c></sheetData></worksheet>",
+        )
+    return output.getvalue()
+
+
+def _msi_package(strings: list[str], payload: bytes | None = None) -> bytes:
+    encoded = [value.encode("cp1252") for value in strings]
+    pool = (
+        (1252).to_bytes(2, "little")
+        + b"\x00\x00"
+        + b"".join(len(value).to_bytes(2, "little") + b"\x01\x00" for value in encoded)
+    )
+    streams = [("_StringPool", pool), ("_StringData", b"".join(encoded))]
+    if payload is not None:
+        streams.append(("Binary/Updater", payload))
+    return build_cfb(streams)
+
+
+def _onenote_section(payloads: list[bytes]) -> bytes:
+    file_type = bytes.fromhex("e4525c7b8cd8a74daeb15378d02996d3")
+    revision_format = bytes.fromhex("3fdd9a101b91f549a5d01791edc8aed8")
+    object_header = bytes.fromhex("e716e3bd65261145a4c48d4d0b7a9eac")
+    object_footer = bytes.fromhex("22a7fb71790f0b4abb13899256426b24")
+    header = bytearray(1024)
+    header[:16] = file_type
+    header[48:64] = revision_format
+    output = bytearray(header)
+    for payload in payloads:
+        output += object_header
+        output += len(payload).to_bytes(8, "little")
+        output += b"\x00" * 12
+        output += payload
+        output += b"\x00" * (-(52 + len(payload)) % 8)
+        output += object_footer
+    return bytes(output)
 
 
 def build_corpus() -> List[Sample]:
@@ -149,6 +238,62 @@ def build_corpus() -> List[Sample]:
         )
     )
 
+    # TITAN-008: executable appended after a valid PNG end marker.
+    samples.append(
+        Sample(
+            "mal_hidden_media_pe",
+            _png_with_appended(b"MZ hidden executable payload"),
+            malicious=True,
+            expected_rules={"TITAN-008"},
+        )
+    )
+
+    # TITAN-009: RTF with a carved executable that contains network delivery
+    # infrastructure. Plain hyperlinks and passive attachments are negatives.
+    samples.append(
+        Sample(
+            "mal_rtf_embedded_executable",
+            _rtf_object(b"MZ http://rtf-c2.example/payload"),
+            malicious=True,
+            expected_rules={"TITAN-009"},
+        )
+    )
+
+    # TITAN-010: Excel 4.0 macro sheet invokes an execution function.
+    samples.append(
+        Sample(
+            "mal_xlm_exec",
+            _xlm_workbook('=EXEC("calc.exe")'),
+            malicious=True,
+            expected_rules={"TITAN-010"},
+        )
+    )
+
+    # TITAN-011: an MSI database combines an executable payload with network
+    # infrastructure recovered from its string table and payload.
+    samples.append(
+        Sample(
+            "mal_msi_executable_delivery",
+            _msi_package(
+                ["ProductName", "https://updates.msi-evil.example/stage"],
+                b"MZ bounded synthetic executable",
+            ),
+            malicious=True,
+            expected_rules={"TITAN-011"},
+        )
+    )
+
+    # TITAN-012: a documented OneNote FileDataStoreObject carries a PE-like
+    # payload and a URL.
+    samples.append(
+        Sample(
+            "mal_onenote_executable_delivery",
+            _onenote_section([b"MZ retrieve https://stage.one-evil.example/payload"]),
+            malicious=True,
+            expected_rules={"TITAN-012"},
+        )
+    )
+
     # --- Malicious variants (second example per rule) -----------------------
     # These differ from the first example above so per-rule recall is measured on
     # more than one positive — a rule that only matched its exact design sample
@@ -243,6 +388,67 @@ def build_corpus() -> List[Sample]:
             pdf2,
             malicious=True,
             expected_rules={"TITAN-007"},
+        )
+    )
+
+    # TITAN-008 v2: a ZIP signature appended to another valid PNG.
+    samples.append(
+        Sample(
+            "mal_hidden_media_zip",
+            _png_with_appended(b"PK\x03\x04 hidden archive payload"),
+            malicious=True,
+            expected_rules={"TITAN-008"},
+        )
+    )
+
+    # TITAN-009 v2: an auto-linked/update-requested RTF OLE object. Automatic
+    # behavior is sufficient even without a network IOC in the synthetic bytes.
+    samples.append(
+        Sample(
+            "mal_rtf_autolink_object",
+            _rtf_object(
+                b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1 bounded OLE payload",
+                b"\\objautlink\\objupdate",
+            ),
+            malicious=True,
+            expected_rules={"TITAN-009"},
+        )
+    )
+
+    # TITAN-010 v2: native-call dispatch from a macro sheet.
+    samples.append(
+        Sample(
+            "mal_xlm_call",
+            _xlm_workbook('=CALL("kernel32","WinExec","JCJ","calc.exe",1)'),
+            malicious=True,
+            expected_rules={"TITAN-010"},
+        )
+    )
+
+    # TITAN-011 v2: a different package exposes its infrastructure only in the
+    # executable stream, exercising recursive IOC collection.
+    samples.append(
+        Sample(
+            "mal_msi_executable_delivery_v2",
+            _msi_package(
+                ["Updater", "InstallFiles"],
+                b"MZ contact second-stage.msi-evil.example for configuration",
+            ),
+            malicious=True,
+            expected_rules={"TITAN-011"},
+        )
+    )
+
+    # TITAN-012 v2: the network indicator is a bare domain inside a second
+    # synthetic executable object.
+    samples.append(
+        Sample(
+            "mal_onenote_executable_delivery_v2",
+            _onenote_section(
+                [b"MZ contact second-stage.one-evil.example for configuration"]
+            ),
+            malicious=True,
+            expected_rules={"TITAN-012"},
         )
     )
 
@@ -342,6 +548,82 @@ def build_corpus() -> List[Sample]:
         ]
     )
     samples.append(Sample("ben_pdf_js_only", js_pdf, malicious=False))
+
+    # A valid image without trailing or framed hidden content must not trip
+    # the hidden-media rule.
+    samples.append(Sample("ben_clean_png", _png_with_appended(), malicious=False))
+
+    # A normal RTF hyperlink without an embedded object is not active content.
+    samples.append(
+        Sample(
+            "ben_rtf_hyperlink",
+            b"{\\rtf1\\ansi Visit https://docs.example.com/rtf for help.}",
+            malicious=False,
+        )
+    )
+
+    # A passive non-executable object with no network or auto-update behavior
+    # is a precision near-miss for TITAN-009.
+    samples.append(
+        Sample(
+            "ben_rtf_passive_attachment",
+            _rtf_object(b"Quarterly report attachment"),
+            malicious=False,
+        )
+    )
+
+    # A macro sheet with an ordinary arithmetic function remains visible but
+    # does not meet the high-risk execution rule.
+    samples.append(
+        Sample(
+            "ben_xlm_ordinary_formula",
+            _xlm_workbook("=SUM(1,2)"),
+            malicious=False,
+        )
+    )
+
+    # A suspicious-looking formula in a normal worksheet is not an XLM macro
+    # sheet and must not be promoted into the XLM artifact path.
+    samples.append(
+        Sample(
+            "ben_worksheet_exec_text",
+            _xlm_workbook('=EXEC("documented function")', macro_sheet=False),
+            malicious=False,
+        )
+    )
+
+    # An ordinary MSI with a product support URL but no embedded executable is
+    # a precision near-miss for TITAN-011.
+    samples.append(
+        Sample(
+            "ben_msi_support_url",
+            _msi_package(["Example Product", "https://support.example.com/msi"]),
+            malicious=False,
+        )
+    )
+
+    # An offline MSI carrying an executable custom-action blob lacks network
+    # infrastructure and therefore remains below the correlation threshold.
+    samples.append(
+        Sample(
+            "ben_msi_offline_executable",
+            _msi_package(["Offline Tool", "InstallFiles"], b"MZ synthetic helper"),
+            malicious=False,
+        )
+    )
+
+    # A valid empty OneNote section is a format-recognition near-miss.
+    samples.append(Sample("ben_onenote_empty", _onenote_section([]), malicious=False))
+
+    # A passive PDF attachment may include a normal URL but is not executable
+    # delivery and must not trip TITAN-012.
+    samples.append(
+        Sample(
+            "ben_onenote_pdf_attachment",
+            _onenote_section([b"%PDF-1.7 https://docs.example.com/guide"]),
+            malicious=False,
+        )
+    )
 
     # Deeply *nested directories* description, but only a single base64 layer —
     # must NOT trip deep-base64 nesting.

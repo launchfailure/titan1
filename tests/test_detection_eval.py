@@ -14,6 +14,7 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 from tools.eval_detections import evaluate  # noqa: E402
+from tools.corpus_samples import build_corpus  # noqa: E402
 
 
 def test_detection_eval_separates_classes():
@@ -26,19 +27,41 @@ def test_detection_eval_separates_classes():
     )
 
 
-def test_no_rule_precision_regression():
+def test_no_rule_precision_or_recall_regression():
     metrics = evaluate()
-    weak = {
-        rule: m["precision"]
-        for rule, m in metrics["per_rule"].items()
-        if m["precision"] < 0.8
+    weak_precision = {
+        rule: values["precision"]
+        for rule, values in metrics["per_rule"].items()
+        if values["precision"] < 0.8
     }
-    assert not weak, f"rules with precision < 0.8: {weak}"
+    weak_recall = {
+        rule: values["recall"]
+        for rule, values in metrics["per_rule"].items()
+        if values["recall"] < 0.8
+    }
+    assert not weak_precision, f"rules with precision < 0.8: {weak_precision}"
+    assert not weak_recall, f"rules with recall < 0.8: {weak_recall}"
 
 
-def test_every_rule_has_a_positive_sample():
-    # The corpus should exercise each built-in rule at least once, otherwise
-    # recall for that rule is untested.
+def test_every_rule_has_multiple_positive_samples():
+    # Multiple distinct positives prevent an exact design fixture from being
+    # mistaken for useful recall coverage.
     metrics = evaluate()
     for rule, m in metrics["per_rule"].items():
-        assert m["tp"] + m["fn"] >= 1, f"{rule} has no positive sample in the corpus"
+        assert m["tp"] + m["fn"] >= 2, (
+            f"{rule} has fewer than two positive samples in the corpus"
+        )
+
+
+def test_evaluator_discovers_all_builtin_rules():
+    from titan_decoder.core.detection_rules import CorrelationRulesEngine
+
+    measured = set(evaluate()["per_rule"])
+    builtins = {rule.rule_id for rule in CorrelationRulesEngine().rules}
+    assert measured == builtins
+
+
+def test_detection_corpus_bytes_are_deterministic():
+    first = [(sample.name, sample.data) for sample in build_corpus()]
+    second = [(sample.name, sample.data) for sample in build_corpus()]
+    assert first == second
