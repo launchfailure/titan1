@@ -1,6 +1,6 @@
 # Interactive Console
 
-The `titan` command (also `titan-decoder --interactive` or
+The advanced `titan cli --interactive` command (or
 `python -m titan_decoder.interactive`) opens a stdlib-only terminal
 application suitable for local shells, SSH, and Codespaces. It is a pure
 presentation layer over the existing engine — it does not duplicate

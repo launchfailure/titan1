@@ -1,0 +1,45 @@
+name: Scheduled adversarial fuzzing
+
+on:
+  schedule:
+    - cron: "17 6 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cross-surface-campaign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install fuzz runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[formats]'
+
+      - name: Run six-surface campaign
+        run: |
+          mkdir -p .fuzz-artifacts
+          python fuzz/fuzz_surfaces.py \
+            --seconds 1800 \
+            --seed ${{ github.run_id }} \
+            --artifacts .fuzz-artifacts
+
+      - name: Retain campaign summary and minimized reproducers
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: fuzz-campaign-${{ github.run_id }}
+          path: .fuzz-artifacts
+          if-no-files-found: error
+          retention-days: 30

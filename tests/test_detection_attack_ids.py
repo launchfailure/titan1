@@ -76,10 +76,34 @@ def test_detection_attack_ids_reach_threat_intelligence():
     """End-to-end: a fired built-in rule corroborates technique findings."""
     report = {
         "nodes": [
-            {"id": 0, "depth": 0, "decoder_used": "Base64", "content_preview": ""},
-            {"id": 1, "depth": 1, "decoder_used": "Base64", "content_preview": ""},
-            {"id": 2, "depth": 2, "decoder_used": "Base64", "content_preview": ""},
-            {"id": 3, "depth": 3, "decoder_used": "Base64", "content_preview": ""},
+            {
+                "id": 0,
+                "parent": None,
+                "depth": 0,
+                "decoder_used": "Base64",
+                "content_preview": "",
+            },
+            {
+                "id": 1,
+                "parent": 0,
+                "depth": 1,
+                "decoder_used": "Base64",
+                "content_preview": "",
+            },
+            {
+                "id": 2,
+                "parent": 1,
+                "depth": 2,
+                "decoder_used": "Base64",
+                "content_preview": "",
+            },
+            {
+                "id": 3,
+                "parent": 2,
+                "depth": 3,
+                "decoder_used": "Base64",
+                "content_preview": "",
+            },
         ]
     }
     detections = CorrelationRulesEngine().evaluate_all(report, {})

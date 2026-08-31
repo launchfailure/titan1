@@ -21,13 +21,14 @@ class RiskScoringEngine:
     ``tools/corpus_samples.py`` via ``tools/eval_detections.py`` (results
     committed in ``docs/detection_metrics.json`` and summarized in
     ``docs/DETECTION_QUALITY.md``). As of the last run over the expanded corpus
-    (14 malicious / 12 benign, two positives per rule plus adversarial benign
-    near-misses): every built-in rule (TITAN-001..007) scores precision 1.000 /
-    recall 1.000, and the overall risk score cleanly separates the classes —
-    benign samples score at most 7 while every malicious sample scores at least
-    15 (no overlap). ``tests/test_detection_eval.py`` asserts this separation so
-    a weight or rule change that regresses it fails CI. Re-run the harness and
-    refresh the metrics file when tuning these constants.
+    (16 malicious / 27 benign, two positives and at least two targeted benign
+    near-misses per rule): every built-in rule (TITAN-001..008) scores precision
+    1.000 / recall 1.000, and the overall risk score cleanly separates the
+    classes — benign samples score at most 12 while every malicious sample
+    scores at least 15 (no overlap). ``tests/test_detection_eval.py`` asserts
+    rule-set parity, corpus depth, and this separation so a weight or rule
+    change that regresses it fails CI. Re-run the harness and refresh the metrics
+    file when tuning these constants.
 
     A per-severity floor (``SEVERITY_FLOOR``) additionally guarantees a fired
     rule never reads below its own severity, so a genuine detection is not

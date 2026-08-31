@@ -14,13 +14,13 @@ analysis and does not require recovered payloads to be run.
 
 | Component | Runs in | Purpose |
 |---|---|---|
-| `titan-ui` / `Titan-Windows.cmd` | Windows | Native PySide6 desktop workbench |
+| `titan` / `Titan-Windows.cmd` | Windows | Native PySide6 desktop workbench |
 | `debian_bridge` | Debian under WSL | Runs Titan analysis and returns the report |
-| `titan-tui` / `titan-workbench-ui` | Current terminal | Optional Textual terminal workbench |
-| `titan-workbench` | Current terminal | Dependency-free completed-report explorer |
+| `titan tui` | Current terminal | Optional Textual terminal workbench |
+| `titan workbench` | Current terminal | Dependency-free completed-report explorer |
 
-The native and terminal workbenches are separate interfaces. `titan-ui` is not
-an alias for `titan-tui`.
+The native and terminal workbenches are separate interfaces. `titan` opens the
+native application; `titan tui` explicitly opens the terminal interface.
 
 ## Prerequisites
 
@@ -94,7 +94,7 @@ launch the module directly:
 .\.venv-windows\Scripts\python.exe -m titan_decoder.desktop_ui.app
 ```
 
-After activating `.venv-windows`, `titan-ui` launches the same native module.
+After activating `.venv-windows`, `titan` launches the same native module.
 
 ## How analysis crosses into Debian
 
@@ -128,15 +128,15 @@ pressing `A` opens the text-input action.
 
 If a file can be selected in the picker but cannot be dropped, confirm that:
 
-1. the native `Titan-Windows.cmd`/`titan-ui` application is running, rather
-   than `titan-tui` inside Windows Terminal;
+1. the native `Titan-Windows.cmd`/`titan gui` application is running, rather
+   than `titan tui` inside Windows Terminal;
 2. File Explorer and Titan run at the same privilege level—Windows blocks
    drag-and-drop from a non-elevated process into an elevated process;
 3. the source is a local file or folder with a path visible to Debian under
    `/mnt`.
 
 Terminal emulators cannot provide the same native Explorer event to a Textual
-application. `titan-tui` accepts a path when the terminal turns a drop into
+application. `titan tui` accepts a path when the terminal turns a drop into
 bracketed pasted text, but that behavior depends on the terminal.
 
 ## Workbench controls
@@ -190,7 +190,7 @@ commands above. The launcher requires
 
 ### A decoder is listed but optional format support is unavailable
 
-Run `titan-decoder --doctor` in both environments. Its `optional_formats`
+Run `titan cli --doctor` in both environments. Its `optional_formats`
 section reports every required module and provides an install hint. Re-run the
 setup commands above when the status is `degraded`.
 

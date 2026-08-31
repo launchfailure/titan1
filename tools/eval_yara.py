@@ -26,6 +26,7 @@ ALL_RULES = (
     "Titan_Certutil_Remote_Download",
     "Titan_MSHTA_Remote_Execution",
     "Titan_Regsvr32_Remote_Scriptlet",
+    "Titan_Scheduled_Task_Suspicious_Execution",
 )
 
 

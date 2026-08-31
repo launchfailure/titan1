@@ -6,44 +6,78 @@ structured-parser quality independently of the threat-detection corpus.
 ## Metrics
 
 Every case targets one named decoder or analyzer and declares whether it should
-match. Positive decoder cases can pin the exact output SHA-256; positive
-analyzer cases can require specific artifact names. The runner produces:
+recognize and/or extract the input. Recognition answers whether the format or
+transport boundary was identified; extraction answers whether usable output was
+recovered. Positive decoder extraction cases can pin the exact output SHA-256,
+and positive analyzer extraction cases can require specific artifact names.
+The runner produces:
 
 - true/false positives and true/false negatives;
-- precision, recall, F1, specificity, and accuracy;
-- the same metrics per component;
+- separate recognition and extraction metrics;
+- precision, recall, F1, specificity, and accuracy per component;
+- automatic parity against the live built-in decoder/analyzer registry;
+- per-component case-class coverage for adversarial corpus requirements;
 - case-level observations and errors;
 - a configurable precision/recall quality gate.
 
-The committed v1 corpus has 27 positive/negative cases for ASCII85, raw
-Deflate, PowerShell EncodedCommand, JavaScript escapes, Base58, Base91, RFC/MIME
-email, scripts, Windows LNK, OOXML/XLM, RTF embedded-object extraction, MSI,
-and OneNote embedded-file extraction.
+The committed v1 corpus has 156 deterministic cases. It covers positive and
+negative recognition for all 39 live built-in decoders and analyzers, plus one
+malformed and one truncated case for every one of those components.
+Thirty-eight components also have positive extraction cases;
+`OptionalArchive` currently has recognition coverage only because positive
+extraction depends on separately installed format libraries. Brotli and
+Zstandard extraction cases are committed and run when their optional Python
+modules are installed; otherwise the report lists those extraction checks
+under `dependency_skips` rather than claiming they ran. User-installed plugins
+are reported when explicitly targeted but do not become obligations of Titan's
+bundled built-in corpus.
 
 ## Run the gate
 
 ```bash
-titan-decoder \
+titan cli \
   --calibrate tests/fixtures/calibration/decoder-analyzer-v1.json \
   --calibration-out calibration.json
 ```
 
-The command exits non-zero when any measured component falls below
-`calibration_min_precision` or `calibration_min_recall` (both default to 0.90).
+The command exits non-zero when any measured phase falls below
+`calibration_min_precision` or `calibration_min_recall` (both default to 0.90),
+when a live built-in lacks either a positive or targeted negative recognition
+case, or when a required component lacks an adversarial case class.
 
 ## Corpus contract
 
+`exempt_components` can explicitly identify newly introduced built-ins that
+are temporarily outside the registry-parity and malformed/truncated case-class
+ratchets. Exemptions remain visible in the report and should be removed as soon
+as their binary calibration fixtures land. MSI, OneNote, and RTF currently use
+this transition path; their focused, detection-corpus, and fuzz tests still run
+in CI.
+
 The corpus uses schema version `1.0`. Each case contains `id`, `kind`
 (`decoder` or `analyzer`), `component`, exactly one of `data_text`,
-`data_base64`, line-wrapped `data_base64_parts`, `data_hex`, or a
-corpus-relative `fixture`, and
-`expected_match`. Decoder positives may add `expected_output_sha256`; analyzer
-positives may add `expected_artifacts`.
+`data_base64`, `data_hex`, a corpus-relative `fixture`, or `derive_from`, and at
+least one of `expected_recognition` or `expected_match`. A derived case names a
+previous corpus case and applies either `flip-middle-byte` or `truncate-half`;
+this keeps adversarial mutations reproducible without copying large binary
+fixtures. When `expected_recognition` is omitted it defaults to
+`expected_match`. Omitting `expected_match` creates a recognition-only case.
+Decoder positives may add `expected_output_sha256`; analyzer positives may add
+`expected_artifacts`. Cases whose extraction needs an optional package declare
+`required_modules`; recognition still runs when the package is absent, while
+extraction is recorded as dependency-skipped.
 
-`data_base64_parts` is a non-empty array of strings joined before strict Base64
-decoding. It is intended for large binary fixtures that need reviewable line
-wrapping. When present it is authoritative; `data_text`, `data_hex`, and
-`fixture` remain mutually exclusive with it.
+Cases can declare `case_class` as `positive`, `clean_negative`, `malformed`,
+`truncated`, `size_bound`, or `nested_chain`. When omitted, the runner infers
+`positive` or `clean_negative` from the recognition label. A corpus-level
+`required_case_classes` object maps `decoder` or `analyzer` to classes that
+every live built-in of that kind must cover. Invalid labels and cases that fail
+to load or evaluate cannot satisfy that coverage gate.
+
+The bundled corpus sets `require_registry_parity` and requires both decoder and
+analyzer `malformed` and `truncated` classes, making live-registry adversarial
+coverage part of the quality gate. Small ad-hoc corpora may omit those fields
+when they are intentionally measuring only a subset.
 
 ```json
 {
@@ -53,6 +87,7 @@ wrapping. When present it is authoritative; `data_text`, `data_hex`, and
       "id": "example",
       "kind": "decoder",
       "component": "ASCII85",
+      "case_class": "positive",
       "data_text": "<~87cURD_*#1Blmd$+T~>",
       "expected_match": true,
       "expected_output_sha256": "76047422c639e6685da351084dd4ee7e509e4148d04cc157819aac5bcbe47b37"

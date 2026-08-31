@@ -26,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--version",
         action="version",
-        version=f"titan-decoder {TITAN_VERSION}",
+        version=f"titan {TITAN_VERSION}",
     )
     parser.add_argument(
         "--interactive",

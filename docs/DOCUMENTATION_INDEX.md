@@ -3,11 +3,11 @@
 ## Users and operators
 
 - [USAGE.md](USAGE.md) — practical walkthroughs.
-- [INTERACTIVE_CONSOLE.md](INTERACTIVE_CONSOLE.md) — the `titan` terminal console.
-- [ANALYST_WORKBENCH.md](ANALYST_WORKBENCH.md) — the `titan-workbench` report explorer.
+- [INTERACTIVE_CONSOLE.md](INTERACTIVE_CONSOLE.md) — the advanced `titan cli --interactive` terminal console.
+- [ANALYST_WORKBENCH.md](ANALYST_WORKBENCH.md) — the `titan workbench` report explorer.
 - [WINDOWS_DESKTOP_UI.md](WINDOWS_DESKTOP_UI.md) — native Windows setup, Debian bridge, drag-and-drop, and troubleshooting.
 - [WORKBENCH_INTEGRATED_BUILD.md](WORKBENCH_INTEGRATED_BUILD.md) — native and Textual workbench commands and shared capabilities.
-- [LOCAL_AI_ANALYST.md](LOCAL_AI_ANALYST.md) — the `titan-analyst` grounded Q&A tool.
+- [LOCAL_AI_ANALYST.md](LOCAL_AI_ANALYST.md) — the `titan analyst` grounded Q&A tool.
 - [CLI_REFERENCE.md](CLI_REFERENCE.md) — command groups and examples.
 - [GRAPH_EXPORTS.md](GRAPH_EXPORTS.md) — JSON, DOT, and Mermaid output.
 - [EVIDENCE_AND_PROVENANCE.md](EVIDENCE_AND_PROVENANCE.md) — evidence ingestion and lineage.
@@ -28,6 +28,7 @@
 - [DETECTION_AND_RISK.md](DETECTION_AND_RISK.md) — rules and operational severity.
 - [PLUGIN_API.md](PLUGIN_API.md) — plugin model and trust boundary.
 - [REPORT_SCHEMA.md](REPORT_SCHEMA.md) — report compatibility.
+- [SCHEMA_COMPATIBILITY.md](SCHEMA_COMPATIBILITY.md) — versioned contract and migration policy.
 - [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) — change workflow.
 - [TESTING.md](TESTING.md) — test strategy and commands.
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — contribution requirements.
@@ -35,5 +36,7 @@
 ## Maintainers
 
 - [PROJECT_CHARTER.md](PROJECT_CHARTER.md) — mission, core principles, scope, and governance.
+- [DEPTH_HARDENING.md](DEPTH_HARDENING.md) — active vertical-hardening phases, gates, and progress.
 - [ROADMAP.md](ROADMAP.md) — shipped and planned work.
 - [RELEASING.md](RELEASING.md) — release process.
+- [RELEASE_NOTES_2.1.0.md](RELEASE_NOTES_2.1.0.md) — prepared notes for the 2.1.0 depth and workflow release.

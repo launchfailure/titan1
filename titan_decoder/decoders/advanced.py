@@ -426,14 +426,21 @@ class BrotliDecoder(Decoder):
     def name(self) -> str:
         return "Brotli"
 
-    def _decode(self, data: bytes) -> bytes | None:
+    @staticmethod
+    def _candidate(data: bytes) -> bytes | None:
         # Only discard whitespace before the textual transport label.  The
         # bytes after ``brotli:`` are an opaque binary stream, so stripping
         # them can remove a legitimate final compressed byte.
         value = data.lstrip()
         if not value.lower().startswith(b"brotli:"):
             return None
-        value = value[7:]
+        payload = value[7:]
+        return payload if payload else None
+
+    def _decode(self, data: bytes) -> bytes | None:
+        value = self._candidate(data)
+        if value is None:
+            return None
         try:
             import brotli  # type: ignore[import-not-found]
 
@@ -453,7 +460,11 @@ class BrotliDecoder(Decoder):
             return None
 
     def can_decode(self, data: bytes) -> bool:
-        return self._decode(data) is not None
+        # Recognition is deliberately independent of the optional runtime
+        # dependency.  The explicit ``brotli:`` transport label is the format
+        # signal; ``decode`` still fails closed when the module is unavailable
+        # or the framed bytes are malformed.
+        return self._candidate(data) is not None
 
     def decode(self, data: bytes) -> tuple[bytes, bool]:
         output = self._decode(data)

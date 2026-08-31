@@ -1,6 +1,6 @@
 """The Analyst Workbench: a terminal application for exploring Titan reports.
 
-Launched as ``titan-workbench`` (or ``python -m titan_decoder.workbench.app``).
+Launched as ``titan workbench`` (or ``python -m titan_decoder.workbench.app``).
 Stdlib-only and line-based, like the rest of Titan's interfaces, so it works
 locally, over SSH, and in Codespaces. It is strictly read-only over reports:
 exploration, search, annotation, and export — never re-analysis.
@@ -388,7 +388,7 @@ class AnalystWorkbench:
 
 
 def main(argv=None) -> int:
-    """Console entry point for the ``titan-workbench`` command."""
+    """Console entry point for the ``titan workbench`` command."""
 
     return AnalystWorkbench().run()
 

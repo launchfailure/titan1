@@ -77,9 +77,13 @@ def test_dynamic_view_replacement_waits_for_removal():
     asyncio.run(exercise())
 
 
-def test_ci_installs_the_required_textual_extra():
+def test_ci_installs_every_required_optional_test_dependency():
     workflow = Path(".github/workflows/tests.yml").read_text(encoding="utf-8")
-    assert "-e '.[workbench-ui]'" in workflow
+    assert "-e '.[workbench-ui,desktop-ui,formats]'" in workflow
+    assert "libegl1 libgl1" in workflow
+    assert "-e '.[formats]'" in workflow
+    assert "'yara-python>=4.5.4'" in workflow
+    assert "pytest -q --fail-on-skips" in workflow
 
 
 def test_analysis_worker_refreshes_results_without_duplicate_ids(monkeypatch):
@@ -207,10 +211,17 @@ def test_dense_scrollable_shell_and_quick_start_actions():
     asyncio.run(exercise())
 
 
-def test_short_integrated_ui_command_is_packaged():
-    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert 'titan-ui = "titan_decoder.desktop_ui.app:main"' in pyproject
-    assert 'titan-tui = "titan_decoder.workbench_ui.app:main"' in pyproject
+def test_single_titan_command_is_packaged():
+    text = Path("pyproject.toml").read_text(encoding="utf-8")
+    scripts = text.split("[project.scripts]", 1)[1].split(
+        "[project.optional-dependencies]", 1
+    )[0]
+    registered = [
+        line.strip()
+        for line in scripts.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    assert registered == ['titan = "titan_decoder.launcher:main"']
 
 
 def test_terminal_drop_path_normalization():

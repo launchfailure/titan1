@@ -126,9 +126,9 @@
         }
       ],
       "name": "titan-decoder",
-      "purl": "pkg:pypi/titan-decoder@2.0.2",
+      "purl": "pkg:pypi/titan-decoder@2.1.0",
       "type": "application",
-      "version": "2.0.2"
+      "version": "2.1.0"
     },
     "tools": [
       {
@@ -137,7 +137,7 @@
       }
     ]
   },
-  "serialNumber": "urn:uuid:0f672a18-1add-b7c0-b698-cfdf257f5113",
+  "serialNumber": "urn:uuid:26653ba5-7265-c3f9-bf74-d5b50df630e5",
   "specVersion": "1.5",
   "version": 1
 }

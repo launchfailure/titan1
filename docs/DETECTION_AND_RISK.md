@@ -31,7 +31,7 @@ Validation is enforced, not advisory, in two places with different strictness:
   prefix is reserved, so a pack rule cannot impersonate a built-in.
   Per-pack `rules_loaded`/`rules_skipped` counts land in the report's
   `meta.rule_packs`.
-- **`titan-decoder --rules-validate <pack>`** performs the same deep
+- **`titan cli --rules-validate <pack>`** performs the same deep
   validation as a strict gate: every problem is reported per rule and the
   command exits non-zero. Run it in CI for any pack you maintain.
 

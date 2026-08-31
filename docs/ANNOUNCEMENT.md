@@ -20,10 +20,10 @@ Repo: https://github.com/pragmaconflux/titan1
 Quick start (interactive menu — no flags to memorize):
 `titan`
 Quick start (scriptable CLI):
-`titan-decoder --file suspicious.bin --progress --enable-detections --out report.json`
+`titan cli --file suspicious.bin --progress --enable-detections --out report.json`
 
 Pipeline-friendly (quiet + JSONL events):
-`titan-decoder --file suspicious.bin --enable-detections --out report.json --jsonl-out events.jsonl --quiet`
+`titan cli --file suspicious.bin --enable-detections --out report.json --jsonl-out events.jsonl --quiet`
 
 ## Medium (Reddit / Discord)
 
@@ -39,12 +39,12 @@ What it does:
 
 Quick start:
 ```bash
-titan-decoder --file suspicious.bin --progress --enable-detections --out report.json
+titan cli --file suspicious.bin --progress --enable-detections --out report.json
 ```
 
 Investigator bundle:
 ```bash
-titan-decoder --file evidence.bin --enable-detections --out report.json \
+titan cli --file evidence.bin --enable-detections --out report.json \
   --forensics-out forensics.json \
   --ioc-out iocs.json --ioc-format misp \
   --report-out case_report.md --report-format markdown \

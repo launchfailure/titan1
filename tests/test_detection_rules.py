@@ -9,18 +9,15 @@ def test_load_starter_rules():
     assert "TITAN-007" in rule_ids
     assert "TITAN-008" in rule_ids
     assert "TITAN-009" in rule_ids
-    assert "TITAN-010" in rule_ids
-    assert "TITAN-011" in rule_ids
-    assert "TITAN-012" in rule_ids
 
 
 def test_deep_base64_detection():
     report = {
         "nodes": [
-            {"depth": 0, "decoder_used": "Base64"},
-            {"depth": 1, "decoder_used": "Base64"},
-            {"depth": 2, "decoder_used": "Base64"},
-            {"depth": 3, "decoder_used": "Base64"},
+            {"id": 0, "parent": None, "depth": 0, "decoder_used": "Base64"},
+            {"id": 1, "parent": 0, "depth": 1, "decoder_used": "Base64"},
+            {"id": 2, "parent": 1, "depth": 2, "decoder_used": "Base64"},
+            {"id": 3, "parent": 2, "depth": 3, "decoder_used": "Base64"},
         ]
     }
     iocs = {}
@@ -31,14 +28,34 @@ def test_deep_base64_detection():
     assert any(d["rule_id"] == "TITAN-001" for d in detections)
 
 
+def test_deep_base64_does_not_add_unrelated_branches():
+    report = {
+        "nodes": [
+            {"id": 1, "parent": None, "depth": 0, "decoder_used": "Base64"},
+            {"id": 2, "parent": None, "depth": 0, "decoder_used": "Base64"},
+            {"id": 3, "parent": None, "depth": 0, "decoder_used": "Base64"},
+        ]
+    }
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, {})
+    }
+    assert "TITAN-001" not in ids
+
+
 def test_office_macro_network_detection():
     report = {
         "nodes": [
-            {"method": "ANALYZE_OLE", "content_preview": "VBA content"},
+            {
+                "method": "ANALYZE_OLE",
+                "content_preview": (
+                    "=== stream: Macros/VBA/Module1 ===\n"
+                    'Attribute VB_Name = "Module1"\nhttps://malicious.example'
+                ),
+            },
         ]
     }
     iocs = {
-        "urls": ["http://malicious.com"],
+        "urls": ["https://malicious.example"],
         "ipv4_public": ["1.2.3.4"],
     }
 
@@ -46,6 +63,30 @@ def test_office_macro_network_detection():
     detections = engine.evaluate_all(report, iocs)
 
     assert any(d["rule_id"] == "TITAN-002" for d in detections)
+
+
+def test_office_rule_requires_macro_and_network_in_same_ole_lineage():
+    report = {
+        "nodes": [
+            {
+                "id": 0,
+                "parent": None,
+                "method": "DECODE_OLE",
+                "decoder_used": "OLE",
+                "content_preview": "=== stream: WordDocument ===",
+            },
+            {
+                "id": 1,
+                "parent": 0,
+                "content_preview": "Company handbook: https://intranet.example",
+            },
+        ]
+    }
+    iocs = {"urls": ["https://intranet.example"], "domains": ["intranet.example"]}
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, iocs)
+    }
+    assert "TITAN-002" not in ids
 
 
 def _lolbin_fires(preview: str) -> bool:
@@ -59,7 +100,6 @@ def test_lolbin_fires_with_abuse_context():
     # A LOLBin name together with a strong abuse token should fire.
     assert _lolbin_fires("powershell -nop -w hidden -enc SQBFAFgA")
     assert _lolbin_fires("regsvr32 /s /i:file.sct scrobj.dll")
-    assert _lolbin_fires("cmd.exe /c whoami & echo done")
 
 
 def test_lolbin_does_not_fire_on_bare_mention():
@@ -72,116 +112,196 @@ def test_lolbin_does_not_fire_on_bare_mention():
     assert not _lolbin_fires("See the PowerShell docs for details.")
 
 
-def test_rtf_active_content_requires_a_strong_delivery_chain():
-    engine = CorrelationRulesEngine()
-    active_report = {
+def test_lolbin_does_not_fire_on_routine_admin_flags():
+    # These flags are common in legitimate automation. They need stronger abuse
+    # evidence before Titan promotes them to a detection.
+    assert not _lolbin_fires(
+        r"powershell.exe -NoProfile -File C:\Admin\Rotate-Logs.ps1"
+    )
+    assert not _lolbin_fires("cmd.exe /c echo nightly backup complete")
+    assert not _lolbin_fires("cscript //nologo inventory.vbs")
+    assert not _lolbin_fires("powershell.exe -Encoding utf8 -File Export.ps1")
+
+
+def test_lolbin_does_not_join_context_from_unrelated_nodes():
+    report = {
         "nodes": [
-            {"method": "ANALYZE_RTF", "artifact_name": ""},
-            {"artifact_name": "rtf_object_001.exe", "content_preview": "MZ"},
+            {"id": 1, "content_preview": "PowerShell administration guide"},
+            {"id": 2, "content_preview": "JavaScript: URL syntax reference"},
+        ]
+    }
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, {})
+    }
+    assert "TITAN-003" not in ids
+
+
+def test_scheduled_task_rule_requires_persistence_and_abuse_context():
+    report = {
+        "nodes": [
             {
-                "artifact_name": "rtf_summary.json",
-                "content_preview": '{"active_content":{"embedded_executable":true}}',
+                "id": 0,
+                "content_preview": (
+                    "schtasks.exe /create /tn CacheUpdate /sc onlogon "
+                    '/tr "powershell.exe -EncodedCommand SQBFAFgA" /f'
+                ),
+            }
+        ]
+    }
+    detections = CorrelationRulesEngine().evaluate_all(report, {})
+    by_id = {item["rule_id"]: item for item in detections}
+
+    assert by_id["TITAN-009"]["severity"] == "high"
+    assert by_id["TITAN-009"]["attack_ids"] == ["T1053.005"]
+
+
+def test_scheduled_task_rule_rejects_benign_task_creation():
+    report = {
+        "nodes": [
+            {
+                "id": 0,
+                "content_preview": (
+                    "schtasks.exe /create /tn DailyBackup /sc onlogon "
+                    '/tr "C:\\Program Files\\Backup\\backup.exe" /f'
+                ),
+            }
+        ]
+    }
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, {})
+    }
+
+    assert "TITAN-009" not in ids
+
+
+def test_scheduled_task_rule_does_not_join_unrelated_nodes():
+    report = {
+        "nodes": [
+            {
+                "id": 1,
+                "parent": None,
+                "content_preview": (
+                    "schtasks.exe /create /tn CacheUpdate /sc onlogon "
+                    '/tr "C:\\Tools\\updater.exe" /f'
+                ),
+            },
+            {
+                "id": 2,
+                "parent": None,
+                "content_preview": "powershell.exe -EncodedCommand SQBFAFgA",
             },
         ]
     }
-    detections = engine.evaluate_all(active_report, {"urls": ["https://c2.example/a"]})
-    assert any(item["rule_id"] == "TITAN-009" for item in detections)
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, {})
+    }
 
-    # A normal hyperlink without an object, and a passive non-executable
-    # attachment without network/update behavior, are benign near-misses.
-    hyperlink_only = {"nodes": [{"method": "ANALYZE_RTF"}]}
-    assert not any(
-        item["rule_id"] == "TITAN-009"
-        for item in engine.evaluate_all(
-            hyperlink_only, {"urls": ["https://example.com"]}
+    assert "TITAN-009" not in ids
+
+
+def test_multistage_rule_requires_attack_context():
+    report = {
+        "nodes": [
+            {
+                "id": 0,
+                "content_preview": (
+                    "Docs https://docs.example.com support support@example.com"
+                ),
+            }
+        ]
+    }
+    iocs = {
+        "urls": ["https://docs.example.com"],
+        "domains": ["docs.example.com"],
+        "emails": ["support@example.com"],
+    }
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, iocs)
+    }
+    assert "TITAN-005" not in ids
+
+
+def test_xor_network_rule_requires_same_lineage():
+    report = {
+        "nodes": [
+            {"id": 0, "parent": None, "content_preview": "container"},
+            {
+                "id": 1,
+                "parent": 0,
+                "decoder_used": "XOR",
+                "content_preview": "opaque local settings",
+            },
+            {
+                "id": 2,
+                "parent": 0,
+                "content_preview": "https://docs.example.com",
+            },
+        ]
+    }
+    ids = {
+        item["rule_id"]
+        for item in CorrelationRulesEngine().evaluate_all(
+            report, {"urls": ["https://docs.example.com"]}
         )
-    )
-    passive_object = {
-        "nodes": [
-            {"method": "ANALYZE_RTF"},
-            {"artifact_name": "rtf_object_001.bin"},
-            {"artifact_name": "rtf_summary.json", "content_preview": "{}"},
-        ]
     }
-    assert not any(
-        item["rule_id"] == "TITAN-009"
-        for item in engine.evaluate_all(passive_object, {})
-    )
+    assert "TITAN-006" not in ids
 
 
-def test_xlm_detection_requires_a_macro_sheet_artifact_and_high_risk_function():
-    engine = CorrelationRulesEngine()
+def test_pdf_rule_requires_binary_magic_not_prose_mentions():
     report = {
         "nodes": [
             {
-                "artifact_name": "office_xlm_macros.txt",
-                "content_preview": '[xl/macrosheets/sheet1.xml] =EXEC("calc.exe")',
-            }
+                "id": 0,
+                "parent": None,
+                "method": "DECODE_PDF",
+                "decoder_used": "PDF",
+                "content_preview": "%PDF-1.7",
+            },
+            {
+                "id": 1,
+                "parent": 0,
+                "content_preview": (
+                    "Training manual: MZ is the DOS header and ELF is a Unix format."
+                ),
+            },
         ]
     }
-    assert any(
-        item["rule_id"] == "TITAN-010" for item in engine.evaluate_all(report, {})
-    )
-    ordinary = {
+    ids = {
+        item["rule_id"] for item in CorrelationRulesEngine().evaluate_all(report, {})
+    }
+    assert "TITAN-007" not in ids
+
+
+def test_opaque_payload_requires_executable_or_packer_context():
+    engine = CorrelationRulesEngine()
+
+    generic_ciphertext = {
         "nodes": [
             {
-                "artifact_name": "office_xlm_macros.txt",
-                "content_preview": "[xl/macrosheets/sheet1.xml] =SUM(1,2)",
+                "entropy": 7.95,
+                "content_preview": "random encrypted backup bytes",
+                "decode_score": 0.0,
             }
         ]
     }
-    assert not any(
-        item["rule_id"] == "TITAN-010" for item in engine.evaluate_all(ordinary, {})
-    )
+    generic_ids = {
+        item["rule_id"] for item in engine.evaluate_all(generic_ciphertext, {})
+    }
+    assert "TITAN-004" not in generic_ids
 
-
-def test_msi_detection_requires_package_executable_and_network_indicator():
-    engine = CorrelationRulesEngine()
-    report = {
+    opaque_executable = {
         "nodes": [
-            {"method": "ANALYZE_MSI", "artifact_name": ""},
-            {"artifact_name": "msi_payload_001.exe", "content_preview": "MZ"},
+            {
+                "entropy": 7.95,
+                "content_preview": "MZ" + "X" * 100,
+                "decode_score": 0.0,
+            }
         ]
     }
-    assert any(
-        item["rule_id"] == "TITAN-011"
-        for item in engine.evaluate_all(report, {"domains": ["c2.example"]})
-    )
-    assert not any(
-        item["rule_id"] == "TITAN-011" for item in engine.evaluate_all(report, {})
-    )
-    url_only = {"nodes": [{"method": "ANALYZE_MSI"}]}
-    assert not any(
-        item["rule_id"] == "TITAN-011"
-        for item in engine.evaluate_all(url_only, {"urls": ["https://example.com"]})
-    )
-
-
-def test_onenote_detection_requires_section_executable_and_network_indicator():
-    engine = CorrelationRulesEngine()
-    report = {
-        "nodes": [
-            {"method": "ANALYZE_OneNote", "artifact_name": ""},
-            {"artifact_name": "onenote_file_001.exe", "content_preview": "MZ"},
-        ]
+    executable_ids = {
+        item["rule_id"] for item in engine.evaluate_all(opaque_executable, {})
     }
-    assert any(
-        item["rule_id"] == "TITAN-012"
-        for item in engine.evaluate_all(report, {"urls": ["https://c2.example/a"]})
-    )
-    assert not any(
-        item["rule_id"] == "TITAN-012" for item in engine.evaluate_all(report, {})
-    )
-    passive = {
-        "nodes": [
-            {"method": "ANALYZE_OneNote"},
-            {"artifact_name": "onenote_file_001.pdf"},
-        ]
-    }
-    assert not any(
-        item["rule_id"] == "TITAN-012"
-        for item in engine.evaluate_all(passive, {"domains": ["example.com"]})
-    )
+    assert "TITAN-004" in executable_ids
 
 
 def test_custom_rule_addition():

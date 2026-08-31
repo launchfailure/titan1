@@ -12,4 +12,4 @@ if not exist "%TITAN_PYTHON%" (
     exit /b 1
 )
 
-start "Titan Forensic Workbench" "%TITAN_PYTHON%" -m titan_decoder.desktop_ui.app
+start "Titan Forensic Workbench" "%TITAN_PYTHON%" -m titan_decoder.launcher

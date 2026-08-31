@@ -89,13 +89,7 @@ Titan requires Python 3.10 or newer.
 ### Install from GitHub
 
 ```bash
-pip install "git+https://github.com/pragmaconflux/titan1.git"
-```
-
-Install the integrated Textual workbench and its optional dependency with:
-
-```bash
-pip install "titan-decoder[workbench-ui] @ git+https://github.com/pragmaconflux/titan1.git"
+pip install "titan-decoder[desktop-ui] @ git+https://github.com/pragmaconflux/titan1.git"
 ```
 
 ### Editable developer install
@@ -105,7 +99,8 @@ git clone https://github.com/pragmaconflux/titan1.git
 cd titan1
 python -m venv .venv
 source .venv/bin/activate
-pip install -e '.[dev,workbench-ui,formats]'
+pip install -e '.[dev,workbench-ui,desktop-ui,formats]'
+pip install 'yara-python>=4.5.4'
 ```
 
 Install optional Brotli, Zstandard, 7z, RAR, ISO, and CAB support with
@@ -113,38 +108,36 @@ Install optional Brotli, Zstandard, 7z, RAR, ISO, and CAB support with
 
 On Debian-derived systems, use a virtual environment rather than installing into the externally managed system Python.
 
-The install provides:
-
-- `titan` — interactive menu-driven interface
-- `titan-decoder` — scriptable CLI
-- `titan-workbench` — dependency-free report explorer
-- `titan-workbench-ui` / `titan-tui` — integrated Textual terminal workbench
-- `titan-ui` — native PySide6 desktop workbench using the reference pixel layout
-- `titan-analyst` — grounded local analyst
+The install provides one application command: `titan`. Running it opens the
+native desktop workbench. Advanced terminal, service, analyst, and automation
+interfaces remain available as `titan` subcommands; run `titan --help` to see
+them.
 
 ## Quick start
 
 ```bash
-titan-decoder --file suspicious.bin --out report.json
+titan
 ```
 
-Launch the native desktop workbench after installing its extra:
-
-```bash
-pip install -e '.[desktop-ui,formats]'
-titan-ui
-```
-
-On Windows, the supported native configuration uses a PySide6 front end and a
-Debian analysis backend through WSL. Follow the one-time setup in the
+That is the complete normal-user workflow. On Windows, the supported native
+configuration uses a PySide6 front end and a Debian analysis backend through
+WSL. Follow the one-time setup in the
 [Windows Desktop Workbench guide](docs/WINDOWS_DESKTOP_UI.md), then launch
 `Titan-Windows.cmd`. Native Explorer drag-and-drop is available in this build.
+
+### Advanced command-line use
+
+The same `titan` executable exposes the scriptable engine when required:
+
+```bash
+titan cli --file suspicious.bin --out report.json
+```
 
 Deep-scan a folder without executing samples and copy only confirmed malicious
 verdicts into recoverable quarantine:
 
 ```bash
-titan-decoder --deep-scan ./incoming --offline \
+titan cli --deep-scan ./incoming --offline \
   --quarantine-verdict malicious --quarantine-action copy \
   --deep-scan-out scan-summary.json
 ```
@@ -152,16 +145,16 @@ titan-decoder --deep-scan ./incoming --offline \
 Run the labeled decoder/analyzer quality gate:
 
 ```bash
-titan-decoder --calibrate tests/fixtures/calibration/decoder-analyzer-v1.json
+titan cli --calibrate tests/fixtures/calibration/decoder-analyzer-v1.json
 ```
 
-For the separate terminal version, install `.[workbench-ui]` and run
-`titan-tui` or `titan-workbench-ui`.
+For the optional terminal workbench, install `.[workbench-ui]` and run
+`titan tui`.
 
 Add detections, risk, a readable explanation, and a separate Intelligence object:
 
 ```bash
-titan-decoder \
+titan cli \
   --file suspicious.bin \
   --enable-detections \
   --explain \
@@ -172,7 +165,7 @@ titan-decoder \
 Generate investigator-facing reports and an annotated graph:
 
 ```bash
-titan-decoder \
+titan cli \
   --file suspicious.bin \
   --enable-detections \
   --report-out case-report.html \
@@ -201,11 +194,11 @@ The CLI is organized as explicit stages:
 Common commands:
 
 ```bash
-titan-decoder --help
-titan-decoder --doctor
-titan-decoder --list-decoders
-titan-decoder --list-analyzers
-titan-decoder --print-schema-version
+titan cli --help
+titan cli --doctor
+titan cli --list-decoders
+titan cli --list-analyzers
+titan cli --print-schema-version
 ```
 
 See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) for stage-level internals and [docs/USAGE.md](docs/USAGE.md) for operational examples.
@@ -250,7 +243,7 @@ Every graph node retains derivation context, including its parent, method, hashe
 External incident-response evidence can be ingested with repeated `--evidence KIND:PATH` arguments:
 
 ```bash
-titan-decoder \
+titan cli \
   --file suspicious.bin \
   --evidence dns:logs/dns.csv \
   --evidence proxy:logs/proxy.csv \
@@ -265,9 +258,9 @@ See [docs/EVIDENCE_AND_PROVENANCE.md](docs/EVIDENCE_AND_PROVENANCE.md).
 ## Graph exports
 
 ```bash
-titan-decoder --file sample.bin --graph graph.json --graph-format json
-titan-decoder --file sample.bin --graph graph.dot --graph-format dot
-titan-decoder --file sample.bin --graph graph.mmd --graph-format mermaid
+titan cli --file sample.bin --graph graph.json --graph-format json
+titan cli --file sample.bin --graph graph.dot --graph-format dot
+titan cli --file sample.bin --graph graph.mmd --graph-format mermaid
 ```
 
 When the report contains Intelligence data, exports include:
@@ -319,7 +312,7 @@ See [docs/REPORT_SCHEMA.md](docs/REPORT_SCHEMA.md).
 ## Testing and development
 
 ```bash
-pip install -e '.[dev]'
+pip install -e '.[dev,desktop-ui]'
 python -m pytest
 ruff check .
 mypy titan_decoder
@@ -343,6 +336,7 @@ See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 |---|---|
 | [Documentation index](docs/DOCUMENTATION_INDEX.md) | Complete operator, developer, and maintainer map |
 | [Project charter](docs/PROJECT_CHARTER.md) | Mission, core principles, scope, and governance |
+| [Depth-hardening program](docs/DEPTH_HARDENING.md) | Ordered plan for content, corpus, parser, assurance, and trust depth |
 | [Architecture](docs/ARCHITECTURE.md) | Components, boundaries, and system diagrams |
 | [CLI reference](docs/CLI_REFERENCE.md) | Command groups, outputs, and examples |
 | [Windows desktop workbench](docs/WINDOWS_DESKTOP_UI.md) | Native setup, Debian bridge, drag-and-drop, and troubleshooting |
@@ -365,7 +359,11 @@ See [docs/TESTING.md](docs/TESTING.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Project status
 
-Titan is under active development. The deterministic core, report contracts, and safety bounds take priority over feature breadth. Planned work is tracked in [docs/ROADMAP.md](docs/ROADMAP.md).
+Titan is under active development. The deterministic core, report contracts,
+and safety bounds take priority over feature breadth. Major surface expansion is
+currently deferred in favor of the
+[depth-hardening program](docs/DEPTH_HARDENING.md); longer-term work remains in
+[docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## License
 

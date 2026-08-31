@@ -2,6 +2,15 @@
 
 This roadmap separates shipped features from planned work.
 
+## Current priority: depth before breadth
+
+Major feature-surface expansion is paused while Titan deepens its shipped
+capabilities. The ordered measurement, corpus, parser, fuzzing, code-assurance,
+operational, and independent-validation work is tracked in
+[DEPTH_HARDENING.md](DEPTH_HARDENING.md). The enterprise-competitiveness items
+below remain useful context, but unfinished breadth items are deferred until the
+depth program's foundations and assurance ratchets are established.
+
 ## Shipped
 
 - Recursive decoder/analyzer graph
@@ -24,16 +33,15 @@ This roadmap separates shipped features from planned work.
 - Evidence correlation platform (Milestone 5): cross-case IOC database, relationship scoring, campaign clustering, timeline correlation, infrastructure reuse detection, shared payload detection, attribution hints, analyst views, persisted cross-case fingerprints/events, and `--correlation-search`
 
 - Plugin SDK v1 (Milestone 6): stable public decoder/analyzer/detection/report APIs behind `titan_decoder.plugins.api`, plugin manifest with JSON Schema, semantic version compatibility and dependency constraints, deep validation (`--plugin-validate`), example plugins, and a complete developer guide
-- Analyst Workbench (Milestone 7): `titan-workbench` terminal application — report library, decode-tree and interactive graph exploration with node navigation, IOC/detection/timeline/evidence browsers, correlation view, ranked cross-report search, investigation workspaces with notes/tags/status, and CSV/graph/ZIP-bundle exports
-- Local AI Analyst (Milestone 8): `titan-analyst` — report-grounded evidence ledger with stable citations, deterministic question planning, citation-enforced validation, a tested local OpenAI-compatible backend (loopback-only by default), and a deterministic no-model default that doubles as the guaranteed fallback
+- Analyst Workbench (Milestone 7): `titan workbench` terminal application — report library, decode-tree and interactive graph exploration with node navigation, IOC/detection/timeline/evidence browsers, correlation view, ranked cross-report search, investigation workspaces with notes/tags/status, and CSV/graph/ZIP-bundle exports
+- Local AI Analyst (Milestone 8): `titan analyst` — report-grounded evidence ledger with stable citations, deterministic question planning, citation-enforced validation, a tested local OpenAI-compatible backend (loopback-only by default), and a deterministic no-model default that doubles as the guaranteed fallback
 
 Additional shipped engine expansion:
 
 - ASCII85, Base58, Base91, raw Deflate, PowerShell EncodedCommand,
   JavaScript escape, and optional Brotli/Zstandard decoders.
-- RFC/MIME, OOXML, RTF text/embedded-object extraction, script, LNK, optional
-  7z/RAR/ISO/CAB, deeper PE/ELF, and expanded image/audio/video steganography
-  analyzers.
+- RFC/MIME, OOXML, script, LNK, optional 7z/RAR/ISO/CAB, deeper PE/ELF, and
+  expanded image/audio/video steganography analyzers.
 - Versioned Windows/Debian capability handshake, manual decoder parity,
   progress events, real timeouts, and cancellation.
 - Hash-bound assurance adapters for isolated VM and provenance providers plus
@@ -72,15 +80,13 @@ constraints: deterministic, bounded, offline-first, fail-closed.
    and bounded seed extractors for Cobalt Strike Beacon and decrypted Remcos
    settings, with real-layout positive/adversarial fixtures. Next: expand the
    calibrated family and version matrix from measured field samples.
-3. **Format coverage depth.** .NET assembly structure, NSIS/InnoSetup
-   installers, deeper MSI table/custom-action semantics, deeper RTF exploit semantics, VBA
+3. **Format coverage depth.** .NET assembly structure, MSI/NSIS/InnoSetup
+   installers, OneNote, RTF exploit structures, Excel 4.0 XLM macros, VBA
    p-code, PDF stream filters with JavaScript extraction, APK/DEX, VHD/VHDX,
    and password-protected archives (`infected`). Thin Mach-O and DEX structural
-   analyzers, bounded RTF text/object extraction, XLM formula recovery, MSI
-   string/payload inspection, and documented OneNote embedded-file recovery now
-   ship with malformed-input corpus slices and explicit resource bounds;
-   continue prioritizing the remaining formats by measured misses.
-4. **Service mode.** A `titan-server` deployment shape: REST API, work
+   analyzers now ship with malformed-input corpus slices and explicit resource
+   bounds; continue prioritizing the remaining formats by measured misses.
+4. **Service mode.** A `titan server` deployment shape: REST API, work
    queue, horizontally scalable workers, artifact store, and hash-based
    dedup cache now ships as a dependency-free, loopback-only-by-default
    reference deployment. Next: production queue/object-store adapters and

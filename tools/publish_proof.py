@@ -20,6 +20,8 @@ from titan_decoder.core.calibration import CalibrationRunner  # noqa: E402
 from titan_decoder.core.engine import TitanEngine  # noqa: E402
 from titan_decoder.ecosystem.catalog import load_catalog  # noqa: E402
 from tools.eval_detections import evaluate  # noqa: E402
+from fuzz.fuzz_surfaces import STRUCTURED_SEEDS  # noqa: E402
+from fuzz.surface_invariants import SURFACES  # noqa: E402
 
 OUTPUT = ROOT / "docs" / "proof"
 CALIBRATION = ROOT / "tests" / "fixtures" / "calibration" / "decoder-analyzer-v1.json"
@@ -42,6 +44,10 @@ def build_metrics() -> dict:
     detection = evaluate()
     baseline = json.loads((ROOT / "tools" / "bench_baseline.json").read_text())
     fuzz_files = sorted((ROOT / "fuzz" / "corpus").iterdir())
+    golden_files = sorted((ROOT / "tests" / "golden" / "expected").glob("*.json"))
+    compatibility_files = sorted(
+        (ROOT / "tests" / "fixtures" / "compatibility").glob("*.json")
+    )
     catalog = load_catalog(ROOT / "registry" / "plugins-v1.json")
     return {
         "schema_version": "1.0",
@@ -56,6 +62,28 @@ def build_metrics() -> dict:
             "cases": baseline["cases"],
             "hardware_normalized": True,
         },
+        "determinism": {
+            "workflow": ".github/workflows/tests.yml",
+            "platforms": ["ubuntu-latest", "windows-latest"],
+            "python_versions": ["3.10", "3.11", "3.12", "3.13"],
+            "golden_fixture_count": len(golden_files),
+            "golden_fixtures": [
+                {
+                    "path": path.relative_to(ROOT).as_posix(),
+                    "sha256": _digest(path, text=True),
+                }
+                for path in golden_files
+            ],
+            "compatibility_fixture_count": len(compatibility_files),
+            "compatibility_fixtures": [
+                {
+                    "path": path.relative_to(ROOT).as_posix(),
+                    "sha256": _digest(path, text=True),
+                }
+                for path in compatibility_files
+            ],
+            "lineage_property": "tests/test_determinism_contracts.py",
+        },
         "fuzzing": {
             "harness": "fuzz/fuzz_decoders.py",
             "seed_count": len(fuzz_files),
@@ -68,6 +96,16 @@ def build_metrics() -> dict:
                 for path in fuzz_files
                 if path.is_file()
             ],
+            "scheduled_campaign": {
+                "workflow": ".github/workflows/scheduled-fuzz.yml",
+                "harness": "fuzz/fuzz_surfaces.py",
+                "seconds": 1800,
+                "surfaces": list(SURFACES),
+                "surface_count": len(SURFACES),
+                "structured_seed_count": len(STRUCTURED_SEEDS),
+                "reproducer_minimization": "deletion",
+                "artifact_retention_days": 30,
+            },
         },
         "ecosystem": {
             "catalog": "registry/plugins-v1.json",
@@ -105,6 +143,7 @@ def build_audit_scope() -> dict:
         "required_checks": [
             "pytest -q",
             "python fuzz/fuzz_decoders.py --seconds 30",
+            "python fuzz/fuzz_surfaces.py --seconds 30 --artifacts .fuzz-artifacts",
             "python tools/bench.py --check",
             "python tools/publish_proof.py --check",
         ],
@@ -125,12 +164,40 @@ def build_audit_scope() -> dict:
 
 def build_html(metrics: dict) -> str:
     calibration = metrics["accuracy"]["decoder_analyzer"]
+    detection = metrics["accuracy"]["detection"]
     aggregate = calibration["aggregate"]
-    rows = "".join(
+    recognition = calibration["recognition_aggregate"]
+    registry = calibration["registry_coverage"]
+    case_classes = calibration["case_class_coverage"]
+    extraction_rows = "".join(
         "<tr><td>{}</td><td>{:.3f}</td><td>{:.3f}</td><td>{:.3f}</td></tr>".format(
             html.escape(name), values["precision"], values["recall"], values["f1"]
         )
         for name, values in calibration["components"].items()
+    )
+    recognition_rows = "".join(
+        "<tr><td>{}</td><td>{:.3f}</td><td>{:.3f}</td><td>{:.3f}</td></tr>".format(
+            html.escape(name), values["precision"], values["recall"], values["f1"]
+        )
+        for name, values in calibration["recognition_components"].items()
+    )
+    case_class_rows = "".join(
+        "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format(
+            html.escape(name),
+            case_classes["per_component"][name]["malformed"],
+            case_classes["per_component"][name]["truncated"],
+        )
+        for name in case_classes["required_components"]
+    )
+    detection_rows = "".join(
+        "<tr><td>{}</td><td>{:.3f}</td><td>{:.3f}</td><td>{}</td><td>{}</td></tr>".format(
+            html.escape(name),
+            values["precision"],
+            values["recall"],
+            values["positive_samples"],
+            values["targeted_near_miss_samples"],
+        )
+        for name, values in detection["per_rule"].items()
     )
     return f"""<!doctype html>
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
@@ -138,8 +205,11 @@ def build_html(metrics: dict) -> str:
 <style>body{{font:16px system-ui;max-width:1050px;margin:2rem auto;padding:0 1rem;color:#172033}}table{{border-collapse:collapse;width:100%}}th,td{{padding:.55rem;border-bottom:1px solid #ccd3df;text-align:left}}.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem}}.card{{padding:1rem;border:1px solid #ccd3df;border-radius:8px}}code{{background:#eef1f5;padding:.1rem .3rem}}</style>
 <h1>Titan accuracy and proof dashboard</h1>
 <p>Deterministically generated by <code>tools/publish_proof.py</code> from committed calibration, benchmark, fuzz, and catalog inputs. A small synthetic corpus is a regression signal, not a field-accuracy claim.</p>
-<div class="cards"><div class="card"><b>Calibration cases</b><br>{calibration["case_count"]}</div><div class="card"><b>Aggregate precision</b><br>{aggregate["precision"]:.3f}</div><div class="card"><b>Aggregate recall</b><br>{aggregate["recall"]:.3f}</div><div class="card"><b>Benchmark cases</b><br>{metrics["benchmark"]["case_count"]}</div><div class="card"><b>Fuzz seeds</b><br>{metrics["fuzzing"]["seed_count"]}</div><div class="card"><b>Plugin entries</b><br>{metrics["ecosystem"]["catalog_entries"]}</div></div>
-<h2>Decoder and analyzer calibration</h2><table><thead><tr><th>Component</th><th>Precision</th><th>Recall</th><th>F1</th></tr></thead><tbody>{rows}</tbody></table>
+<div class="cards"><div class="card"><b>Calibration cases</b><br>{calibration["case_count"]}</div><div class="card"><b>Live built-ins covered</b><br>{registry["covered_count"]}/{registry["live_builtin_count"]}</div><div class="card"><b>Adversarial coverage</b><br>{case_classes["covered_count"]}/{case_classes["required_component_count"]}</div><div class="card"><b>Recognition precision</b><br>{recognition["precision"]:.3f}</div><div class="card"><b>Extraction precision</b><br>{aggregate["precision"]:.3f}</div><div class="card"><b>Detection cases</b><br>{detection["corpus_size"]}</div><div class="card"><b>Built-in rules measured</b><br>{len(detection["per_rule"])}</div><div class="card"><b>Benchmark cases</b><br>{metrics["benchmark"]["case_count"]}</div><div class="card"><b>Golden fixtures</b><br>{metrics["determinism"]["golden_fixture_count"]}</div><div class="card"><b>Compatibility fixtures</b><br>{metrics["determinism"]["compatibility_fixture_count"]}</div><div class="card"><b>Fuzz seeds</b><br>{metrics["fuzzing"]["seed_count"]}</div><div class="card"><b>Scheduled fuzz surfaces</b><br>{metrics["fuzzing"]["scheduled_campaign"]["surface_count"]}</div><div class="card"><b>Plugin entries</b><br>{metrics["ecosystem"]["catalog_entries"]}</div></div>
+<h2>Decoder and analyzer adversarial cases</h2><table><thead><tr><th>Component</th><th>Malformed</th><th>Truncated</th></tr></thead><tbody>{case_class_rows}</tbody></table>
+<h2>Decoder and analyzer recognition</h2><table><thead><tr><th>Component</th><th>Precision</th><th>Recall</th><th>F1</th></tr></thead><tbody>{recognition_rows}</tbody></table>
+<h2>Decoder and analyzer extraction</h2><table><thead><tr><th>Component</th><th>Precision</th><th>Recall</th><th>F1</th></tr></thead><tbody>{extraction_rows}</tbody></table>
+<h2>Built-in detection calibration</h2><table><thead><tr><th>Rule</th><th>Precision</th><th>Recall</th><th>Positive cases</th><th>Targeted near-misses</th></tr></thead><tbody>{detection_rows}</tbody></table>
 <h2>Evidence</h2><ul><li><a href="metrics.json">Machine-readable metrics</a></li><li><a href="parser-audit-scope.json">Independent parser-audit scope</a></li><li><a href="../../tools/bench_baseline.json">Committed benchmark baseline</a></li><li><a href="../../registry/plugins-v1.json">Plugin catalog</a></li></ul>
 </html>
 """

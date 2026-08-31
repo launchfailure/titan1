@@ -2,6 +2,65 @@
 
 ## Unreleased
 
+Determinism and compatibility:
+
+- Verify golden reports, root/lineage commitments, and frozen compatibility
+  fixtures on Windows across Python 3.10–3.13 in addition to the Linux matrix.
+- Lock legacy report, workspace, and Plugin API 1.0 reader behavior, including
+  `parent_id` navigation, and publish an explicit contract migration matrix.
+
+Code-assurance ratchet:
+
+- Raise the CI coverage floor from 70% to 75% while keeping the full package in
+  scope.
+- Remove `core.evidence_parsers` from the mypy exemption list and add property
+  checks for evidence ordering, deduplication, record bounds, and coercion.
+
+Continuous adversarial testing:
+
+- Add a weekly 30-minute fuzz campaign spanning decoder/analyzer contracts,
+  evidence parsers, plugin transport, server request bounds, report loading and
+  exports, and workspace loading.
+- Retain machine-readable campaign metrics and deletion-minimized reproducers
+  as CI artifacts for 30 days, with recorded seeds for replay.
+
+Detection content depth:
+
+- Add native `TITAN-009` and starter-pack YARA coverage for suspicious
+  logon/startup scheduled-task persistence (`T1053.005`).
+- Measure command-line and PowerShell behavior variants, decoded-child
+  coverage, multi-rule risk stacking, and benign administrative lookalikes.
+
+Decoder calibration depth:
+
+- Require every live built-in decoder, as well as every structural analyzer,
+  to carry deterministic malformed and truncated calibration cases.
+- Add compact derived-case mutations with pinned extraction hashes so a corpus
+  can retain its original fixture while measuring corrupt and partial variants.
+
+## 2.1.0 — Depth, extensibility, and analyst workflows (2026-08-29)
+
+Detection-depth hardening:
+
+- Derive detection-quality coverage from the live built-in rule registry so a
+  new `TITAN-*` rule cannot silently ship without published calibration.
+- Expand the deterministic labeled corpus from 27 to 43 cases, add two positive
+  and two targeted benign near-miss cases for `TITAN-008`, and require every
+  built-in rule to maintain at least two of each.
+- Make the evaluator fail closed on precision, recall, corpus coverage, label
+  integrity, duplicate samples, missing decoder preconditions, targeted
+  near-miss, or risk-separation regressions.
+- Stop treating routine `-NoProfile`, `cmd.exe /c`, and `cscript //nologo`
+  administration—or the benign `-Encoding` option—as LOLBin abuse by
+  themselves, and stop joining LOLBin context across unrelated nodes.
+- Require executable or packer context for `TITAN-004`, keeping ordinary
+  ciphertext as an entropy risk signal instead of a detection false positive.
+- Keep Base64, OLE, XOR, and PDF evidence on the same artifact lineage; require
+  actual macro markers for OLE detections, binary magic rather than prose for
+  PDF detections, and C2/beacon/exfiltration context for multi-IOC detections.
+- Publish built-in detection counts and per-rule corpus depth in the proof
+  dashboard.
+
 First-class YARA integration:
 
 - Scan every artifact-graph node — raw, decoded, and extracted content —

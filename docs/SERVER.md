@@ -1,6 +1,6 @@
 # Titan service mode
 
-`titan-server` turns the deterministic engine into local pipeline
+`titan server` turns the deterministic engine into local pipeline
 infrastructure without adding a web-framework dependency. It combines a REST
 surface, a persistent SQLite work queue, hash-addressed artifact/report storage,
 and one or more workers.
@@ -8,7 +8,7 @@ and one or more workers.
 ## Quick start
 
 ```console
-titan-server --data-dir ./titan-data
+titan server --data-dir ./titan-data
 ```
 
 The default binds only to `127.0.0.1:8787` and starts one worker. Submit raw
@@ -28,8 +28,8 @@ and `GET /v1/jobs/{sha256}/report`. Uploads default to 50 MiB maximum.
 The API and workers can run separately against a shared data directory:
 
 ```console
-titan-server --mode serve --data-dir /srv/titan
-titan-server --mode worker --workers 4 --worker-id worker-a --data-dir /srv/titan
+titan server --mode serve --data-dir /srv/titan
+titan server --mode worker --workers 4 --worker-id worker-a --data-dir /srv/titan
 ```
 
 SQLite transactions ensure one worker claims a queued artifact. A stopped

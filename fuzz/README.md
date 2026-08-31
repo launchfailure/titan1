@@ -1,8 +1,7 @@
 # Fuzzing
 
-Fuzz harness for Titan's decoders and analyzers. The safety invariants are
-easy to state and cheap to check, which makes this the highest-ROI robustness
-work in the project.
+Titan has a fast decoder/analyzer gate for pull requests and a longer scheduled
+campaign across six public-facing surfaces.
 
 ## Invariants (`invariants.py`)
 
@@ -27,6 +26,23 @@ Standalone, time-bounded (portable, no native deps):
 python fuzz/fuzz_decoders.py --seconds 30
 ```
 
+Cross-surface campaign:
+
+```bash
+python fuzz/fuzz_surfaces.py --seconds 300 --seed 145 --artifacts .fuzz-artifacts
+```
+
+The cross-surface harness covers decoder/analyzer contracts, evidence parsers,
+plugin manifest and request transport, server request-length validation,
+report loading and exports, and workspace load/save. It starts from the binary
+corpus plus valid structured seeds so mutations reach both rejection and
+successful-processing paths. Each run writes `summary.json` with its seed,
+duration, iterations, unique inputs, surfaces, and violation categories.
+
+The weekly GitHub Actions campaign runs for 30 minutes. On failure it retains
+the exact input after deletion minimization, a metadata sidecar, and the run
+summary for 30 days. The recorded seed makes the random stream reproducible.
+
 In CI / pytest (bounded example budget + corpus replay):
 
 ```bash
@@ -42,4 +58,7 @@ Checked-in "interesting" seeds: empty input, format magic bytes with and
 without valid structure, truncated CFB/PDF streams, nested base64, compression
 containers, an XOR'd URL, PE/ELF stubs, UTF-16/URL/HTML/UU encodings, high-
 entropy blobs, and mixed-magic junk. New crash-triggering inputs discovered by
-the fuzzer should be minimized and added here as regression seeds.
+the fuzzer should be minimized and added here as regression seeds. The
+scheduled harness performs initial deletion minimization automatically; a
+confirmed reproducer still belongs in this corpus with a focused regression
+test.

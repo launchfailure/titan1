@@ -7,25 +7,31 @@ documents the methodology, the current numbers, and how to reproduce them.
 ## Methodology
 
 - **Corpus** — `tools/corpus_samples.py` generates a labeled set of
-  documentation-range, synthetic samples: **24 malicious** (two per rule, so
-  per-rule recall is measured on more than one example — a rule that only
-  matched its exact design sample would show up as a miss) covering deep base64
-  nesting, CFB macro docs with a network IOC, LOLBin command lines, high-entropy
-  packed blobs, multi-stage IOC infrastructure, XOR-obfuscated C2, and PDFs
-  carrying an embedded PE/ELF, hidden-media payloads, RTF active objects, XLM
-  execution formulas, MSI executable delivery, and OneNote embedded-file
-  delivery; and **22 benign**, including **adversarial
-  near-misses** that deliberately sit just under a rule's trigger (a single-URL
-  doc, a JS-only PDF with no embedded executable, a single-layer base64 blob, a
-  two-domain config, a benign shell script, and a documentation snippet that
-  *names* PowerShell/cmd.exe without any abuse context) to stress false-positive
-  precision.
+  documentation-range, synthetic samples: **18 malicious** (at least two per
+  rule, so per-rule recall is measured on more than one example — a rule that
+  only matched its exact design sample would show up as a miss) covering deep
+  base64 nesting, CFB macro docs with a network IOC, LOLBin command lines,
+  high-entropy executable-like blobs, multi-stage IOC infrastructure,
+  XOR-obfuscated C2, PDFs carrying an embedded PE/ELF, hidden PNG payloads, and
+  suspicious scheduled-task persistence; and **30 benign**, including at least
+  **two labeled adversarial near-misses per rule**. These
+  deliberately sit just under a trigger: single-layer Base64, clean/macro-only
+  CFB, ordinary OLE hyperlinks, routine PowerShell and `cmd.exe`
+  administration (including `-Encoding`), generic ciphertext, IOC-rich service
+  documentation, XOR without a network observable, JavaScript-only PDFs, PDF
+  prose about executable formats, non-PDF executables, clean/unframed PNGs,
+  task queries, and ordinary scheduled backups and maintenance.
   The corpus is fully deterministic (seeded RNG, no `os.urandom`). **No real
   malware is stored in the repository — only the generator (the harness).**
 - **Harness** — `tools/eval_detections.py` runs the full engine plus the
   detection rules over every sample, compares the fired rule IDs against each
   sample's ground-truth labels, and reports per-rule precision/recall and the
-  overall benign-vs-malicious risk-score separation.
+  overall benign-vs-malicious risk-score separation. The built-in rule list is
+  discovered from the live engine rather than duplicated in the harness, so a
+  newly added rule fails CI until it receives enough positive and targeted
+  near-miss coverage. Duplicate names or payloads fail the label-integrity
+  gate, and selected near-misses declare a required decoder so they cannot
+  receive coverage credit unless the intended processing boundary was reached.
 - **Weights** — the 0–100 weights in `titan_decoder/core/risk_scoring.py` are
   tuned so the overall score separates the two classes. The docstring on
   `RiskScoringEngine` cites this measurement. A **per-severity floor** also
@@ -48,18 +54,34 @@ Committed machine-readable numbers: [`detection_metrics.json`](detection_metrics
 | TITAN-007 | 1.000     | 1.000  | 1.000 |
 | TITAN-008 | 1.000     | 1.000  | 1.000 |
 | TITAN-009 | 1.000     | 1.000  | 1.000 |
-| TITAN-010 | 1.000     | 1.000  | 1.000 |
-| TITAN-011 | 1.000     | 1.000  | 1.000 |
-| TITAN-012 | 1.000     | 1.000  | 1.000 |
 
-Each rule now has **two** positive samples (recall is measured on more than one
-example), and precision is checked against 22 benign samples that include
-adversarial near-misses. The LOLBin rule (TITAN-003) requires an actual
-abuse/execution-context token, so a document that merely *names* PowerShell or
-cmd.exe no longer false-positives.
+Each rule now has at least **two** positive samples (recall is measured on more
+than one example), and precision is checked against 30 benign samples. Every
+rule also has at least **two explicitly labeled near-misses**, preventing
+unrelated clean files from creating a misleading appearance of negative
+coverage. The LOLBin
+rule (TITAN-003) now requires actual abuse evidence rather than routine
+`-NoProfile`, `cmd.exe /c`, or `cscript //nologo` administration. TITAN-004
+requires high entropy plus executable/packer context; generic encrypted bytes
+remain visible through the separate entropy risk signal without becoming a
+detection. OLE, XOR, and PDF correlations now keep their evidence within the
+relevant artifact lineage, while multi-stage infrastructure requires explicit
+C2, beacon, or exfiltration context rather than IOC diversity alone.
+TITAN-009 requires scheduled-task creation, a logon/startup trigger, and strong
+LOLBin abuse context in one graph node; the measured Base64 variant verifies
+that decoded child content is covered, and both positives exercise deliberate
+TITAN-003/TITAN-009 risk stacking.
 
-**Risk separation:** benign samples score at most **9**; every malicious sample
+**Risk separation:** benign samples score at most **12**; every malicious sample
 scores at least **15**. The classes do not overlap.
+
+The CI quality gate requires, for every live built-in rule:
+
+- precision and recall of at least 0.800;
+- at least two labeled positive samples;
+- at least two targeted benign near-misses;
+- no targeted near-miss firing its associated rule; and
+- complete benign/malicious risk-score separation.
 
 These numbers reflect a deliberately small, clean corpus and are a regression
 anchor, **not a claim of field accuracy** — 1.000/1.000 here means each rule
@@ -74,14 +96,16 @@ precision is caught in CI.
 python tools/eval_detections.py --json docs/detection_metrics.json
 ```
 
-`tests/test_detection_eval.py` runs the same evaluation in CI and asserts that
-the benign/malicious risk scores stay separated, every built-in rule has at
-least two positives, and no rule's precision or recall regresses below 0.8, so
-the corpus stays honest as rules evolve.
+`tests/test_detection_eval.py` runs the same evaluation in CI. The evaluator
+also exits non-zero when any quality, coverage, label-integrity, or risk-
+separation gate fails, so both direct script use and pytest enforce the same
+contract.
 
 ## Extending the corpus
 
 Add samples to `build_corpus()` in `tools/corpus_samples.py` with a `malicious`
-flag and the set of `expected_rules`. Prefer synthetic, documentation-range
+flag and the set of `expected_rules`. Benign boundary cases should use
+`near_miss_rules`; set `required_decoders` when reaching a particular decoder
+is part of the boundary being tested. Prefer synthetic, documentation-range
 content. For a larger malicious set, generate or reference samples from
 theZoo / MalwareBazaar **out of tree** and keep only the harness here.

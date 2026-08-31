@@ -3,7 +3,9 @@
 Titan measures the shipped starter YARA pack against a deterministic,
 synthetic labeled corpus. The corpus contains two positive variants for every
 rule plus benign near-misses that mention the same tools and strings without
-the complete abuse chain.
+the complete abuse chain. The current 32-case corpus measures nine starter
+rules, including command-line and PowerShell scheduled-task persistence
+variants plus task-query and routine-maintenance lookalikes.
 
 The committed machine-readable result is
 [`yara_detection_metrics.json`](yara_detection_metrics.json). It is a

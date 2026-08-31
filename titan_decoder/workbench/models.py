@@ -99,7 +99,12 @@ class TitanReport:
 
     def children_of(self, node_id: Any) -> list[dict[str, Any]]:
         wanted = str(node_id)
-        return [node for node in self.nodes() if str(node.get("parent")) == wanted]
+        children = []
+        for node in self.nodes():
+            parent = node.get("parent") if "parent" in node else node.get("parent_id")
+            if str(parent) == wanted:
+                children.append(node)
+        return children
 
     def evidence(self) -> dict[str, Any]:
         evidence = self.data.get("evidence")

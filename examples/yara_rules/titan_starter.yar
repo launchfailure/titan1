@@ -129,3 +129,41 @@ rule Titan_Regsvr32_Remote_Scriptlet
     condition:
         $host and $scriptlet and $install and any of ($url*)
 }
+
+rule Titan_Scheduled_Task_Suspicious_Execution
+{
+    meta:
+        description = "Logon/startup scheduled task with suspicious LOLBin execution"
+        severity = "high"
+        attack_id = "T1053.005"
+    strings:
+        $schtasks = /\bschtasks(\.exe)?\b/ ascii nocase
+        $create = /\/create([ \t:]|$)/ ascii nocase
+        $task_run = /\/tr([ \t:]|$)/ ascii nocase
+        $trigger_cli1 = /\/sc([ \t:]+)onlogon\b/ ascii nocase
+        $trigger_cli2 = /\/sc([ \t:]+)onstart\b/ ascii nocase
+
+        $register = "Register-ScheduledTask" ascii nocase
+        $task_action = "New-ScheduledTaskAction" ascii nocase
+        $trigger_ps1 = "-AtLogOn" ascii nocase
+        $trigger_ps2 = "-AtStartup" ascii nocase
+
+        $host1 = "powershell" ascii nocase
+        $host2 = "pwsh" ascii nocase
+        $host3 = "wscript" ascii nocase
+        $host4 = "cscript" ascii nocase
+        $host5 = "mshta" ascii nocase
+        $host6 = "regsvr32" ascii nocase
+
+        $abuse1 = "-EncodedCommand" ascii nocase
+        $abuse2 = "-WindowStyle Hidden" ascii nocase
+        $abuse3 = "DownloadString" ascii nocase
+        $abuse4 = "Invoke-Expression" ascii nocase
+        $abuse5 = "scrobj.dll" ascii nocase
+        $abuse6 = /["']?[ \t]+(javascript|vbscript):/ ascii nocase
+    condition:
+        (
+            ($schtasks and $create and $task_run and any of ($trigger_cli*)) or
+            ($register and $task_action and any of ($trigger_ps*))
+        ) and any of ($host*) and any of ($abuse*)
+}
