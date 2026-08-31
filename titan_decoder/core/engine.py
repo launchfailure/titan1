@@ -44,7 +44,11 @@ from ..decoders.advanced import (
     ZstandardDecoder,
 )
 from .analyzers.base import Analyzer, ZipAnalyzer, TarAnalyzer, PEAnalyzer, ELFAnalyzer
-from .analyzers.executable_formats import DexAnalyzer, MachOAnalyzer, VirtualDiskAnalyzer
+from .analyzers.executable_formats import (
+    DexAnalyzer,
+    MachOAnalyzer,
+    VirtualDiskAnalyzer,
+)
 from .analyzers.steganography import SteganographyAnalyzer
 from .analyzers.emulation import X86ShellcodeEmulationAnalyzer
 from .analyzers.structured import (
