@@ -182,9 +182,7 @@ def test_fixed_vhd_footer_and_partition_are_parsed_and_extracted():
             "type": "0x07",
         }
     ]
-    assert artifacts["disk_partition_001.bin"].startswith(
-        b"https://disk.example/stage"
-    )
+    assert artifacts["disk_partition_001.bin"].startswith(b"https://disk.example/stage")
 
     report = TitanEngine().run_analysis(_build_fixed_vhd(b"https://disk.example/stage"))
     assert "https://disk.example/stage" in report["iocs"]["urls"]
@@ -235,9 +233,7 @@ def test_fixed_vhd_gpt_header_entries_and_partition_are_validated():
     assert metadata["partitions"][0]["type_guid"] == (
         "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7"
     )
-    assert artifacts["disk_partition_001.bin"].startswith(
-        b"https://gpt.example/stage"
-    )
+    assert artifacts["disk_partition_001.bin"].startswith(b"https://gpt.example/stage")
 
 
 def test_fixed_vhd_gpt_crc_corruption_fails_closed():
@@ -246,9 +242,7 @@ def test_fixed_vhd_gpt_crc_corruption_fails_closed():
     metadata = json.loads(_artifacts(bytes(data))["virtual_disk_metadata.json"])
 
     assert metadata["partition_table"]["valid"] is False
-    assert metadata["partition_table"]["anomalies"] == [
-        "invalid_gpt_entry_array_crc"
-    ]
+    assert metadata["partition_table"]["anomalies"] == ["invalid_gpt_entry_array_crc"]
     assert metadata["partitions"] == []
 
 
@@ -261,9 +255,10 @@ def test_vhdx_headers_and_region_tables_are_checksum_validated():
     assert metadata["current_header_offset"] == 128 << 10
     assert [header["valid"] for header in metadata["headers"]] == [True, True]
     assert [table["valid"] for table in metadata["region_tables"]] == [True, True]
-    assert [
-        region["name"] for region in metadata["region_tables"][0]["regions"]
-    ] == ["bat", "metadata"]
+    assert [region["name"] for region in metadata["region_tables"][0]["regions"]] == [
+        "bat",
+        "metadata",
+    ]
     assert metadata["metadata"]["values"] == {
         "file_parameters": {
             "block_size": 1 << 20,
@@ -284,9 +279,7 @@ def test_vhdx_headers_and_region_tables_are_checksum_validated():
     assert artifacts["virtual_disk_payload.bin"][512:538] == (
         b"https://vhdx.example/stage"
     )
-    assert artifacts["disk_partition_001.bin"].startswith(
-        b"https://vhdx.example/stage"
-    )
+    assert artifacts["disk_partition_001.bin"].startswith(b"https://vhdx.example/stage")
     assert metadata["anomalies"] == []
 
     report = TitanEngine().run_analysis(_build_vhdx())

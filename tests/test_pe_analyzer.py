@@ -152,17 +152,25 @@ def _build_dotnet_pe() -> bytes:
     headers = bytes(dos) + b"PE\x00\x00" + coff + bytes(optional) + bytes(section)
     output[: len(headers)] = headers
     struct.pack_into(
-        "<IHHIIII", output, section_raw, 72, 2, 5, metadata_rva,
-        len(metadata), 0x00000009, 0x06000001
+        "<IHHIIII",
+        output,
+        section_raw,
+        72,
+        2,
+        5,
+        metadata_rva,
+        len(metadata),
+        0x00000009,
+        0x06000001,
     )
     struct.pack_into("<II", output, section_raw + 24, resources_rva, 64)
     struct.pack_into("<II", output, section_raw + 32, section_rva + 0xC0, 32)
     output[section_raw + 0x100 : section_raw + 0x100 + len(metadata)] = metadata
     resource_payload = b'{"url":"https://managed.example/stage"}'
     struct.pack_into("<I", output, section_raw + 0x340, len(resource_payload))
-    output[
-        section_raw + 0x344 : section_raw + 0x344 + len(resource_payload)
-    ] = resource_payload
+    output[section_raw + 0x344 : section_raw + 0x344 + len(resource_payload)] = (
+        resource_payload
+    )
     return bytes(output)
 
 

@@ -967,9 +967,7 @@ class MsiAnalyzer(Analyzer):
                     "artifact": name if stored else None,
                     "sha256": digest,
                     "source_stream": decoded_path[:512],
-                    "source_stream_raw": (
-                        path[:512] if path != decoded_path else None
-                    ),
+                    "source_stream_raw": (path[:512] if path != decoded_path else None),
                     "stored": stored,
                     "type": suffix.removeprefix("."),
                 }
@@ -987,9 +985,7 @@ class MsiAnalyzer(Analyzer):
             }
         )[:256]
         sequence_tables = sorted(
-            name
-            for name in table_names
-            if name.lower().endswith("sequence")
+            name for name in table_names if name.lower().endswith("sequence")
         )[:32]
         binary_streams = sorted(
             name[:256]

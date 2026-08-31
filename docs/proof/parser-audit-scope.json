@@ -72,7 +72,7 @@
   "source_files": [
     {
       "path": "titan_decoder/core/analyzers/base.py",
-      "sha256": "09b9d23ecef374e55dc39db106b3179a95ef7a7801ec9ddbe776d48448682789"
+      "sha256": "319ed2c6c46dfd14d1ae0a42c4061729595e98bb96881e5a448791262b62e84b"
     },
     {
       "path": "titan_decoder/core/analyzers/emulation.py",
@@ -80,7 +80,7 @@
     },
     {
       "path": "titan_decoder/core/analyzers/executable_formats.py",
-      "sha256": "4e83bc2cbb7330c6dd0fc6d9d507d7b87172325c57263a7301e0a7f80e2efe07"
+      "sha256": "c6ec2adb44602f5b44625a4792f9a7a58e2da4a960b6d751e55257c727c3e75b"
     },
     {
       "path": "titan_decoder/core/analyzers/steganography.py",
@@ -88,7 +88,7 @@
     },
     {
       "path": "titan_decoder/core/analyzers/structured.py",
-      "sha256": "592804b340265b9fa5ebaac2ca13aefc9b958cbcb25f2fd0fe3ee9f45bd23743"
+      "sha256": "526f807329df8e147b60ca322964b486a4a4c2acfbbf47c44e8383f3affb8eea"
     },
     {
       "path": "titan_decoder/decoders/advanced.py",

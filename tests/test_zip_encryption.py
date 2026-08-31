@@ -41,40 +41,47 @@ def _encrypted_zip(
     compressed_size = len(encrypted)
     flags = 0x1
     method = 0
-    local = struct.pack(
-        "<IHHHHHIIIHH",
-        0x04034B50,
-        20,
-        flags,
-        method,
-        0,
-        0,
-        crc,
-        compressed_size,
-        len(content),
-        len(filename),
-        0,
-    ) + filename + encrypted
-    central = struct.pack(
-        "<IHHHHHHIIIHHHHHII",
-        0x02014B50,
-        20,
-        20,
-        flags,
-        method,
-        0,
-        0,
-        crc,
-        compressed_size,
-        len(content),
-        len(filename),
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-    ) + filename
+    local = (
+        struct.pack(
+            "<IHHHHHIIIHH",
+            0x04034B50,
+            20,
+            flags,
+            method,
+            0,
+            0,
+            crc,
+            compressed_size,
+            len(content),
+            len(filename),
+            0,
+        )
+        + filename
+        + encrypted
+    )
+    central = (
+        struct.pack(
+            "<IHHHHHHIIIHHHHHII",
+            0x02014B50,
+            20,
+            20,
+            flags,
+            method,
+            0,
+            0,
+            crc,
+            compressed_size,
+            len(content),
+            len(filename),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+        + filename
+    )
     eocd = struct.pack(
         "<IHHHHIIH",
         0x06054B50,

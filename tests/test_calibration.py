@@ -12,9 +12,10 @@ CORPUS = Path(__file__).parent / "fixtures" / "calibration" / "decoder-analyzer-
 
 
 def test_calibration_supports_reviewable_base64_parts(tmp_path):
-    assert CalibrationRunner._case_data(
-        {"data_base64_parts": ["SGVs", "bG8="]}, tmp_path
-    ) == b"Hello"
+    assert (
+        CalibrationRunner._case_data({"data_base64_parts": ["SGVs", "bG8="]}, tmp_path)
+        == b"Hello"
+    )
 
     with pytest.raises(ValueError, match="exactly one data representation"):
         CalibrationRunner._case_data(

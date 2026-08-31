@@ -309,10 +309,7 @@ class VirtualDiskAnalyzer(Analyzer):
     def can_analyze(self, data: bytes) -> bool:
         return data.startswith(self._VHDX_SIGNATURE) or (
             len(data) >= 512
-            and (
-                data[-512:-504] == self._VHD_COOKIE
-                or data[:8] == self._VHD_COOKIE
-            )
+            and (data[-512:-504] == self._VHD_COOKIE or data[:8] == self._VHD_COOKIE)
         )
 
     def analyze(self, data: bytes) -> list[tuple[str, bytes]]:
@@ -402,7 +399,9 @@ class VirtualDiskAnalyzer(Analyzer):
         timestamp = struct.unpack_from(">I", footer, 24)[0]
         creator_version = struct.unpack_from(">I", footer, 32)[0]
         original_size, current_size = struct.unpack_from(">QQ", footer, 40)
-        geometry, disk_type_value, stored_checksum = struct.unpack_from(">III", footer, 56)
+        geometry, disk_type_value, stored_checksum = struct.unpack_from(
+            ">III", footer, 56
+        )
         checksum_valid = self._vhd_checksum(footer) == stored_checksum
         disk_type = self._VHD_TYPES.get(disk_type_value, "unknown")
         anomalies = []
@@ -449,7 +448,11 @@ class VirtualDiskAnalyzer(Analyzer):
     ) -> tuple[dict[str, Any], list[dict[str, Any]], list[tuple[str, bytes]]]:
         if len(disk_data) < 512 or disk_data[510:512] != b"\x55\xaa":
             return (
-                {"scheme": None, "valid": False, "anomalies": ["missing_mbr_signature"]},
+                {
+                    "scheme": None,
+                    "valid": False,
+                    "anomalies": ["missing_mbr_signature"],
+                },
                 [],
                 [],
             )
@@ -480,7 +483,10 @@ class VirtualDiskAnalyzer(Analyzer):
             )
             if range_valid and size <= self.max_item:
                 extracted.append(
-                    (f"disk_partition_{slot + 1:03d}.bin", disk_data[offset : offset + size])
+                    (
+                        f"disk_partition_{slot + 1:03d}.bin",
+                        disk_data[offset : offset + size],
+                    )
                 )
         return {"scheme": "MBR", "valid": True, "anomalies": []}, partitions, extracted
 
@@ -575,7 +581,9 @@ class VirtualDiskAnalyzer(Analyzer):
                 first_usable <= start_lba <= end_lba <= last_usable
                 and offset + size <= len(disk_data)
             )
-            name = entry[56:128].decode("utf-16-le", errors="replace").split("\x00", 1)[0]
+            name = (
+                entry[56:128].decode("utf-16-le", errors="replace").split("\x00", 1)[0]
+            )
             partitions.append(
                 {
                     "slot": index + 1,
@@ -592,7 +600,10 @@ class VirtualDiskAnalyzer(Analyzer):
             )
             if range_valid and size <= self.max_item:
                 extracted.append(
-                    (f"disk_partition_{index + 1:03d}.bin", disk_data[offset : offset + size])
+                    (
+                        f"disk_partition_{index + 1:03d}.bin",
+                        disk_data[offset : offset + size],
+                    )
                 )
         return summary, partitions, extracted
 
@@ -610,7 +621,9 @@ class VirtualDiskAnalyzer(Analyzer):
             return None
         raw = data[offset : offset + 4096]
         stored_checksum = struct.unpack_from("<I", raw, 4)[0]
-        checksum_valid = self._crc32c(raw[:4] + b"\x00" * 4 + raw[8:]) == stored_checksum
+        checksum_valid = (
+            self._crc32c(raw[:4] + b"\x00" * 4 + raw[8:]) == stored_checksum
+        )
         sequence = struct.unpack_from("<Q", raw, 8)[0]
         log_version, version, log_length, log_offset = struct.unpack_from(
             "<HHIQ", raw, 64
@@ -646,7 +659,9 @@ class VirtualDiskAnalyzer(Analyzer):
             return None
         raw = data[offset : offset + 65536]
         stored_checksum, count = struct.unpack_from("<II", raw, 4)
-        checksum_valid = self._crc32c(raw[:4] + b"\x00" * 4 + raw[8:]) == stored_checksum
+        checksum_valid = (
+            self._crc32c(raw[:4] + b"\x00" * 4 + raw[8:]) == stored_checksum
+        )
         if count > 2047:
             return {
                 "offset": offset,
@@ -739,13 +754,10 @@ class VirtualDiskAnalyzer(Analyzer):
             name = self._VHDX_METADATA.get(guid, "unknown")
             is_user = bool(flags & 0x1)
             key = (guid, is_user)
-            range_valid = (
-                (length == 0 and item_offset == 0)
-                or (
-                    item_offset >= 65536
-                    and length <= 1 << 20
-                    and item_offset + length <= region_length
-                )
+            range_valid = (length == 0 and item_offset == 0) or (
+                item_offset >= 65536
+                and length <= 1 << 20
+                and item_offset + length <= region_length
             )
             if key in seen:
                 anomalies.append("duplicate_metadata_item")
@@ -791,7 +803,9 @@ class VirtualDiskAnalyzer(Analyzer):
                 values[name] = struct.unpack_from("<Q", raw)[0]
             elif name == "virtual_disk_id" and length == 16:
                 values[name] = str(uuid.UUID(bytes_le=raw))
-            elif name in ("logical_sector_size", "physical_sector_size") and length == 4:
+            elif (
+                name in ("logical_sector_size", "physical_sector_size") and length == 4
+            ):
                 sector_size = struct.unpack_from("<I", raw)[0]
                 values[name] = sector_size
                 if sector_size not in (512, 4096):
@@ -939,7 +953,11 @@ class VirtualDiskAnalyzer(Analyzer):
             reconstructable = False
         if anomalies:
             reconstructable = False
-        output = bytes(reconstructed) if reconstructed is not None and reconstructable else None
+        output = (
+            bytes(reconstructed)
+            if reconstructed is not None and reconstructable
+            else None
+        )
         return {
             "valid": not anomalies,
             "has_parent": has_parent,
@@ -1021,8 +1039,8 @@ class VirtualDiskAnalyzer(Analyzer):
                 anomalies.append("invalid_bat_region")
             if disk_payload is not None:
                 candidates.append(("virtual_disk_payload.bin", disk_payload))
-                partition_table, partitions, partition_artifacts = self._partition_table(
-                    disk_payload
+                partition_table, partitions, partition_artifacts = (
+                    self._partition_table(disk_payload)
                 )
                 candidates.extend(partition_artifacts)
         result = {

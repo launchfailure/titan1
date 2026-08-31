@@ -330,16 +330,51 @@ class PEAnalyzer(Analyzer):
     """PE (Portable Executable) file metadata analyzer."""
 
     _DOTNET_TABLE_NAMES = (
-        "Module", "TypeRef", "TypeDef", "FieldPtr", "Field", "MethodPtr",
-        "MethodDef", "ParamPtr", "Param", "InterfaceImpl", "MemberRef",
-        "Constant", "CustomAttribute", "FieldMarshal", "DeclSecurity",
-        "ClassLayout", "FieldLayout", "StandAloneSig", "EventMap",
-        "EventPtr", "Event", "PropertyMap", "PropertyPtr", "Property",
-        "MethodSemantics", "MethodImpl", "ModuleRef", "TypeSpec", "ImplMap",
-        "FieldRVA", "ENCLog", "ENCMap", "Assembly", "AssemblyProcessor",
-        "AssemblyOS", "AssemblyRef", "AssemblyRefProcessor", "AssemblyRefOS",
-        "File", "ExportedType", "ManifestResource", "NestedClass",
-        "GenericParam", "MethodSpec", "GenericParamConstraint",
+        "Module",
+        "TypeRef",
+        "TypeDef",
+        "FieldPtr",
+        "Field",
+        "MethodPtr",
+        "MethodDef",
+        "ParamPtr",
+        "Param",
+        "InterfaceImpl",
+        "MemberRef",
+        "Constant",
+        "CustomAttribute",
+        "FieldMarshal",
+        "DeclSecurity",
+        "ClassLayout",
+        "FieldLayout",
+        "StandAloneSig",
+        "EventMap",
+        "EventPtr",
+        "Event",
+        "PropertyMap",
+        "PropertyPtr",
+        "Property",
+        "MethodSemantics",
+        "MethodImpl",
+        "ModuleRef",
+        "TypeSpec",
+        "ImplMap",
+        "FieldRVA",
+        "ENCLog",
+        "ENCMap",
+        "Assembly",
+        "AssemblyProcessor",
+        "AssemblyOS",
+        "AssemblyRef",
+        "AssemblyRefProcessor",
+        "AssemblyRefOS",
+        "File",
+        "ExportedType",
+        "ManifestResource",
+        "NestedClass",
+        "GenericParam",
+        "MethodSpec",
+        "GenericParamConstraint",
     )
     _MAX_DOTNET_METADATA_SIZE = 64 << 20
     _MAX_DOTNET_STREAMS = 64
@@ -360,8 +395,29 @@ class PEAnalyzer(Analyzer):
         "HasConstant": (2, (4, 8, 23)),
         "HasCustomAttribute": (
             5,
-            (6, 4, 1, 2, 8, 9, 10, 0, 14, 23, 20, 17, 26, 27, 32, 35,
-             38, 39, 40, 42, 44),
+            (
+                6,
+                4,
+                1,
+                2,
+                8,
+                9,
+                10,
+                0,
+                14,
+                23,
+                20,
+                17,
+                26,
+                27,
+                32,
+                35,
+                38,
+                39,
+                40,
+                42,
+                44,
+            ),
         ),
         "HasFieldMarshal": (1, (4, 8)),
         "HasDeclSecurity": (2, (2, 6, 32)),
@@ -484,11 +540,16 @@ class PEAnalyzer(Analyzer):
                             continue
                         stored_hashes.add(digest)
                         raw_name = str(record.get("name") or "resource.bin")
-                        safe_name = "".join(
-                            character
-                            for character in raw_name.replace("\\", "/").rsplit("/", 1)[-1]
-                            if character.isalnum() or character in "._-"
-                        )[:120] or "resource.bin"
+                        safe_name = (
+                            "".join(
+                                character
+                                for character in raw_name.replace("\\", "/").rsplit(
+                                    "/", 1
+                                )[-1]
+                                if character.isalnum() or character in "._-"
+                            )[:120]
+                            or "resource.bin"
+                        )
                         artifact_name = (
                             f"dotnet_resource_{len(resource_artifacts) + 1:03d}_"
                             f"{safe_name}"
@@ -535,8 +596,7 @@ class PEAnalyzer(Analyzer):
         if schema is None:
             return None
         return sum(
-            cls._dotnet_index_width(token, row_counts, heap_sizes)
-            for token in schema
+            cls._dotnet_index_width(token, row_counts, heap_sizes) for token in schema
         )
 
     @staticmethod
@@ -612,9 +672,7 @@ class PEAnalyzer(Analyzer):
                     "prefers_32_bit": bool(flags & 0x00020000),
                 },
                 "entry_point": {
-                    "kind": "native_rva"
-                    if flags & 0x00000010
-                    else "metadata_token",
+                    "kind": "native_rva" if flags & 0x00000010 else "metadata_token",
                     "value": f"0x{entry:08x}",
                 },
             }
@@ -637,8 +695,7 @@ class PEAnalyzer(Analyzer):
                 "size": managed_resources_size,
                 "range_valid": bool(
                     managed_resources_at is not None
-                    and managed_resources_size
-                    <= len(data) - managed_resources_at
+                    and managed_resources_size <= len(data) - managed_resources_at
                 ),
             }
 
@@ -646,9 +703,7 @@ class PEAnalyzer(Analyzer):
             strong_name_rva, strong_name_size = struct.unpack_from(
                 "<II", data, clr_at + 32
             )
-            strong_name_at = (
-                rva_offset(strong_name_rva) if strong_name_size else None
-            )
+            strong_name_at = rva_offset(strong_name_rva) if strong_name_size else None
             result["strong_name_signature"] = {
                 "present": bool(strong_name_size),
                 "rva": f"0x{strong_name_rva:08x}",
@@ -677,18 +732,11 @@ class PEAnalyzer(Analyzer):
             "<HH", data, metadata_at + 4
         )
         version_length = struct.unpack_from("<I", data, metadata_at + 12)[0]
-        if (
-            version_length > 1024
-            or metadata_at + 16 + version_length > metadata_end
-        ):
+        if version_length > 1024 or metadata_at + 16 + version_length > metadata_end:
             result["anomalies"].append("invalid_metadata_version_range")
             return result
-        version_bytes = data[
-            metadata_at + 16 : metadata_at + 16 + version_length
-        ]
-        version = version_bytes.split(b"\x00", 1)[0].decode(
-            "utf-8", errors="replace"
-        )
+        version_bytes = data[metadata_at + 16 : metadata_at + 16 + version_length]
+        version = version_bytes.split(b"\x00", 1)[0].decode("utf-8", errors="replace")
         cursor = metadata_at + ((16 + version_length + 3) & ~3)
         if cursor + 4 > metadata_end:
             result["anomalies"].append("truncated_metadata_stream_count")
@@ -757,9 +805,7 @@ class PEAnalyzer(Analyzer):
                 if end < 0:
                     break
                 if end > position:
-                    value = strings_data[position:end].decode(
-                        "utf-8", errors="replace"
-                    )
+                    value = strings_data[position:end].decode("utf-8", errors="replace")
                     if value:
                         string_values.append(value[:512])
                 position = end + 1
@@ -771,9 +817,7 @@ class PEAnalyzer(Analyzer):
             if index >= strings_size or strings_at + index >= metadata_end:
                 return None
             start = strings_at + index
-            end = data.find(
-                b"\x00", start, min(strings_at + strings_size, start + 512)
-            )
+            end = data.find(b"\x00", start, min(strings_at + strings_size, start + 512))
             if end < 0:
                 return None
             return data[start:end].decode("utf-8", errors="replace")
@@ -808,9 +852,7 @@ class PEAnalyzer(Analyzer):
                     table_cursor = row_cursor
                     table_end = table_at + table_size
                     for index in present_indexes:
-                        row_size = self._dotnet_row_size(
-                            index, row_counts, heap_sizes
-                        )
+                        row_size = self._dotnet_row_size(index, row_counts, heap_sizes)
                         if row_size is None:
                             result["anomalies"].append(
                                 f"unsupported_metadata_table:{index}"
@@ -845,8 +887,7 @@ class PEAnalyzer(Analyzer):
                             relative_guid = (mvid_index - 1) * 16
                             if relative_guid + 16 <= guid_size:
                                 mvid = data[
-                                    guid_at
-                                    + relative_guid : guid_at
+                                    guid_at + relative_guid : guid_at
                                     + relative_guid
                                     + 16
                                 ].hex()
@@ -859,9 +900,7 @@ class PEAnalyzer(Analyzer):
                     assembly_layout = table_offsets.get(32)
                     if assembly_layout is not None and row_counts.get(32, 0) > 0:
                         assembly_at, _ = assembly_layout
-                        hash_algorithm = struct.unpack_from(
-                            "<I", data, assembly_at
-                        )[0]
+                        hash_algorithm = struct.unpack_from("<I", data, assembly_at)[0]
                         version_parts = struct.unpack_from(
                             "<HHHH", data, assembly_at + 4
                         )
@@ -975,9 +1014,7 @@ class PEAnalyzer(Analyzer):
                             )
                         ):
                             at = resource_at + row * resource_size
-                            offset, resource_flags = struct.unpack_from(
-                                "<II", data, at
-                            )
+                            offset, resource_flags = struct.unpack_from("<II", data, at)
                             name_index = read_index(at + 8, string_width)
                             implementation = read_index(
                                 at + 8 + string_width,
@@ -1029,8 +1066,7 @@ class PEAnalyzer(Analyzer):
                                     range_valid = bool(
                                         payload_size
                                         <= managed_resources_size - offset - 4
-                                        and payload_size
-                                        <= len(data) - payload_at - 4
+                                        and payload_size <= len(data) - payload_at - 4
                                     )
                                     record["embedded_data"] = {
                                         "size": payload_size,
@@ -1038,7 +1074,9 @@ class PEAnalyzer(Analyzer):
                                         "range_valid": range_valid,
                                         "sha256": sha256(
                                             data[
-                                                payload_at + 4 : payload_at + 4 + payload_size
+                                                payload_at + 4 : payload_at
+                                                + 4
+                                                + payload_size
                                             ]
                                         ).hexdigest()
                                         if range_valid
@@ -1072,14 +1110,12 @@ class PEAnalyzer(Analyzer):
                 "assembly": assembly,
                 "assembly_reference_count": table_rows.get("AssemblyRef", 0),
                 "assembly_references": assembly_references,
-                "assembly_references_truncated": table_rows.get(
-                    "AssemblyRef", 0
-                ) > len(assembly_references),
+                "assembly_references_truncated": table_rows.get("AssemblyRef", 0)
+                > len(assembly_references),
                 "manifest_resource_count": table_rows.get("ManifestResource", 0),
                 "manifest_resources": manifest_resources,
-                "manifest_resources_truncated": table_rows.get(
-                    "ManifestResource", 0
-                ) > len(manifest_resources),
+                "manifest_resources_truncated": table_rows.get("ManifestResource", 0)
+                > len(manifest_resources),
                 "module": module,
                 "streams": streams,
                 "string_heap_preview": string_values,
@@ -1118,8 +1154,7 @@ class PEAnalyzer(Analyzer):
             ) = struct.unpack_from("<7I", scanned, header_at)
             range_valid = bool(
                 signature == 0xDEADBEEF
-                and (magic_1, magic_2, magic_3)
-                == (0x6C6C754E, 0x74666F73, 0x74736E49)
+                and (magic_1, magic_2, magic_3) == (0x6C6C754E, 0x74666F73, 0x74736E49)
                 and flags & ~0x0F == 0
                 and header_length > 0
                 and following_length >= 28
@@ -1387,10 +1422,8 @@ class PEAnalyzer(Analyzer):
                             "<I", data, opt_offset + number_of_directories_at
                         )[0]
                         clr_directory_at = opt_offset + directories_at + 14 * 8
-                        if (
-                            directory_count > 14
-                            and clr_directory_at + 8
-                            <= min(section_offset, len(data))
+                        if directory_count > 14 and clr_directory_at + 8 <= min(
+                            section_offset, len(data)
                         ):
                             clr_rva, clr_size = struct.unpack_from(
                                 "<II", data, clr_directory_at
