@@ -758,6 +758,18 @@ class MsiAnalyzer(Analyzer):
     )
     _ASCII = re.compile(rb"[\x20-\x7e]{4,4096}")
     _UTF16 = re.compile(rb"(?:[\x20-\x7e]\x00){4,2048}")
+    _NAME_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz._"
+    _COMMAND_MARKERS = (
+        "cmd.exe",
+        "cscript",
+        "mshta",
+        "msiexec",
+        "powershell",
+        "pwsh",
+        "regsvr32",
+        "rundll32",
+        "wscript",
+    )
 
     def __init__(self, config: dict[str, Any] | None = None):
         config = config or {}
@@ -773,9 +785,40 @@ class MsiAnalyzer(Analyzer):
     def metadata_artifact_names(self) -> frozenset:
         return frozenset({"msi_summary.json"})
 
-    @staticmethod
-    def _leaf(path: str) -> str:
-        return path.replace("\\", "/").rsplit("/", 1)[-1].lower()
+    @classmethod
+    def _decode_stream_name(cls, value: str) -> tuple[str, bool]:
+        """Decode MSI's packed CFB stream-name representation."""
+
+        table_stream = value.startswith("\u4840")
+        position = 1 if table_stream else 0
+        decoded: list[str] = []
+        for character in value[position:]:
+            codepoint = ord(character)
+            if 0x3800 <= codepoint < 0x4800:
+                packed = codepoint - 0x3800
+                decoded.append(cls._NAME_ALPHABET[packed & 0x3F])
+                decoded.append(cls._NAME_ALPHABET[(packed >> 6) & 0x3F])
+            elif 0x4800 <= codepoint < 0x4840:
+                decoded.append(cls._NAME_ALPHABET[codepoint - 0x4800])
+            else:
+                decoded.append(character)
+        return "".join(decoded), table_stream
+
+    @classmethod
+    def _decoded_path(cls, path: str) -> tuple[str, bool]:
+        parts = path.replace("\\", "/").split("/")
+        decoded_parts: list[str] = []
+        table_stream = False
+        for part in parts:
+            decoded, is_table = cls._decode_stream_name(part)
+            decoded_parts.append(decoded)
+            table_stream = table_stream or is_table
+        return "/".join(decoded_parts), table_stream
+
+    @classmethod
+    def _leaf(cls, path: str) -> str:
+        decoded, _ = cls._decoded_path(path)
+        return decoded.rsplit("/", 1)[-1].lower()
 
     def _reader(self, data: bytes) -> CFBReader | None:
         if len(data) < 512 or not data.startswith(CFB_SIGNATURE):
@@ -867,15 +910,21 @@ class MsiAnalyzer(Analyzer):
             streams = reader.streams()[:2048]
         except (CFBError, IndexError, OSError, OverflowError, ValueError, struct.error):
             return []
-        leaves = {self._leaf(path): (path, entry) for path, entry in streams}
+        stream_records = [
+            (path, *self._decoded_path(path), entry) for path, entry in streams
+        ]
+        leaves = {
+            decoded.rsplit("/", 1)[-1].lower(): (path, decoded, entry)
+            for path, decoded, _is_table, entry in stream_records
+        }
         if not {"_stringpool", "_stringdata"}.issubset(leaves):
             return []
 
         collector = _Collector(self.max_artifacts, self.max_total, self.max_item)
         collector.names.add("msi_summary.json")
         try:
-            pool = reader.read_stream(leaves["_stringpool"][1])[: self.max_item]
-            string_data = reader.read_stream(leaves["_stringdata"][1])[: self.max_item]
+            pool = reader.read_stream(leaves["_stringpool"][2])[: self.max_item]
+            string_data = reader.read_stream(leaves["_stringdata"][2])[: self.max_item]
         except (CFBError, IndexError, OSError, OverflowError, ValueError, struct.error):
             pool, string_data = b"", b""
         code_page, strings = self._strings(pool, string_data)
@@ -884,8 +933,11 @@ class MsiAnalyzer(Analyzer):
 
         payloads: list[dict[str, Any]] = []
         payload_hashes: set[str] = set()
-        for path, entry in streams:
-            if self._leaf(path) in {"_stringpool", "_stringdata"}:
+        for path, decoded_path, _is_table, entry in stream_records:
+            if decoded_path.rsplit("/", 1)[-1].lower() in {
+                "_stringpool",
+                "_stringdata",
+            }:
                 continue
             if entry.size <= 0 or entry.size > self.max_total:
                 continue
@@ -914,21 +966,65 @@ class MsiAnalyzer(Analyzer):
                 {
                     "artifact": name if stored else None,
                     "sha256": digest,
-                    "source_stream": path[:512],
+                    "source_stream": decoded_path[:512],
+                    "source_stream_raw": (
+                        path[:512] if path != decoded_path else None
+                    ),
                     "stored": stored,
                     "type": suffix.removeprefix("."),
                 }
             )
 
         stream_names = sorted(path[:512] for path, _ in streams)[:512]
+        decoded_stream_names = sorted(
+            {decoded_path[:512] for _, decoded_path, _, _ in stream_records}
+        )[:512]
+        table_names = sorted(
+            {
+                decoded_path.rsplit("/", 1)[-1][:128]
+                for _, decoded_path, is_table, _ in stream_records
+                if is_table
+            }
+        )[:256]
+        sequence_tables = sorted(
+            name
+            for name in table_names
+            if name.lower().endswith("sequence")
+        )[:32]
+        binary_streams = sorted(
+            name[:256]
+            for name in decoded_stream_names
+            if name.lower().startswith("binary.")
+        )[:128]
+        command_strings = sorted(
+            {
+                value[:512]
+                for value in strings
+                if any(marker in value.lower() for marker in self._COMMAND_MARKERS)
+            }
+        )[:32]
+        custom_action_table_present = any(
+            name.lower() == "customaction" for name in table_names
+        )
         summary = {
             "analyzer": "msi",
             "code_page": code_page,
+            "custom_action_evidence": {
+                "binary_streams": binary_streams,
+                "command_strings": command_strings,
+                "custom_action_table_present": custom_action_table_present,
+                "execution_surface_present": bool(
+                    custom_action_table_present or command_strings
+                ),
+                "sequence_tables": sequence_tables,
+            },
+            "decoded_stream_names": decoded_stream_names,
             "execution_performed": False,
             "payloads": payloads,
             "stream_count": len(streams),
             "stream_names": stream_names,
             "string_count": len(strings),
+            "table_names": table_names,
         }
         encoded = json.dumps(summary, indent=2, sort_keys=True).encode("utf-8")
         collector.items.insert(0, ("msi_summary.json", encoded[: self.max_item]))

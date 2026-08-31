@@ -9,21 +9,25 @@
         "precision": 1.0,
         "recall": 1.0,
         "specificity": 1.0,
-        "true_negative": 91,
-        "true_positive": 61
+        "true_negative": 97,
+        "true_positive": 71
       },
       "case_class_coverage": {
         "covered_components": [
           "analyzer:DEX",
           "analyzer:ELF",
           "analyzer:Email",
+          "analyzer:MSI",
           "analyzer:Mach-O",
           "analyzer:OfficeOOXML",
+          "analyzer:OneNote",
           "analyzer:OptionalArchive",
           "analyzer:PE",
+          "analyzer:RTF",
           "analyzer:Script",
           "analyzer:Steganography",
           "analyzer:TAR",
+          "analyzer:VirtualDisk",
           "analyzer:WindowsLNK",
           "analyzer:X86ShellcodeEmulation",
           "analyzer:ZIP",
@@ -54,7 +58,7 @@
           "decoder:ZLIB",
           "decoder:Zstandard"
         ],
-        "covered_count": 39,
+        "covered_count": 43,
         "missing": [],
         "per_component": {
           "analyzer:DEX": {
@@ -82,12 +86,12 @@
             "truncated": 1
           },
           "analyzer:MSI": {
-            "clean_negative": 0,
-            "malformed": 0,
+            "clean_negative": 1,
+            "malformed": 1,
             "nested_chain": 0,
-            "positive": 0,
+            "positive": 1,
             "size_bound": 0,
-            "truncated": 0
+            "truncated": 1
           },
           "analyzer:Mach-O": {
             "clean_negative": 1,
@@ -106,12 +110,12 @@
             "truncated": 1
           },
           "analyzer:OneNote": {
-            "clean_negative": 0,
-            "malformed": 0,
+            "clean_negative": 1,
+            "malformed": 1,
             "nested_chain": 0,
-            "positive": 0,
+            "positive": 1,
             "size_bound": 0,
-            "truncated": 0
+            "truncated": 1
           },
           "analyzer:OptionalArchive": {
             "clean_negative": 1,
@@ -130,12 +134,12 @@
             "truncated": 1
           },
           "analyzer:RTF": {
-            "clean_negative": 0,
-            "malformed": 0,
+            "clean_negative": 1,
+            "malformed": 1,
             "nested_chain": 0,
-            "positive": 0,
+            "positive": 1,
             "size_bound": 0,
-            "truncated": 0
+            "truncated": 1
           },
           "analyzer:Script": {
             "clean_negative": 1,
@@ -154,6 +158,14 @@
             "truncated": 1
           },
           "analyzer:TAR": {
+            "clean_negative": 1,
+            "malformed": 1,
+            "nested_chain": 0,
+            "positive": 1,
+            "size_bound": 0,
+            "truncated": 1
+          },
+          "analyzer:VirtualDisk": {
             "clean_negative": 1,
             "malformed": 1,
             "nested_chain": 0,
@@ -404,18 +416,22 @@
             "truncated"
           ]
         },
-        "required_component_count": 39,
+        "required_component_count": 43,
         "required_components": [
           "analyzer:DEX",
           "analyzer:ELF",
           "analyzer:Email",
+          "analyzer:MSI",
           "analyzer:Mach-O",
           "analyzer:OfficeOOXML",
+          "analyzer:OneNote",
           "analyzer:OptionalArchive",
           "analyzer:PE",
+          "analyzer:RTF",
           "analyzer:Script",
           "analyzer:Steganography",
           "analyzer:TAR",
+          "analyzer:VirtualDisk",
           "analyzer:WindowsLNK",
           "analyzer:X86ShellcodeEmulation",
           "analyzer:ZIP",
@@ -447,7 +463,7 @@
           "decoder:Zstandard"
         ]
       },
-      "case_count": 156,
+      "case_count": 172,
       "cases": [
         {
           "can_process": true,
@@ -2994,6 +3010,295 @@
           "predicted_match": false,
           "predicted_recognition": false,
           "recognition_outcome": "true_negative"
+        },
+        {
+          "artifacts": [
+            "rtf_object_001.exe",
+            "rtf_summary.json",
+            "rtf_text.txt"
+          ],
+          "can_process": true,
+          "case_class": "positive",
+          "component": "RTF",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "rtf-positive",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "case_class": "clean_negative",
+          "component": "RTF",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": false,
+          "id": "rtf-negative",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": false,
+          "recognition_outcome": "true_negative"
+        },
+        {
+          "artifacts": [
+            "rtf_object_001.exe",
+            "rtf_summary.json",
+            "rtf_text.txt"
+          ],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "RTF",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "rtf-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [
+            "rtf_summary.json",
+            "rtf_text.txt"
+          ],
+          "can_process": true,
+          "case_class": "truncated",
+          "component": "RTF",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "rtf-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [
+            "msi_strings.txt",
+            "msi_summary.json"
+          ],
+          "can_process": true,
+          "case_class": "positive",
+          "component": "MSI",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "msi-positive",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "case_class": "clean_negative",
+          "component": "MSI",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": false,
+          "id": "msi-negative",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": false,
+          "recognition_outcome": "true_negative"
+        },
+        {
+          "artifacts": [
+            "msi_strings.txt",
+            "msi_summary.json"
+          ],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "MSI",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "msi-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [
+            "msi_summary.json"
+          ],
+          "can_process": true,
+          "case_class": "truncated",
+          "component": "MSI",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "msi-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [
+            "disk_partition_001.bin",
+            "virtual_disk_metadata.json"
+          ],
+          "can_process": true,
+          "case_class": "positive",
+          "component": "VirtualDisk",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "virtual-disk-positive",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "case_class": "clean_negative",
+          "component": "VirtualDisk",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": false,
+          "id": "virtual-disk-negative",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": false,
+          "recognition_outcome": "true_negative"
+        },
+        {
+          "artifacts": [
+            "disk_partition_001.bin",
+            "virtual_disk_metadata.json"
+          ],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "VirtualDisk",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "virtual-disk-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "case_class": "truncated",
+          "component": "VirtualDisk",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": false,
+          "id": "virtual-disk-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": false,
+          "recognition_outcome": "true_negative"
+        },
+        {
+          "artifacts": [
+            "onenote_file_001.exe",
+            "onenote_strings.txt",
+            "onenote_summary.json"
+          ],
+          "can_process": true,
+          "case_class": "positive",
+          "component": "OneNote",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "onenote-positive",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "case_class": "clean_negative",
+          "component": "OneNote",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": false,
+          "id": "onenote-negative",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": false,
+          "recognition_outcome": "true_negative"
+        },
+        {
+          "artifacts": [
+            "onenote_file_001.exe",
+            "onenote_strings.txt",
+            "onenote_summary.json"
+          ],
+          "can_process": true,
+          "case_class": "malformed",
+          "component": "OneNote",
+          "expected_artifacts_present": true,
+          "expected_match": true,
+          "expected_recognition": true,
+          "id": "onenote-malformed",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_positive",
+          "predicted_match": true,
+          "predicted_recognition": true,
+          "recognition_outcome": "true_positive"
+        },
+        {
+          "artifacts": [],
+          "can_process": false,
+          "case_class": "truncated",
+          "component": "OneNote",
+          "expected_artifacts_present": null,
+          "expected_match": false,
+          "expected_recognition": false,
+          "id": "onenote-truncated",
+          "kind": "analyzer",
+          "missing_modules": [],
+          "outcome": "true_negative",
+          "predicted_match": false,
+          "predicted_recognition": false,
+          "recognition_outcome": "true_negative"
         }
       ],
       "components": {
@@ -3030,6 +3335,17 @@
           "true_negative": 2,
           "true_positive": 2
         },
+        "analyzer:MSI": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 3
+        },
         "analyzer:Mach-O": {
           "accuracy": 1.0,
           "f1": 1.0,
@@ -3052,6 +3368,17 @@
           "true_negative": 2,
           "true_positive": 2
         },
+        "analyzer:OneNote": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 2,
+          "true_positive": 2
+        },
         "analyzer:PE": {
           "accuracy": 1.0,
           "f1": 1.0,
@@ -3062,6 +3389,17 @@
           "specificity": 1.0,
           "true_negative": 2,
           "true_positive": 2
+        },
+        "analyzer:RTF": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 3
         },
         "analyzer:Script": {
           "accuracy": 1.0,
@@ -3095,6 +3433,17 @@
           "specificity": 1.0,
           "true_negative": 3,
           "true_positive": 1
+        },
+        "analyzer:VirtualDisk": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 2,
+          "true_positive": 2
         },
         "analyzer:WindowsLNK": {
           "accuracy": 1.0,
@@ -3433,8 +3782,8 @@
         "precision": 1.0,
         "recall": 1.0,
         "specificity": 1.0,
-        "true_negative": 68,
-        "true_positive": 88
+        "true_negative": 74,
+        "true_positive": 98
       },
       "recognition_components": {
         "analyzer:DEX": {
@@ -3470,6 +3819,17 @@
           "true_negative": 2,
           "true_positive": 2
         },
+        "analyzer:MSI": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 3
+        },
         "analyzer:Mach-O": {
           "accuracy": 1.0,
           "f1": 1.0,
@@ -3482,6 +3842,17 @@
           "true_positive": 3
         },
         "analyzer:OfficeOOXML": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 2,
+          "true_positive": 2
+        },
+        "analyzer:OneNote": {
           "accuracy": 1.0,
           "f1": 1.0,
           "false_negative": 0,
@@ -3513,6 +3884,17 @@
           "specificity": 1.0,
           "true_negative": 2,
           "true_positive": 2
+        },
+        "analyzer:RTF": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 1,
+          "true_positive": 3
         },
         "analyzer:Script": {
           "accuracy": 1.0,
@@ -3546,6 +3928,17 @@
           "specificity": 1.0,
           "true_negative": 1,
           "true_positive": 3
+        },
+        "analyzer:VirtualDisk": {
+          "accuracy": 1.0,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "specificity": 1.0,
+          "true_negative": 2,
+          "true_positive": 2
         },
         "analyzer:WindowsLNK": {
           "accuracy": 1.0,
@@ -3872,13 +4265,17 @@
           "analyzer:DEX",
           "analyzer:ELF",
           "analyzer:Email",
+          "analyzer:MSI",
           "analyzer:Mach-O",
           "analyzer:OfficeOOXML",
+          "analyzer:OneNote",
           "analyzer:OptionalArchive",
           "analyzer:PE",
+          "analyzer:RTF",
           "analyzer:Script",
           "analyzer:Steganography",
           "analyzer:TAR",
+          "analyzer:VirtualDisk",
           "analyzer:WindowsLNK",
           "analyzer:X86ShellcodeEmulation",
           "analyzer:ZIP",
@@ -3909,12 +4306,7 @@
           "decoder:ZLIB",
           "decoder:Zstandard"
         ],
-        "covered_count": 39,
-        "exempt_components": [
-          "analyzer:MSI",
-          "analyzer:OneNote",
-          "analyzer:RTF"
-        ],
+        "covered_count": 43,
         "live_builtin_components": [
           "analyzer:DEX",
           "analyzer:ELF",
@@ -3929,6 +4321,7 @@
           "analyzer:Script",
           "analyzer:Steganography",
           "analyzer:TAR",
+          "analyzer:VirtualDisk",
           "analyzer:WindowsLNK",
           "analyzer:X86ShellcodeEmulation",
           "analyzer:ZIP",
@@ -3959,7 +4352,7 @@
           "decoder:ZLIB",
           "decoder:Zstandard"
         ],
-        "live_builtin_count": 42,
+        "live_builtin_count": 43,
         "missing_negative": [],
         "missing_positive": [],
         "per_component": {
@@ -3982,10 +4375,10 @@
             "recognition_positive_cases": 2
           },
           "analyzer:MSI": {
-            "extraction_negative_cases": 0,
-            "extraction_positive_cases": 0,
-            "recognition_negative_cases": 0,
-            "recognition_positive_cases": 0
+            "extraction_negative_cases": 1,
+            "extraction_positive_cases": 3,
+            "recognition_negative_cases": 1,
+            "recognition_positive_cases": 3
           },
           "analyzer:Mach-O": {
             "extraction_negative_cases": 3,
@@ -4000,10 +4393,10 @@
             "recognition_positive_cases": 2
           },
           "analyzer:OneNote": {
-            "extraction_negative_cases": 0,
-            "extraction_positive_cases": 0,
-            "recognition_negative_cases": 0,
-            "recognition_positive_cases": 0
+            "extraction_negative_cases": 2,
+            "extraction_positive_cases": 2,
+            "recognition_negative_cases": 2,
+            "recognition_positive_cases": 2
           },
           "analyzer:OptionalArchive": {
             "extraction_negative_cases": 0,
@@ -4018,10 +4411,10 @@
             "recognition_positive_cases": 2
           },
           "analyzer:RTF": {
-            "extraction_negative_cases": 0,
-            "extraction_positive_cases": 0,
-            "recognition_negative_cases": 0,
-            "recognition_positive_cases": 0
+            "extraction_negative_cases": 1,
+            "extraction_positive_cases": 3,
+            "recognition_negative_cases": 1,
+            "recognition_positive_cases": 3
           },
           "analyzer:Script": {
             "extraction_negative_cases": 1,
@@ -4040,6 +4433,12 @@
             "extraction_positive_cases": 1,
             "recognition_negative_cases": 1,
             "recognition_positive_cases": 3
+          },
+          "analyzer:VirtualDisk": {
+            "extraction_negative_cases": 2,
+            "extraction_positive_cases": 2,
+            "recognition_negative_cases": 2,
+            "recognition_positive_cases": 2
           },
           "analyzer:WindowsLNK": {
             "extraction_negative_cases": 2,
@@ -5509,35 +5908,35 @@
     "golden_fixtures": [
       {
         "path": "tests/golden/expected/cfb_macro.doc.json",
-        "sha256": "880703421ef10677ca32d28f6b602dd7c02f478de5972ccb77d80c15be5c2c3a"
+        "sha256": "38469e967a4afa3e8c0f1d2c514cbe7fda7fc9f75e604e63302d9a7e102e2a1d"
       },
       {
         "path": "tests/golden/expected/gzip_text.bin.json",
-        "sha256": "0a4430c87393f07245eb23b722dd9d149203c5805f060e0cabb69501d533a0dd"
+        "sha256": "d6433499b4826d61daa8ad967e81aea249d806a67634cbaadf0b361a07ca6581"
       },
       {
         "path": "tests/golden/expected/high_entropy.bin.json",
-        "sha256": "dd0c74ccc89bf38d01c90439942f1c70294b91980f330e0e959a6102d7c8fd0c"
+        "sha256": "cbb98e8233af0f2eb15c2a99ad886eb100a4cb817a4adb1789019a9d84f6899a"
       },
       {
         "path": "tests/golden/expected/multi_ioc.txt.json",
-        "sha256": "5c674e2f25e39f96f64175e192fbb49e540c90e2cd4fbb756a2df7794a8d93c1"
+        "sha256": "00faaad016afa4012243704664557346119e68391017daa938ccb9a233a5f937"
       },
       {
         "path": "tests/golden/expected/nested_base64.txt.json",
-        "sha256": "9e6a950fe2b37075748687bea171bcc5c0e7116966fa50896d30ac968689e337"
+        "sha256": "7bed3cf01360ad643ada01d232384ec85578ec8026ed1ca4a40fcade1f064446"
       },
       {
         "path": "tests/golden/expected/pdf_js.pdf.json",
-        "sha256": "a7895a737ae6d329c2143bd8b62d9d45d7e20639df2377c67acb0c37ea6d5e9f"
+        "sha256": "fd3117f8ea225bdde1dd85c685faf4ef8cb93607302a37d04664b2bba73d7fac"
       },
       {
         "path": "tests/golden/expected/plain_iocs.txt.json",
-        "sha256": "33f8175dd469d49bcc6de88e952634266b8ebc9eb29cc3057fb8462a25d117cf"
+        "sha256": "041d9bf345e0fb454d81cc21da96c17fe6d6a1538b8d2edb3ef809f90157c967"
       },
       {
         "path": "tests/golden/expected/xor_url.bin.json",
-        "sha256": "734ab75dc55c8aba7a512c24a6ae202869d7a106e284b81bbd436ec8111ba110"
+        "sha256": "a680aa5a1125434ea23aa862daac73304a2a4c4fe99ad056cc0e5cf7d42d9b3f"
       }
     ],
     "lineage_property": "tests/test_determinism_contracts.py",

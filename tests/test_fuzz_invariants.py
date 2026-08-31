@@ -74,6 +74,8 @@ if _HAS_HYPOTHESIS:
                     b"PK\x03\x04",
                     b"MZ",
                     b"\x7fELF",
+                    b"vhdxfile",
+                    b"conectix",
                     b"\x1f\x8b",
                     b"BZh",
                     b"\xfd7zXZ",

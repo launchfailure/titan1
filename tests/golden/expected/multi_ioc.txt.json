@@ -81,6 +81,7 @@
         "Script",
         "Steganography",
         "TAR",
+        "VirtualDisk",
         "WindowsLNK",
         "X86ShellcodeEmulation",
         "ZIP"
@@ -145,6 +146,7 @@
         "script": true,
         "steganography": true,
         "tar": true,
+        "virtual_disk": true,
         "x86_shellcode_emulation": true,
         "zip": true
       },
@@ -252,7 +254,10 @@
       "yara_rules_dirs": [],
       "yara_rules_files": [],
       "yara_rules_path": null,
-      "yara_timeout_seconds": 10
+      "yara_timeout_seconds": 10,
+      "zip_passwords": [
+        "[REDACTED]"
+      ]
     },
     "limits": {
       "analysis_timeout_seconds": 300,

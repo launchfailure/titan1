@@ -587,7 +587,13 @@ Useful knobs:
 - `max_node_count`: maximum nodes/artifacts
 - `max_data_size`: input size safety limit
 - `decoders`: enable/disable specific decoders
-- `analyzers`: enable/disable ZIP/TAR/PE/ELF analyzers
+- `analyzers`: enable/disable individual structured and executable analyzers
+- `zip_passwords`: bounded ZIP password allowlist (defaults to `["infected"]`)
+
+Encrypted ZIP handling never brute-forces. Titan tries at most eight configured
+UTF-8 passwords, each limited to 128 bytes, while retaining the same file,
+total-size, and compression-ratio limits as ordinary ZIP extraction. Passwords
+are redacted from the report's effective configuration snapshot.
 
 ## Practical troubleshooting
 

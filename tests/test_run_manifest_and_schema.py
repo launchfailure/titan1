@@ -29,3 +29,18 @@ def test_report_schema_version_matches_schema_file():
 
     assert meta_schema_version == SCHEMA_VERSION
     assert manifest_schema_version == SCHEMA_VERSION
+
+
+def test_run_manifest_redacts_zip_passwords(tmp_path):
+    from titan_decoder.config import Config
+    from titan_decoder.core.engine import TitanEngine
+
+    config = Config(tmp_path / "missing.json")
+    config.set("zip_passwords", ["infected", "private-sample-password"])
+    report = TitanEngine(config).run_analysis(b"hello")
+
+    assert report["run_manifest"]["effective_config"]["zip_passwords"] == [
+        "[REDACTED]",
+        "[REDACTED]",
+    ]
+    assert "private-sample-password" not in json.dumps(report)

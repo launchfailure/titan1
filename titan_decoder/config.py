@@ -26,6 +26,8 @@ class Config:
         "max_zip_total_size": 10 * 1024 * 1024,  # 10MB
         "max_zip_file_size": 50 * 1024 * 1024,  # 50MB per file
         "max_compression_ratio": 100,  # 100:1 max compression ratio
+        # Bounded allowlist only; Titan never brute-forces archive passwords.
+        "zip_passwords": ["infected"],
         "max_tar_files": 25,
         "max_tar_total_size": 10 * 1024 * 1024,  # 10MB
         "max_tar_file_size": 50 * 1024 * 1024,  # 50MB per file
@@ -101,6 +103,7 @@ class Config:
             "msi": True,
             "onenote": True,
             "optional_archives": True,
+            "virtual_disk": True,
         },
         # Structured artifact extraction bounds shared by email, Office,
         # script, shortcut, and optional archive analyzers.

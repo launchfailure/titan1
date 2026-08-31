@@ -19,6 +19,8 @@ from titan_decoder.core.analyzers.structured import (
     ScriptAnalyzer,
 )
 from titan_decoder.core.engine import TitanEngine
+from titan_decoder.core.detection_rules import CorrelationRulesEngine
+from titan_decoder.core.ioc_export import build_ioc_summary
 
 from _cfb_fixtures import build_cfb
 
@@ -226,6 +228,27 @@ def _msi(strings: list[str], payload: bytes | None = None) -> bytes:
     return build_cfb(streams)
 
 
+def _encoded_msi_stream_name(name: str, *, table: bool) -> str:
+    alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz._"
+    encoded = ["\u4840"] if table else []
+    position = 0
+    while position < len(name):
+        first = alphabet.find(name[position])
+        if first < 0:
+            encoded.append(name[position])
+            position += 1
+            continue
+        if position + 1 < len(name):
+            second = alphabet.find(name[position + 1])
+            if second >= 0:
+                encoded.append(chr(0x3800 + first + (second << 6)))
+                position += 2
+                continue
+        encoded.append(chr(0x4800 + first))
+        position += 1
+    return "".join(encoded)
+
+
 def test_msi_analyzer_extracts_strings_and_embedded_payload_into_graph():
     payload = b"MZ-not-executed http://payload.msi.example/stage"
     data = _msi(["ProductName", "https://installer.example/update"], payload)
@@ -246,6 +269,61 @@ def test_msi_analyzer_extracts_strings_and_embedded_payload_into_graph():
     assert "https://installer.example/update" in report["iocs"]["urls"]
     assert "http://payload.msi.example/stage" in report["iocs"]["urls"]
     assert any(node["method"] == "ANALYZE_MSI" for node in report["nodes"])
+
+
+def test_msi_analyzer_decodes_real_stream_names_and_surfaces_execution_evidence():
+    encoded = [value.encode("cp1252") for value in ["ProductName", "cmd.exe /c whoami"]]
+    pool = struct.pack("<HH", 1252, 0) + b"".join(
+        struct.pack("<HH", len(value), 1) for value in encoded
+    )
+    data = build_cfb(
+        [
+            (_encoded_msi_stream_name("_StringPool", table=True), pool),
+            (_encoded_msi_stream_name("_StringData", table=True), b"".join(encoded)),
+            (_encoded_msi_stream_name("CustomAction", table=True), b"table rows"),
+            (
+                _encoded_msi_stream_name("InstallExecuteSequence", table=True),
+                b"sequence rows",
+            ),
+            (
+                _encoded_msi_stream_name("Binary.Updater", table=False),
+                b"MZ-not-executed https://payload.msi.example/stage",
+            ),
+        ]
+    )
+
+    artifacts = dict(MsiAnalyzer().analyze(data))
+    summary = json.loads(artifacts["msi_summary.json"])
+
+    assert summary["decoded_stream_names"] == [
+        "Binary.Updater",
+        "CustomAction",
+        "InstallExecuteSequence",
+        "_StringData",
+        "_StringPool",
+    ]
+    assert summary["table_names"] == [
+        "CustomAction",
+        "InstallExecuteSequence",
+        "_StringData",
+        "_StringPool",
+    ]
+    assert summary["custom_action_evidence"] == {
+        "binary_streams": ["Binary.Updater"],
+        "command_strings": ["cmd.exe /c whoami"],
+        "custom_action_table_present": True,
+        "execution_surface_present": True,
+        "sequence_tables": ["InstallExecuteSequence"],
+    }
+    assert summary["payloads"][0]["source_stream"] == "Binary.Updater"
+    assert summary["payloads"][0]["source_stream_raw"] is not None
+    assert artifacts["msi_payload_001.exe"].startswith(b"MZ-not-executed")
+
+    report = TitanEngine().run_analysis(data)
+    matches = CorrelationRulesEngine().evaluate_all(
+        report, build_ioc_summary(report, None)
+    )
+    assert {match["rule_id"] for match in matches} >= {"TITAN-012"}
 
 
 def test_msi_analyzer_fails_closed_and_enforces_deterministic_bounds():

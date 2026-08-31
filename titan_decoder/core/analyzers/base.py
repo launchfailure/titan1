@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
+from hashlib import sha256
 import zipfile
 import tarfile
 import io
@@ -59,6 +60,19 @@ class ZipAnalyzer(Analyzer):
         self.max_compression_ratio = self.config.get(
             "max_compression_ratio", 100
         )  # 100:1 max
+        configured_passwords = self.config.get("zip_passwords", ["infected"])
+        if isinstance(configured_passwords, str):
+            configured_passwords = [configured_passwords]
+        if not isinstance(configured_passwords, (list, tuple)):
+            configured_passwords = []
+        # Password attempts are an explicit, tightly bounded allowlist. Titan
+        # does not brute-force archives, and oversized/non-text values are
+        # ignored before any extraction work begins.
+        self.passwords = tuple(
+            password.encode("utf-8")
+            for password in configured_passwords[:8]
+            if isinstance(password, str) and 0 < len(password.encode("utf-8")) <= 128
+        )
 
     def can_analyze(self, data: bytes) -> bool:
         return looks_like_zip(data)
@@ -100,21 +114,24 @@ class ZipAnalyzer(Analyzer):
         return final_extracted
 
     def _extract_sequential(
-        self, zip_file: zipfile.ZipFile, safe_files: List[str]
+        self, zip_file: zipfile.ZipFile, safe_files: List[zipfile.ZipInfo]
     ) -> List[Tuple[str, bytes]]:
         """Extract files sequentially."""
         extracted = []
-        for filename in safe_files:
-            try:
-                content = zip_file.read(filename)
-                extracted.append((filename, content))
-            except Exception:
-                # Skip files that can't be read
-                continue
+        for info in safe_files:
+            passwords = self.passwords if info.flag_bits & 0x1 else (None,)
+            for password in passwords:
+                try:
+                    content = zip_file.read(info, pwd=password)
+                    extracted.append((info.filename, content))
+                    break
+                except (RuntimeError, NotImplementedError, zipfile.BadZipFile):
+                    # Wrong password, unsupported encryption, or corrupt entry.
+                    continue
         return extracted
 
-    def _pre_scan_zip(self, zip_file: zipfile.ZipFile) -> List[str]:
-        """Pre-scan ZIP contents for safety issues. Returns list of safe filenames."""
+    def _pre_scan_zip(self, zip_file: zipfile.ZipFile) -> List[zipfile.ZipInfo]:
+        """Pre-scan ZIP contents for safety issues. Returns safe entries."""
         safe_files = []
         # Track the running total incrementally. Recomputing
         # ``sum(getinfo(f).file_size ...)`` on every iteration made this O(n^2):
@@ -123,6 +140,9 @@ class ZipAnalyzer(Analyzer):
         current_safe_size = 0
 
         for info in zip_file.infolist():
+            if len(safe_files) >= self.max_files:
+                break
+
             # Skip directories
             if info.is_dir():
                 continue
@@ -146,7 +166,7 @@ class ZipAnalyzer(Analyzer):
             if current_safe_size + info.file_size > self.max_total_size:
                 continue
 
-            safe_files.append(info.filename)
+            safe_files.append(info)
             current_safe_size += info.file_size
 
         return safe_files
@@ -257,7 +277,12 @@ class TarAnalyzer(Analyzer):
         # was O(n^2) and let a many-entry archive hang pre-scan.
         current_safe_size = 0
 
-        for member in tar_file.getmembers():
+        # Iterate lazily instead of getmembers(), which materializes every
+        # header even though only max_files entries can ever be extracted.
+        for member in tar_file:
+            if len(safe_members) >= self.max_files:
+                break
+
             # Skip non-files
             if not member.isfile():
                 continue
@@ -304,6 +329,99 @@ class TarAnalyzer(Analyzer):
 class PEAnalyzer(Analyzer):
     """PE (Portable Executable) file metadata analyzer."""
 
+    _DOTNET_TABLE_NAMES = (
+        "Module", "TypeRef", "TypeDef", "FieldPtr", "Field", "MethodPtr",
+        "MethodDef", "ParamPtr", "Param", "InterfaceImpl", "MemberRef",
+        "Constant", "CustomAttribute", "FieldMarshal", "DeclSecurity",
+        "ClassLayout", "FieldLayout", "StandAloneSig", "EventMap",
+        "EventPtr", "Event", "PropertyMap", "PropertyPtr", "Property",
+        "MethodSemantics", "MethodImpl", "ModuleRef", "TypeSpec", "ImplMap",
+        "FieldRVA", "ENCLog", "ENCMap", "Assembly", "AssemblyProcessor",
+        "AssemblyOS", "AssemblyRef", "AssemblyRefProcessor", "AssemblyRefOS",
+        "File", "ExportedType", "ManifestResource", "NestedClass",
+        "GenericParam", "MethodSpec", "GenericParamConstraint",
+    )
+    _MAX_DOTNET_METADATA_SIZE = 64 << 20
+    _MAX_DOTNET_STREAMS = 64
+    _MAX_DOTNET_STRINGS = 512
+    _MAX_DOTNET_STRING_BYTES = 64 << 10
+    _MAX_DOTNET_REFERENCES = 1024
+    _MAX_DOTNET_RESOURCES = 1024
+    _MAX_DOTNET_RESOURCE_ARTIFACTS = 32
+    _MAX_DOTNET_RESOURCE_ITEM_SIZE = 4 << 20
+    _MAX_DOTNET_RESOURCE_TOTAL_SIZE = 16 << 20
+    _MAX_INSTALLER_SCAN = 16 << 20
+    _NSIS_SIGNATURE = b"\xef\xbe\xad\xdeNullsoftInst"
+    _INNO_SETUP_ID = re.compile(
+        rb"Inno Setup Setup Data \(([0-9]+(?:\.[0-9]+){1,3}[a-z]?)\)( \(u\))?"
+    )
+    _DOTNET_CODED_INDEXES = {
+        "TypeDefOrRef": (2, (2, 1, 27)),
+        "HasConstant": (2, (4, 8, 23)),
+        "HasCustomAttribute": (
+            5,
+            (6, 4, 1, 2, 8, 9, 10, 0, 14, 23, 20, 17, 26, 27, 32, 35,
+             38, 39, 40, 42, 44),
+        ),
+        "HasFieldMarshal": (1, (4, 8)),
+        "HasDeclSecurity": (2, (2, 6, 32)),
+        "MemberRefParent": (3, (2, 1, 26, 6, 27)),
+        "HasSemantics": (1, (20, 23)),
+        "MethodDefOrRef": (1, (6, 10)),
+        "MemberForwarded": (1, (4, 6)),
+        "Implementation": (2, (38, 35, 39)),
+        "CustomAttributeType": (3, (6, 10)),
+        "ResolutionScope": (2, (0, 26, 35, 1)),
+        "TypeOrMethodDef": (1, (2, 6)),
+    }
+    _DOTNET_TABLE_SCHEMAS = {
+        0: ("u2", "str", "guid", "guid", "guid"),
+        1: ("coded:ResolutionScope", "str", "str"),
+        2: ("u4", "str", "str", "coded:TypeDefOrRef", "table:4", "table:6"),
+        3: ("table:4",),
+        4: ("u2", "str", "blob"),
+        5: ("table:6",),
+        6: ("u4", "u2", "u2", "str", "blob", "table:8"),
+        7: ("table:8",),
+        8: ("u2", "u2", "str"),
+        9: ("table:2", "coded:TypeDefOrRef"),
+        10: ("coded:MemberRefParent", "str", "blob"),
+        11: ("u2", "coded:HasConstant", "blob"),
+        12: ("coded:HasCustomAttribute", "coded:CustomAttributeType", "blob"),
+        13: ("coded:HasFieldMarshal", "blob"),
+        14: ("u2", "coded:HasDeclSecurity", "blob"),
+        15: ("u2", "u4", "table:2"),
+        16: ("u4", "table:4"),
+        17: ("blob",),
+        18: ("table:2", "table:20"),
+        19: ("table:20",),
+        20: ("u2", "str", "coded:TypeDefOrRef"),
+        21: ("table:2", "table:23"),
+        22: ("table:23",),
+        23: ("u2", "str", "blob"),
+        24: ("u2", "table:6", "coded:HasSemantics"),
+        25: ("table:2", "coded:MethodDefOrRef", "coded:MethodDefOrRef"),
+        26: ("str",),
+        27: ("blob",),
+        28: ("u2", "coded:MemberForwarded", "str", "table:26"),
+        29: ("u4", "table:4"),
+        30: ("u4", "u4"),
+        31: ("u4",),
+        32: ("u4", "u2", "u2", "u2", "u2", "u4", "blob", "str", "str"),
+        33: ("u4",),
+        34: ("u4", "u4", "u4"),
+        35: ("u2", "u2", "u2", "u2", "u4", "blob", "str", "str", "blob"),
+        36: ("u4", "table:35"),
+        37: ("u4", "u4", "u4", "table:35"),
+        38: ("u4", "str", "blob"),
+        39: ("u4", "u4", "str", "str", "coded:Implementation"),
+        40: ("u4", "u4", "str", "coded:Implementation"),
+        41: ("table:2", "table:2"),
+        42: ("u2", "u2", "coded:TypeOrMethodDef", "str"),
+        43: ("coded:MethodDefOrRef", "blob"),
+        44: ("table:42", "coded:TypeDefOrRef"),
+    }
+
     @property
     def metadata_artifact_names(self) -> frozenset:
         return frozenset({"pe_metadata.json"})
@@ -328,12 +446,727 @@ class PEAnalyzer(Analyzer):
         """Extract PE metadata without executing the file."""
         metadata = self._extract_pe_metadata(data)
         if metadata:
-            # Return metadata as JSON string
             import json
 
+            resource_artifacts: List[Tuple[str, bytes]] = []
+            stored_hashes: set[str] = set()
+            stored_bytes = 0
+            dotnet = metadata.get("dotnet")
+            if isinstance(dotnet, dict):
+                resources = dotnet.get("manifest_resources")
+                if isinstance(resources, list):
+                    for record in resources:
+                        if not isinstance(record, dict):
+                            continue
+                        embedded = record.get("embedded_data")
+                        if not isinstance(embedded, dict):
+                            continue
+                        embedded["artifact"] = None
+                        embedded["stored"] = False
+                        offset = embedded.get("file_offset")
+                        size = embedded.get("size")
+                        if (
+                            embedded.get("range_valid") is not True
+                            or not isinstance(offset, int)
+                            or not isinstance(size, int)
+                            or size < 0
+                            or size > self._MAX_DOTNET_RESOURCE_ITEM_SIZE
+                            or stored_bytes + size
+                            > self._MAX_DOTNET_RESOURCE_TOTAL_SIZE
+                            or len(resource_artifacts)
+                            >= self._MAX_DOTNET_RESOURCE_ARTIFACTS
+                        ):
+                            continue
+                        payload = data[offset : offset + size]
+                        digest = sha256(payload).hexdigest()
+                        if digest in stored_hashes:
+                            embedded["duplicate_sha256"] = digest
+                            continue
+                        stored_hashes.add(digest)
+                        raw_name = str(record.get("name") or "resource.bin")
+                        safe_name = "".join(
+                            character
+                            for character in raw_name.replace("\\", "/").rsplit("/", 1)[-1]
+                            if character.isalnum() or character in "._-"
+                        )[:120] or "resource.bin"
+                        artifact_name = (
+                            f"dotnet_resource_{len(resource_artifacts) + 1:03d}_"
+                            f"{safe_name}"
+                        )
+                        embedded["artifact"] = artifact_name
+                        embedded["stored"] = True
+                        stored_bytes += size
+                        resource_artifacts.append((artifact_name, payload))
             metadata_json = json.dumps(metadata, indent=2).encode("utf-8")
-            return [("pe_metadata.json", metadata_json)]
+            return [("pe_metadata.json", metadata_json), *resource_artifacts]
         return []
+
+    @classmethod
+    def _dotnet_index_width(
+        cls,
+        token: str,
+        row_counts: Dict[int, int],
+        heap_sizes: int,
+    ) -> int:
+        if token == "str":
+            return 4 if heap_sizes & 0x01 else 2
+        if token == "guid":
+            return 4 if heap_sizes & 0x02 else 2
+        if token == "blob":
+            return 4 if heap_sizes & 0x04 else 2
+        if token.startswith("table:"):
+            table = int(token.partition(":")[2])
+            return 4 if row_counts.get(table, 0) >= 1 << 16 else 2
+        if token.startswith("coded:"):
+            name = token.partition(":")[2]
+            tag_bits, tables = cls._DOTNET_CODED_INDEXES[name]
+            maximum = max((row_counts.get(table, 0) for table in tables), default=0)
+            return 4 if maximum >= 1 << (16 - tag_bits) else 2
+        return 4 if token == "u4" else 2
+
+    @classmethod
+    def _dotnet_row_size(
+        cls,
+        table: int,
+        row_counts: Dict[int, int],
+        heap_sizes: int,
+    ) -> int | None:
+        schema = cls._DOTNET_TABLE_SCHEMAS.get(table)
+        if schema is None:
+            return None
+        return sum(
+            cls._dotnet_index_width(token, row_counts, heap_sizes)
+            for token in schema
+        )
+
+    @staticmethod
+    def _dotnet_blob(
+        data: bytes,
+        blob_range: tuple[int, int] | None,
+        index: int,
+        *,
+        maximum: int = 4096,
+    ) -> bytes | None:
+        if blob_range is None or index <= 0:
+            return b"" if index == 0 else None
+        blob_at, blob_size = blob_range
+        if index >= blob_size:
+            return None
+        cursor = blob_at + index
+        end = blob_at + blob_size
+        if cursor >= end:
+            return None
+        first = data[cursor]
+        if first & 0x80 == 0:
+            length, prefix = first, 1
+        elif first & 0xC0 == 0x80 and cursor + 2 <= end:
+            length = ((first & 0x3F) << 8) | data[cursor + 1]
+            prefix = 2
+        elif first & 0xE0 == 0xC0 and cursor + 4 <= end:
+            length = (
+                ((first & 0x1F) << 24)
+                | (data[cursor + 1] << 16)
+                | (data[cursor + 2] << 8)
+                | data[cursor + 3]
+            )
+            prefix = 4
+        else:
+            return None
+        if length > maximum or cursor + prefix + length > end:
+            return None
+        return data[cursor + prefix : cursor + prefix + length]
+
+    def _parse_dotnet_metadata(
+        self,
+        data: bytes,
+        rva_offset: Any,
+        clr_rva: int,
+        clr_size: int,
+    ) -> Dict[str, Any]:
+        """Parse bounded CLI and ECMA-335 metadata-root structure."""
+
+        result: Dict[str, Any] = {
+            "present": True,
+            "valid": False,
+            "anomalies": [],
+        }
+        clr_at = rva_offset(clr_rva)
+        if clr_at is None or clr_size < 24 or clr_at + 24 > len(data):
+            result["anomalies"].append("invalid_clr_header_range")
+            return result
+        header_size, major, minor, metadata_rva, metadata_size, flags, entry = (
+            struct.unpack_from("<IHHIIII", data, clr_at)
+        )
+        result.update(
+            {
+                "header_size": header_size,
+                "runtime_version": f"{major}.{minor}",
+                "metadata_rva": f"0x{metadata_rva:08x}",
+                "metadata_size": metadata_size,
+                "flags": {
+                    "raw": f"0x{flags:08x}",
+                    "il_only": bool(flags & 0x00000001),
+                    "requires_32_bit": bool(flags & 0x00000002),
+                    "strong_name_signed": bool(flags & 0x00000008),
+                    "native_entry_point": bool(flags & 0x00000010),
+                    "prefers_32_bit": bool(flags & 0x00020000),
+                },
+                "entry_point": {
+                    "kind": "native_rva"
+                    if flags & 0x00000010
+                    else "metadata_token",
+                    "value": f"0x{entry:08x}",
+                },
+            }
+        )
+        if header_size < 72 or header_size > clr_size:
+            result["anomalies"].append("invalid_clr_header_size")
+
+        managed_resources_at: int | None = None
+        managed_resources_size = 0
+        if clr_at + 32 <= len(data) and clr_size >= 32:
+            resources_rva, managed_resources_size = struct.unpack_from(
+                "<II", data, clr_at + 24
+            )
+            managed_resources_at = (
+                rva_offset(resources_rva) if managed_resources_size else None
+            )
+            result["managed_resource_directory"] = {
+                "present": bool(managed_resources_size),
+                "rva": f"0x{resources_rva:08x}",
+                "size": managed_resources_size,
+                "range_valid": bool(
+                    managed_resources_at is not None
+                    and managed_resources_size
+                    <= len(data) - managed_resources_at
+                ),
+            }
+
+        if clr_at + 40 <= len(data) and clr_size >= 40:
+            strong_name_rva, strong_name_size = struct.unpack_from(
+                "<II", data, clr_at + 32
+            )
+            strong_name_at = (
+                rva_offset(strong_name_rva) if strong_name_size else None
+            )
+            result["strong_name_signature"] = {
+                "present": bool(strong_name_size),
+                "rva": f"0x{strong_name_rva:08x}",
+                "size": strong_name_size,
+                "range_valid": bool(
+                    strong_name_at is not None
+                    and strong_name_size <= len(data) - strong_name_at
+                ),
+            }
+
+        metadata_at = rva_offset(metadata_rva)
+        if (
+            metadata_at is None
+            or metadata_size < 20
+            or metadata_size > self._MAX_DOTNET_METADATA_SIZE
+            or metadata_size > len(data) - metadata_at
+        ):
+            result["anomalies"].append("invalid_metadata_root_range")
+            return result
+        metadata_end = metadata_at + metadata_size
+        if data[metadata_at : metadata_at + 4] != b"BSJB":
+            result["anomalies"].append("invalid_metadata_signature")
+            return result
+
+        metadata_major, metadata_minor = struct.unpack_from(
+            "<HH", data, metadata_at + 4
+        )
+        version_length = struct.unpack_from("<I", data, metadata_at + 12)[0]
+        if (
+            version_length > 1024
+            or metadata_at + 16 + version_length > metadata_end
+        ):
+            result["anomalies"].append("invalid_metadata_version_range")
+            return result
+        version_bytes = data[
+            metadata_at + 16 : metadata_at + 16 + version_length
+        ]
+        version = version_bytes.split(b"\x00", 1)[0].decode(
+            "utf-8", errors="replace"
+        )
+        cursor = metadata_at + ((16 + version_length + 3) & ~3)
+        if cursor + 4 > metadata_end:
+            result["anomalies"].append("truncated_metadata_stream_count")
+            return result
+        metadata_flags, stream_count = struct.unpack_from("<HH", data, cursor)
+        cursor += 4
+        if stream_count > self._MAX_DOTNET_STREAMS:
+            result["anomalies"].append("excessive_metadata_stream_count")
+            return result
+
+        streams: list[Dict[str, Any]] = []
+        stream_ranges: Dict[str, tuple[int, int]] = {}
+        seen_names: set[str] = set()
+        for _ in range(stream_count):
+            if cursor + 9 > metadata_end:
+                result["anomalies"].append("truncated_metadata_stream_header")
+                return result
+            relative_offset, size = struct.unpack_from("<II", data, cursor)
+            name_start = cursor + 8
+            name_end = data.find(
+                b"\x00", name_start, min(metadata_end, name_start + 32)
+            )
+            if name_end < 0:
+                result["anomalies"].append("unterminated_metadata_stream_name")
+                return result
+            name = data[name_start:name_end].decode("ascii", errors="replace")
+            cursor = metadata_at + ((name_end + 1 - metadata_at + 3) & ~3)
+            range_valid = bool(
+                relative_offset <= metadata_size
+                and size <= metadata_size - relative_offset
+            )
+            if name in seen_names:
+                result["anomalies"].append(f"duplicate_metadata_stream:{name}")
+            seen_names.add(name)
+            streams.append(
+                {
+                    "name": name,
+                    "offset": relative_offset,
+                    "size": size,
+                    "range_valid": range_valid,
+                }
+            )
+            if range_valid and name not in stream_ranges:
+                stream_ranges[name] = (metadata_at + relative_offset, size)
+
+        table_rows: Dict[str, int] = {}
+        row_counts: Dict[int, int] = {}
+        module: Dict[str, Any] | None = None
+        assembly: Dict[str, Any] | None = None
+        assembly_references: list[Dict[str, Any]] = []
+        manifest_resources: list[Dict[str, Any]] = []
+        string_values: list[str] = []
+        strings_range = stream_ranges.get("#Strings")
+        if strings_range is not None:
+            strings_at, strings_size = strings_range
+            strings_data = data[
+                strings_at : strings_at
+                + min(strings_size, self._MAX_DOTNET_STRING_BYTES)
+            ]
+            position = 1 if strings_data.startswith(b"\x00") else 0
+            while (
+                position < len(strings_data)
+                and len(string_values) < self._MAX_DOTNET_STRINGS
+            ):
+                end = strings_data.find(b"\x00", position)
+                if end < 0:
+                    break
+                if end > position:
+                    value = strings_data[position:end].decode(
+                        "utf-8", errors="replace"
+                    )
+                    if value:
+                        string_values.append(value[:512])
+                position = end + 1
+
+        def heap_string(index: int) -> str | None:
+            if strings_range is None or index <= 0:
+                return None
+            strings_at, strings_size = strings_range
+            if index >= strings_size or strings_at + index >= metadata_end:
+                return None
+            start = strings_at + index
+            end = data.find(
+                b"\x00", start, min(strings_at + strings_size, start + 512)
+            )
+            if end < 0:
+                return None
+            return data[start:end].decode("utf-8", errors="replace")
+
+        table_range = stream_ranges.get("#~") or stream_ranges.get("#-")
+        if table_range is not None:
+            table_at, table_size = table_range
+            if table_size < 24 or table_at + 24 > metadata_end:
+                result["anomalies"].append("truncated_metadata_tables_header")
+            else:
+                heap_sizes = data[table_at + 6]
+                valid_mask = struct.unpack_from("<Q", data, table_at + 8)[0]
+                row_cursor = table_at + 24
+                present_indexes = [
+                    index for index in range(64) if valid_mask & (1 << index)
+                ]
+                if row_cursor + 4 * len(present_indexes) > table_at + table_size:
+                    result["anomalies"].append("truncated_metadata_row_counts")
+                else:
+                    for index in present_indexes:
+                        rows = struct.unpack_from("<I", data, row_cursor)[0]
+                        row_cursor += 4
+                        name = (
+                            self._DOTNET_TABLE_NAMES[index]
+                            if index < len(self._DOTNET_TABLE_NAMES)
+                            else f"Table{index}"
+                        )
+                        table_rows[name] = rows
+                        row_counts[index] = rows
+
+                    table_offsets: Dict[int, tuple[int, int]] = {}
+                    table_cursor = row_cursor
+                    table_end = table_at + table_size
+                    for index in present_indexes:
+                        row_size = self._dotnet_row_size(
+                            index, row_counts, heap_sizes
+                        )
+                        if row_size is None:
+                            result["anomalies"].append(
+                                f"unsupported_metadata_table:{index}"
+                            )
+                            break
+                        table_bytes = row_counts[index] * row_size
+                        if table_bytes > table_end - table_cursor:
+                            result["anomalies"].append(
+                                f"truncated_metadata_table:{index}"
+                            )
+                            break
+                        table_offsets[index] = (table_cursor, row_size)
+                        table_cursor += table_bytes
+
+                    string_width = 4 if heap_sizes & 0x01 else 2
+                    guid_width = 4 if heap_sizes & 0x02 else 2
+                    blob_width = 4 if heap_sizes & 0x04 else 2
+
+                    def read_index(at: int, width: int) -> int:
+                        return int.from_bytes(data[at : at + width], "little")
+
+                    module_layout = table_offsets.get(0)
+                    if module_layout is not None and row_counts.get(0, 0) > 0:
+                        module_at, _ = module_layout
+                        name_index = read_index(module_at + 2, string_width)
+                        mvid_at = module_at + 2 + string_width
+                        mvid_index = read_index(mvid_at, guid_width)
+                        mvid: str | None = None
+                        guid_range = stream_ranges.get("#GUID")
+                        if guid_range is not None and mvid_index > 0:
+                            guid_at, guid_size = guid_range
+                            relative_guid = (mvid_index - 1) * 16
+                            if relative_guid + 16 <= guid_size:
+                                mvid = data[
+                                    guid_at
+                                    + relative_guid : guid_at
+                                    + relative_guid
+                                    + 16
+                                ].hex()
+                        module = {
+                            "name": heap_string(name_index),
+                            "mvid": mvid,
+                            "mvid_index": mvid_index,
+                        }
+
+                    assembly_layout = table_offsets.get(32)
+                    if assembly_layout is not None and row_counts.get(32, 0) > 0:
+                        assembly_at, _ = assembly_layout
+                        hash_algorithm = struct.unpack_from(
+                            "<I", data, assembly_at
+                        )[0]
+                        version_parts = struct.unpack_from(
+                            "<HHHH", data, assembly_at + 4
+                        )
+                        assembly_flags = struct.unpack_from(
+                            "<I", data, assembly_at + 12
+                        )[0]
+                        value_at = assembly_at + 16
+                        public_key_index = read_index(value_at, blob_width)
+                        value_at += blob_width
+                        name_index = read_index(value_at, string_width)
+                        value_at += string_width
+                        culture_index = read_index(value_at, string_width)
+                        public_key = self._dotnet_blob(
+                            data,
+                            stream_ranges.get("#Blob"),
+                            public_key_index,
+                        )
+                        assembly_name = heap_string(name_index)
+                        if assembly_name is None:
+                            result["anomalies"].append("invalid_assembly_name_index")
+                        if public_key_index and public_key is None:
+                            result["anomalies"].append(
+                                "invalid_assembly_public_key_index"
+                            )
+                        assembly = {
+                            "name": assembly_name,
+                            "version": ".".join(str(value) for value in version_parts),
+                            "culture": heap_string(culture_index) or "neutral",
+                            "flags": f"0x{assembly_flags:08x}",
+                            "hash_algorithm": {
+                                0: "none",
+                                0x8003: "md5",
+                                0x8004: "sha1",
+                            }.get(hash_algorithm, f"0x{hash_algorithm:08x}"),
+                            "public_key": None
+                            if not public_key
+                            else {
+                                "size": len(public_key),
+                                "sha256": sha256(public_key).hexdigest(),
+                                "preview_hex": public_key[:32].hex(),
+                            },
+                        }
+
+                    reference_layout = table_offsets.get(35)
+                    if reference_layout is not None:
+                        reference_at, reference_size = reference_layout
+                        for row in range(
+                            min(
+                                row_counts.get(35, 0),
+                                self._MAX_DOTNET_REFERENCES,
+                            )
+                        ):
+                            at = reference_at + row * reference_size
+                            version_parts = struct.unpack_from("<HHHH", data, at)
+                            reference_flags = struct.unpack_from("<I", data, at + 8)[0]
+                            value_at = at + 12
+                            key_index = read_index(value_at, blob_width)
+                            value_at += blob_width
+                            name_index = read_index(value_at, string_width)
+                            value_at += string_width
+                            culture_index = read_index(value_at, string_width)
+                            value_at += string_width
+                            hash_index = read_index(value_at, blob_width)
+                            key = self._dotnet_blob(
+                                data, stream_ranges.get("#Blob"), key_index
+                            )
+                            reference_hash = self._dotnet_blob(
+                                data, stream_ranges.get("#Blob"), hash_index
+                            )
+                            reference_name = heap_string(name_index)
+                            if reference_name is None:
+                                result["anomalies"].append(
+                                    f"invalid_assembly_reference_name:{row + 1}"
+                                )
+                            if key_index and key is None:
+                                result["anomalies"].append(
+                                    f"invalid_assembly_reference_key:{row + 1}"
+                                )
+                            if hash_index and reference_hash is None:
+                                result["anomalies"].append(
+                                    f"invalid_assembly_reference_hash:{row + 1}"
+                                )
+                            assembly_references.append(
+                                {
+                                    "row": row + 1,
+                                    "name": reference_name,
+                                    "version": ".".join(
+                                        str(value) for value in version_parts
+                                    ),
+                                    "culture": heap_string(culture_index) or "neutral",
+                                    "flags": f"0x{reference_flags:08x}",
+                                    "public_key_or_token": None
+                                    if not key
+                                    else key.hex(),
+                                    "hash": None
+                                    if not reference_hash
+                                    else reference_hash.hex(),
+                                }
+                            )
+
+                    resource_layout = table_offsets.get(40)
+                    implementation_width = self._dotnet_index_width(
+                        "coded:Implementation", row_counts, heap_sizes
+                    )
+                    if resource_layout is not None:
+                        resource_at, resource_size = resource_layout
+                        for row in range(
+                            min(
+                                row_counts.get(40, 0),
+                                self._MAX_DOTNET_RESOURCES,
+                            )
+                        ):
+                            at = resource_at + row * resource_size
+                            offset, resource_flags = struct.unpack_from(
+                                "<II", data, at
+                            )
+                            name_index = read_index(at + 8, string_width)
+                            implementation = read_index(
+                                at + 8 + string_width,
+                                implementation_width,
+                            )
+                            tag = implementation & 0x03
+                            target_row = implementation >> 2
+                            target_table = {
+                                0: "File",
+                                1: "AssemblyRef",
+                                2: "ExportedType",
+                            }.get(tag)
+                            resolved_name = heap_string(name_index)
+                            if resolved_name is None:
+                                result["anomalies"].append(
+                                    f"invalid_manifest_resource_name:{row + 1}"
+                                )
+                            record: Dict[str, Any] = {
+                                "row": row + 1,
+                                "name": resolved_name,
+                                "offset": offset,
+                                "visibility": "public"
+                                if resource_flags & 0x01
+                                else "private"
+                                if resource_flags & 0x02
+                                else "unspecified",
+                                "implementation": "embedded"
+                                if implementation == 0
+                                else {
+                                    "table": target_table or f"tag:{tag}",
+                                    "row": target_row,
+                                },
+                            }
+                            if implementation == 0:
+                                payload_at = (
+                                    managed_resources_at + offset
+                                    if managed_resources_at is not None
+                                    else None
+                                )
+                                if (
+                                    payload_at is not None
+                                    and offset <= managed_resources_size
+                                    and payload_at + 4 <= len(data)
+                                    and offset + 4 <= managed_resources_size
+                                ):
+                                    payload_size = struct.unpack_from(
+                                        "<I", data, payload_at
+                                    )[0]
+                                    range_valid = bool(
+                                        payload_size
+                                        <= managed_resources_size - offset - 4
+                                        and payload_size
+                                        <= len(data) - payload_at - 4
+                                    )
+                                    record["embedded_data"] = {
+                                        "size": payload_size,
+                                        "file_offset": payload_at + 4,
+                                        "range_valid": range_valid,
+                                        "sha256": sha256(
+                                            data[
+                                                payload_at + 4 : payload_at + 4 + payload_size
+                                            ]
+                                        ).hexdigest()
+                                        if range_valid
+                                        else None,
+                                    }
+                                    if not range_valid:
+                                        result["anomalies"].append(
+                                            f"invalid_manifest_resource_range:{row + 1}"
+                                        )
+                                else:
+                                    record["embedded_data"] = {
+                                        "size": None,
+                                        "file_offset": None,
+                                        "range_valid": False,
+                                        "sha256": None,
+                                    }
+                                    result["anomalies"].append(
+                                        f"invalid_manifest_resource_range:{row + 1}"
+                                    )
+                            manifest_resources.append(record)
+
+        result.update(
+            {
+                "valid": not any(
+                    anomaly.startswith(("invalid_", "truncated_", "unterminated_"))
+                    for anomaly in result["anomalies"]
+                ),
+                "metadata_version": f"{metadata_major}.{metadata_minor}",
+                "metadata_version_string": version[:256],
+                "metadata_flags": f"0x{metadata_flags:04x}",
+                "assembly": assembly,
+                "assembly_reference_count": table_rows.get("AssemblyRef", 0),
+                "assembly_references": assembly_references,
+                "assembly_references_truncated": table_rows.get(
+                    "AssemblyRef", 0
+                ) > len(assembly_references),
+                "manifest_resource_count": table_rows.get("ManifestResource", 0),
+                "manifest_resources": manifest_resources,
+                "manifest_resources_truncated": table_rows.get(
+                    "ManifestResource", 0
+                ) > len(manifest_resources),
+                "module": module,
+                "streams": streams,
+                "string_heap_preview": string_values,
+                "table_row_counts": table_rows,
+            }
+        )
+        return result
+
+    def _parse_installer_overlay(
+        self, data: bytes, overlay_offset: int
+    ) -> Dict[str, Any] | None:
+        """Identify bounded, structurally validated installer data in a PE overlay."""
+
+        overlay_offset = min(max(overlay_offset, 0), len(data))
+        scan_end = min(len(data), overlay_offset + self._MAX_INSTALLER_SCAN)
+        scanned = data[overlay_offset:scan_end]
+        formats: list[Dict[str, Any]] = []
+
+        search_at = 0
+        for _ in range(8):
+            signature_at = scanned.find(self._NSIS_SIGNATURE, search_at)
+            if signature_at < 0:
+                break
+            search_at = signature_at + 1
+            header_at = signature_at - 4
+            if header_at < 0 or header_at + 28 > len(scanned):
+                continue
+            (
+                flags,
+                signature,
+                magic_1,
+                magic_2,
+                magic_3,
+                header_length,
+                following_length,
+            ) = struct.unpack_from("<7I", scanned, header_at)
+            range_valid = bool(
+                signature == 0xDEADBEEF
+                and (magic_1, magic_2, magic_3)
+                == (0x6C6C754E, 0x74666F73, 0x74736E49)
+                and flags & ~0x0F == 0
+                and header_length > 0
+                and following_length >= 28
+                and header_length <= following_length - 28
+                and following_length <= len(scanned) - header_at
+            )
+            if not range_valid:
+                continue
+            formats.append(
+                {
+                    "family": "NSIS",
+                    "offset": overlay_offset + header_at,
+                    "header_length": header_length,
+                    "following_data_length": following_length,
+                    "range_valid": True,
+                    "flags": {
+                        "raw": f"0x{flags:08x}",
+                        "uninstaller": bool(flags & 0x01),
+                        "silent": bool(flags & 0x02),
+                        "no_crc": bool(flags & 0x04),
+                        "force_crc": bool(flags & 0x08),
+                    },
+                }
+            )
+
+        for match in list(self._INNO_SETUP_ID.finditer(scanned))[:8]:
+            identifier = match.group(0).decode("ascii", errors="replace")
+            formats.append(
+                {
+                    "family": "Inno Setup",
+                    "offset": overlay_offset + match.start(),
+                    "identifier": identifier,
+                    "data_format_version": match.group(1).decode("ascii"),
+                    "unicode": bool(match.group(2)),
+                }
+            )
+
+        if not formats:
+            return None
+        formats.sort(key=lambda item: (int(item["offset"]), str(item["family"])))
+        return {
+            "overlay_offset": overlay_offset,
+            "overlay_size": len(data) - overlay_offset,
+            "scan_bytes": len(scanned),
+            "scan_truncated": scan_end < len(data),
+            "formats": formats,
+        }
 
     def _extract_pe_metadata(self, data: bytes) -> Dict[str, Any]:
         """Extract key metadata from PE file."""
@@ -546,6 +1379,27 @@ class PEAnalyzer(Analyzer):
                             "size": certificate_size,
                         }
 
+                    number_of_directories_at = 92 if magic == 0x10B else 108
+                    if opt_offset + number_of_directories_at + 4 <= min(
+                        section_offset, len(data)
+                    ):
+                        directory_count = struct.unpack_from(
+                            "<I", data, opt_offset + number_of_directories_at
+                        )[0]
+                        clr_directory_at = opt_offset + directories_at + 14 * 8
+                        if (
+                            directory_count > 14
+                            and clr_directory_at + 8
+                            <= min(section_offset, len(data))
+                        ):
+                            clr_rva, clr_size = struct.unpack_from(
+                                "<II", data, clr_directory_at
+                            )
+                            if clr_rva or clr_size:
+                                metadata["dotnet"] = self._parse_dotnet_metadata(
+                                    data, rva_offset, clr_rva, clr_size
+                                )
+
                     metadata.update(
                         {
                             "entry_point_section": entry_section,
@@ -558,6 +1412,9 @@ class PEAnalyzer(Analyzer):
                             "anomalies": sorted(set(anomalies)),
                         }
                     )
+                    installer = self._parse_installer_overlay(data, raw_end)
+                    if installer is not None:
+                        metadata["installer"] = installer
 
             return metadata
 

@@ -80,12 +80,15 @@ constraints: deterministic, bounded, offline-first, fail-closed.
    and bounded seed extractors for Cobalt Strike Beacon and decrypted Remcos
    settings, with real-layout positive/adversarial fixtures. Next: expand the
    calibrated family and version matrix from measured field samples.
-3. **Format coverage depth.** .NET assembly structure, MSI/NSIS/InnoSetup
-   installers, OneNote, RTF exploit structures, Excel 4.0 XLM macros, VBA
-   p-code, PDF stream filters with JavaScript extraction, APK/DEX, VHD/VHDX,
-   and password-protected archives (`infected`). Thin Mach-O and DEX structural
-   analyzers now ship with malformed-input corpus slices and explicit resource
-   bounds; continue prioritizing the remaining formats by measured misses.
+3. **Format coverage depth.** MSI table/custom-action evidence, OneNote, RTF
+   exploit structures, Excel 4.0 XLM macros, PDF stream filters with JavaScript
+   extraction, APK/DEX, bounded VHD/VHDX structure inspection, PE-hosted .NET
+   assembly/resource metadata, NSIS/Inno overlay identification, and bounded
+   password-protected ZIP extraction (`infected`) now ship with adversarial
+   coverage and explicit resource limits. Small self-contained VHDX images now
+   also have bounded BAT reconstruction and MBR/GPT partition recovery. Next:
+   VBA p-code, large/differencing virtual-disk and file-system recovery, and
+   full NSIS/Inno payload-table decompression, prioritized by measured misses.
 4. **Service mode.** A `titan server` deployment shape: REST API, work
    queue, horizontally scalable workers, artifact store, and hash-based
    dedup cache now ships as a dependency-free, loopback-only-by-default
