@@ -42,4 +42,5 @@ jobs:
           name: fuzz-campaign-${{ github.run_id }}
           path: .fuzz-artifacts
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 30
